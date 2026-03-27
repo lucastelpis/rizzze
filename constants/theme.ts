@@ -73,8 +73,9 @@ export const tokens = {
       shadowColor: "#2D2B3D",
       shadowOffset: { width: 0, height: 12 },
       shadowOpacity: 0.12,
-      shadowRadius: 40,
-      elevation: 12,
     },
   },
 };
+
+export const Colors = { light: tokens.colors, dark: tokens.colors } as any;
+export const Fonts = { ...tokens.fonts, mono: 'Apple SD Gothic Neo', rounded: 'Apple SD Gothic Neo' } as any;
