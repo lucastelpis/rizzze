@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { tokens } from '../../constants/theme';
 import { useAudio } from '@/context/AudioContext';
+import * as SoundGraphics from '@/components/SoundGraphics';
 
 // ─── COLORS ───────────────────────────────────────────────────────────────────
 const C = {
@@ -292,6 +293,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { activeSound } = useAudio();
   const randomScene = useMemo(() => SCENES[Math.floor(Math.random() * SCENES.length)], []);
+  const PickGraphic = randomScene?.graphicId ? (SoundGraphics as any)[randomScene.graphicId] : null;
 
   return (
     <View style={styles.root}>
@@ -327,9 +329,9 @@ export default function HomeScreen() {
               }
             })}
           >
-            {/* Sheep thumbnail */}
-            <View style={styles.pickThumb}>
-              <SheepIcon size={36} />
+            {/* Scene thumbnail */}
+            <View style={[styles.pickThumb, { overflow: 'hidden', padding: 0 }]}>
+              {PickGraphic ? <PickGraphic w={52} h={52} /> : <SheepIcon size={36} />}
             </View>
             {/* Content */}
             <View style={styles.pickContent}>
