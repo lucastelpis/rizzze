@@ -1,9 +1,16 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as Font from 'expo-font';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import {
+  useFonts,
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  Nunito_900Black,
+} from '@expo-google-fonts/nunito';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -11,29 +18,22 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded, setLoaded] = useState(false);
+  
+  const [loaded, error] = useFonts({
+    Nunito_400Regular,
+    Nunito_500Medium,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black,
+  });
 
   useEffect(() => {
-    async function loadFonts() {
-      try {
-        await Font.loadAsync({
-          Nunito_400Regular: 'https://fonts.gstatic.com/s/nunito/v26/XRXV3I6Li01BKofINeaB.ttf',
-          Nunito_500Medium: 'https://fonts.gstatic.com/s/nunito/v26/XRXV3I6Li01BKofINeaB.ttf', // Fallback or separate
-          Nunito_700Bold: 'https://fonts.gstatic.com/s/nunito/v26/XRXV3I6Li01BKofINeaB.ttf',
-          Nunito_800ExtraBold: 'https://fonts.gstatic.com/s/nunito/v26/XRXV3I6Li01BKofINeaB.ttf',
-          Nunito_900Black: 'https://fonts.gstatic.com/s/nunito/v26/XRXV3I6Li01BKofINeaB.ttf',
-        });
-      } catch (e) {
-        console.warn(e);
-      } finally {
-        setLoaded(true);
-        SplashScreen.hideAsync();
-      }
+    if (loaded || error) {
+      SplashScreen.hideAsync();
     }
-    loadFonts();
-  }, []);
+  }, [loaded, error]);
 
-  if (!loaded) return null;
+  if (!loaded && !error) return null;
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

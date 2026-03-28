@@ -43,6 +43,15 @@ function getGreeting(): { greeting: string; subtitle: string } {
   return { greeting: 'Good evening', subtitle: 'Ready to wind down?' };
 }
 
+const SCENES = [
+  { title: "Forest night", tag: "Crickets, wind, owls", soundFile: "forest.m4a", graphicId: "ForestNightBg" },
+  { title: "Ocean shore", tag: "Waves, seagulls, breeze", soundFile: "beach.m4a", graphicId: "OceanShoreBg" },
+  { title: "City rain", tag: "Rain, traffic hum, puddles", soundFile: "city_rain.m4a", graphicId: "CityRainBg" },
+  { title: "Fireplace", tag: "Crackling wood, warmth", soundFile: "fireplace.m4a", graphicId: "FireplaceBg" },
+  { title: "Bamboo grove", tag: "Wind, rustling leaves", soundFile: "forest.m4a", graphicId: "BambooGroveBg" },
+  { title: "Cozy café", tag: "Coffee, chatter, soft jazz", soundFile: "coffeeshop.m4a", graphicId: "CozyCafeBg" }
+];
+
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────
 
 // Sleep: crescent moon
@@ -218,9 +227,10 @@ type CategoryCardProps = {
   Icon: React.ComponentType<any>;
   iconColor: string;
   border?: boolean;
+  onPress?: () => void;
 };
 
-const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border }: CategoryCardProps) => (
+const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border, onPress }: CategoryCardProps) => (
   <TouchableOpacity
     style={[
       styles.categoryCard,
@@ -228,6 +238,7 @@ const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border }: Category
       border && styles.categoryCardBorder,
     ]}
     activeOpacity={0.85}
+    onPress={onPress}
   >
     <View style={styles.categoryIconWrap}>
       <Icon size={28} color={iconColor} />
@@ -277,6 +288,8 @@ const BottomNav = ({ active }: { active: string }) => {
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { greeting, subtitle } = useMemo(() => getGreeting(), []);
+  const router = useRouter();
+  const randomScene = useMemo(() => SCENES[Math.floor(Math.random() * SCENES.length)], []);
 
   return (
     <View style={styles.root}>
@@ -299,7 +312,19 @@ export default function HomeScreen() {
           </View>
 
           {/* ── TONIGHT'S PICK ── */}
-          <View style={styles.pickCard}>
+          <TouchableOpacity 
+            style={styles.pickCard}
+            activeOpacity={0.85}
+            onPress={() => router.push({
+              pathname: '/player',
+              params: {
+                title: randomScene.title,
+                subtitle: 'Scenes collection',
+                soundFile: randomScene.soundFile,
+                graphicId: randomScene.graphicId
+              }
+            })}
+          >
             {/* Sheep thumbnail */}
             <View style={styles.pickThumb}>
               <SheepIcon size={36} />
@@ -307,14 +332,14 @@ export default function HomeScreen() {
             {/* Content */}
             <View style={styles.pickContent}>
               <Text style={styles.pickOverline}>TONIGHT'S PICK</Text>
-              <Text style={styles.pickTitle}>Rain on bamboo</Text>
-              <Text style={styles.pickSubtitle}>30 min · Sleep sounds</Text>
+              <Text style={styles.pickTitle}>{randomScene.title}</Text>
+              <Text style={styles.pickSubtitle}>{randomScene.tag}</Text>
             </View>
             {/* Play button */}
-            <TouchableOpacity style={styles.playButton} activeOpacity={0.85}>
+            <View style={styles.playButton}>
               <PlayIcon size={16} />
-            </TouchableOpacity>
-          </View>
+            </View>
+          </TouchableOpacity>
 
           {/* ── STREAK ── */}
           <StreakSection />
@@ -329,6 +354,7 @@ export default function HomeScreen() {
                 bg={C.sleepBg}
                 Icon={MoonIcon}
                 iconColor={C.sleepIcon}
+                onPress={() => router.push('/(tabs)/sleep')}
               />
               <CategoryCard
                 title="Sounds"
@@ -336,6 +362,7 @@ export default function HomeScreen() {
                 bg={C.soundsBg}
                 Icon={CloudRainIcon}
                 iconColor={C.soundsIcon}
+                onPress={() => router.push('/(tabs)/sounds')}
               />
               <CategoryCard
                 title="Stories"
