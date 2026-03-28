@@ -49,8 +49,8 @@ const SCENES = [
   { title: "Ocean shore", tag: "Waves, seagulls, breeze", soundFile: "beach.m4a", graphicId: "OceanShoreBg" },
   { title: "City rain", tag: "Rain, traffic hum, puddles", soundFile: "city_rain.m4a", graphicId: "CityRainBg" },
   { title: "Fireplace", tag: "Crackling wood, warmth", soundFile: "fireplace.m4a", graphicId: "FireplaceBg" },
-  { title: "Bamboo grove", tag: "Wind, rustling leaves", soundFile: "forest.m4a", graphicId: "BambooGroveBg" },
-  { title: "Cozy café", tag: "Coffee, chatter, soft jazz", soundFile: "coffeeshop.m4a", graphicId: "CozyCafeBg" }
+  { title: "Birdsong fields", tag: "Birdsong, soft breeze, grass", soundFile: "birds.m4a", graphicId: "BirdsongFieldsBg" },
+  { title: "Cozy café", tag: "Coffee, chatter, soft jazz", soundFile: "coffeeshop.m4a", graphicId: "CozyCafeBg" },
 ];
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ const SOUND_ASSETS: Record<string, any> = {
   'city_rain.m4a': require('@/assets/sounds/city_rain.m4a'),
   'fireplace.m4a': require('@/assets/sounds/fireplace.m4a'),
   'coffeeshop.m4a': require('@/assets/sounds/coffeeshop.m4a'),
+  'birds.m4a': require('@/assets/sounds/birds.m4a'),
   'simple_rain.m4a': require('@/assets/sounds/simple_rain.m4a'),
   'simple_fan.m4a': require('@/assets/sounds/simple_fan.m4a'),
   'simple_static.m4a': require('@/assets/sounds/simple_static.m4a'),

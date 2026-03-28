@@ -90,33 +90,38 @@ export const FireplaceBg = ({ w = 160, h = 120 }: { w?: number; h?: number }) =>
   </Svg>
 );
 
-export const BambooGroveBg = ({ w = 160, h = 120 }: { w?: number; h?: number }) => (
+export const BirdsongFieldsBg = ({ w = 160, h = 120 }: { w?: number; h?: number }) => (
   <Svg width={w} height={h} viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice" style={StyleSheet.absoluteFill}>
-    <Rect width={160} height={120} fill="#1A2A1A"/>
-    <Circle cx={80} cy={28} r={22} fill="#E8C88A" opacity={0.08}/>
-    <Circle cx={80} cy={28} r={13} fill="#E8C88A" opacity={0.14}/>
-    <Circle cx={25} cy={15} r={1} fill="#E8DFF0" opacity={0.5}/>
-    <Circle cx={60} cy={8} r={0.7} fill="#E8DFF0" opacity={0.35}/>
-    <Circle cx={100} cy={18} r={0.9} fill="#E8DFF0" opacity={0.6}/>
-    <Circle cx={140} cy={10} r={0.8} fill="#E8DFF0" opacity={0.4}/>
-    <Path d="M0 72Q20 62 40 68Q60 74 80 64Q100 54 120 62Q140 70 160 60V120H0Z" fill="#2A3A2A"/>
-    <Path d="M0 88Q30 80 60 86Q90 92 120 84Q150 76 160 80V120H0Z" fill="#3A4A3A"/>
-    
-    <Rect x={17} y={55} width={3} height={55} rx={1} fill="#4A6A40" opacity={0.7}/>
-    {[55, 67, 79, 91, 103].map((y, i) => <Rect key={i} x={17} y={y} width={3} height={1} fill="#3A5A30"/>)}
-    <Path d="M10 58Q17 44 24 58Z" fill="#5A8050" opacity={0.5}/>
-    
-    <Rect x={57} y={50} width={4} height={60} rx={1} fill="#4A6A40" opacity={0.65}/>
-    {[50, 62, 74, 86, 98].map((y, i) => <Rect key={i} x={57} y={y} width={4} height={1} fill="#3A5A30"/>)}
-    <Path d="M50 54Q58 38 66 54Z" fill="#5A8050" opacity={0.45}/>
-    
-    <Rect x={104} y={56} width={3} height={54} rx={1} fill="#4A6A40" opacity={0.6}/>
-    {[56, 68, 80, 92, 104].map((y, i) => <Rect key={i} x={104} y={y} width={3} height={1} fill="#3A5A30"/>)}
-    <Path d="M98 60Q105 46 112 60Z" fill="#5A8050" opacity={0.5}/>
-    
-    <Rect x={137} y={52} width={4} height={58} rx={1} fill="#4A6A40" opacity={0.55}/>
-    {[52, 64, 76, 88, 100].map((y, i) => <Rect key={i} x={137} y={y} width={4} height={1} fill="#3A5A30"/>)}
-    <Path d="M131 56Q138 42 145 56Z" fill="#5A8050" opacity={0.4}/>
+    {/* Twilight Sky */}
+    <Rect width={160} height={120} fill="#2A3441" />
+    {/* Moon glow */}
+    <Circle cx={120} cy={84} r={28} fill="#E8DFF0" opacity={0.15} />
+    {/* Back hill */}
+    <Path d="M0 60 Q40 45 80 65 T160 55 V120 H0 Z" fill="#3B4C42" />
+    {/* Middle hill */}
+    <Path d="M0 75 Q50 60 100 85 T160 70 V120 H0 Z" fill="#324239" />
+    {/* Front hill */}
+    <Path d="M0 90 Q40 105 90 85 T160 100 V120 H0 Z" fill="#28362D" />
+    {/* Grass Texture scattered on front hill */}
+    <Line x1={20} y1={92} x2={20} y2={95} stroke="#465A4E" opacity={0.6} strokeWidth={1} strokeLinecap="round" />
+    <Line x1={25} y1={94} x2={25} y2={97} stroke="#465A4E" opacity={0.5} strokeWidth={1} strokeLinecap="round" />
+    <Line x1={45} y1={98} x2={45} y2={101} stroke="#465A4E" opacity={0.7} strokeWidth={1} strokeLinecap="round" />
+    <Line x1={70} y1={90} x2={70} y2={93} stroke="#465A4E" opacity={0.6} strokeWidth={1} strokeLinecap="round" />
+    <Line x1={100} y1={87} x2={100} y2={90} stroke="#465A4E" opacity={0.7} strokeWidth={1} strokeLinecap="round" />
+    <Line x1={115} y1={92} x2={115} y2={95} stroke="#465A4E" opacity={0.5} strokeWidth={1} strokeLinecap="round" />
+    <Line x1={135} y1={96} x2={135} y2={99} stroke="#465A4E" opacity={0.6} strokeWidth={1} strokeLinecap="round" />
+    {/* Wildflowers - deeper tones */}
+    <Circle cx={30} cy={97} r={1.5} fill="#94808A" />
+    <Circle cx={34} cy={100} r={1.2} fill="#7A6B8A" />
+    <Circle cx={65} cy={94} r={1.5} fill="#7A6B8A" />
+    <Circle cx={85} cy={88} r={1.5} fill="#94808A" />
+    <Circle cx={125} cy={95} r={1.2} fill="#7A6B8A" />
+    <Circle cx={140} cy={100} r={1.5} fill="#94808A" />
+    {/* Birds at twilight */}
+    <Path d="M 30 30 L 34 26 L 38 30" fill="none" stroke="#4A5565" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M 60 15 L 63 12 L 66 15" fill="none" stroke="#4A5565" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M 110 35 L 112.5 32 L 115 35" fill="none" stroke="#4A5565" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M 135 20 L 138 17 L 141 20" fill="none" stroke="#4A5565" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 

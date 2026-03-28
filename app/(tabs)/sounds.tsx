@@ -12,8 +12,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Line, G } from 'react-native-svg';
-import {
-  ForestNightBg, OceanShoreBg, CityRainBg, FireplaceBg, BambooGroveBg, CozyCafeBg,
+import { 
+  ForestNightBg, OceanShoreBg, CityRainBg, FireplaceBg, BirdsongFieldsBg, CozyCafeBg,
   RainBg, FanBg, StaticBg, AcBg
 } from '@/components/SoundGraphics';
 import { useAudio } from '@/context/AudioContext';
@@ -228,14 +228,14 @@ export default function SoundsScreen() {
                 graphicId="FireplaceBg"
               />
               <SceneCard
-                title="Bamboo grove"
+                title="Birdsong fields"
                 subtitle="#A8C5A0"
-                tag="Wind, rustling leaves"
-                bgColor="#1A2A1A"
-                gradientOverlay="rgba(26,42,26,0.9)"
-                BgGraphic={BambooGroveBg}
-                soundFile="forest.m4a"
-                graphicId="BambooGroveBg"
+                tag="Birdsong, soft breeze, grass"
+                bgColor="#28362D"
+                gradientOverlay="rgba(40,54,45,0.9)"
+                BgGraphic={BirdsongFieldsBg}
+                soundFile="birds.m4a"
+                graphicId="BirdsongFieldsBg"
               />
               <SceneCard
                 title="Cozy café"
