@@ -157,15 +157,15 @@ export const RainBg = ({ w = 160, h = 60 }: { w?: number; h?: number }) => (
 
 export const FanBg = ({ w = 160, h = 60 }: { w?: number; h?: number }) => (
   <Svg width={w} height={h} viewBox="0 0 160 60" preserveAspectRatio="xMidYMid slice" style={StyleSheet.absoluteFill}>
-    <Rect width="160" height="60" fill="#2A2A3A" />
+    <Rect width="160" height="60" fill="#35354A" />
     <G x={110} y={30}>
-      <Circle cx={0} cy={0} r={22} fill="#3A3A4A" />
-      <Circle cx={0} cy={0} r={14} fill="#2A2A3A" />
-      <Path d="M -2 -14 Q 5 -20 10 -12 Q 5 -6 2 -2 Z" fill="#4A4A5A" opacity={0.7} />
-      <Path d="M 2 14 Q -5 20 -10 12 Q -5 6 -2 2 Z" fill="#4A4A5A" opacity={0.7} />
-      <Path d="M 14 -2 Q 20 5 12 10 Q 6 5 2 2 Z" fill="#4A4A5A" opacity={0.7} />
-      <Path d="M -14 2 Q -20 -5 -12 -10 Q -6 -5 -2 -2 Z" fill="#4A4A5A" opacity={0.7} />
-      <Circle cx={0} cy={0} r={4} fill="#4A4A5A" />
+      <Circle cx={0} cy={0} r={22} fill="#4A4A5A" />
+      <Circle cx={0} cy={0} r={14} fill="#35354A" />
+      <Path d="M -2 -14 Q 5 -20 10 -12 Q 5 -6 2 -2 Z" fill="#5A5A6A" opacity={0.7} />
+      <Path d="M 2 14 Q -5 20 -10 12 Q -5 6 -2 2 Z" fill="#5A5A6A" opacity={0.7} />
+      <Path d="M 14 -2 Q 20 5 12 10 Q 6 5 2 2 Z" fill="#5A5A6A" opacity={0.7} />
+      <Path d="M -14 2 Q -20 -5 -12 -10 Q -6 -5 -2 -2 Z" fill="#5A5A6A" opacity={0.7} />
+      <Circle cx={0} cy={0} r={4} fill="#5A5A6A" />
     </G>
   </Svg>
 );

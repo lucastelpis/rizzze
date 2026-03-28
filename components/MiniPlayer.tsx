@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, Line } from 'react-native-svg';
 import * as SoundGraphics from '@/components/SoundGraphics';
+import { useTheme } from '@/context/ThemeContext';
 
 // ── Icons ─────────
 const PauseIcon = () => (
@@ -58,6 +59,7 @@ const SheepFallbackIcon = () => (
 
 export function MiniPlayer() {
   const { activeSound, isPlaying, isLooping, toggleLoop, visualProgress, visualDuration, togglePlayPause, stopSound } = useAudio();
+  const { isDark } = useTheme();
   const router = useRouter();
   const translateY = useSharedValue(100);
 
@@ -97,7 +99,14 @@ export function MiniPlayer() {
   return (
     <Animated.View style={[styles.wrapper, animatedStyle]} pointerEvents={activeSound ? 'auto' : 'none'}>
       {activeSound && (
-        <TouchableOpacity style={styles.container} activeOpacity={0.9} onPress={handlePress}>
+        <TouchableOpacity 
+          style={[
+            styles.container,
+            isDark && { borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }
+          ]} 
+          activeOpacity={0.9} 
+          onPress={handlePress}
+        >
           {/* 1. Thumbnail */}
           <View style={styles.thumb}>
             {GraphicComponent ? (

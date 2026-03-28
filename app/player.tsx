@@ -133,7 +133,9 @@ export default function PlayerScreen() {
         
         {/* TOP NAV BAR - Fixed at top */}
         <View style={styles.topNav}>
-          <View style={{ width: 24 }} />
+          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ padding: 4 }}>
+            <Ionicons name="chevron-down" size={24} color="#C4AED8" />
+          </TouchableOpacity>
           <Text style={styles.nowPlayingText}>NOW PLAYING</Text>
           <TouchableOpacity activeOpacity={0.7} style={{ padding: 4 }}>
             <Feather name="more-vertical" size={20} color="#C4AED8" />

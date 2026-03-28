@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -21,13 +21,16 @@ import Animated, {
   FadeInRight,
   FadeOutLeft
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
 import { tokens } from '../constants/theme';
 import { Sparkle } from '../components/SheepMascot';
+import { useColors } from '@/hooks/useColors';
+import { useTheme } from '@/context/ThemeContext';
+import { CloudIcon, StoriesIcon, GamesIcon } from '../components/BedtimeIcons';
 
 // ─── COMPONENTS ───
 
 const Mascot = ({ variant, size = 200 }: { variant: 'welcome' | 'features' | 'teaching' | 'reading' | 'age' | 'goal', size?: number }) => {
+  const C = useColors();
   const bob = useSharedValue(0);
 
   useEffect(() => {
@@ -58,7 +61,7 @@ const Mascot = ({ variant, size = 200 }: { variant: 'welcome' | 'features' | 'te
 
   return (
     <View style={styles.mascotContainer}>
-      <View style={styles.mascotBgBox}>
+      <View style={[styles.mascotBgBox, { backgroundColor: C.lavender }]}>
         <Animated.View style={animatedStyle}>
           <Image
             source={images[variant]}
@@ -68,63 +71,72 @@ const Mascot = ({ variant, size = 200 }: { variant: 'welcome' | 'features' | 'te
       </View>
       {variant === 'welcome' && (
         <>
-          <View style={styles.sparkle1}><Sparkle size={24} color={tokens.colors.accentSoft} /></View>
-          <View style={styles.sparkle2}><Sparkle size={32} color={tokens.colors.accentSoft} /></View>
+          <View style={styles.sparkle1}><Sparkle size={24} color={C.accentSoft} /></View>
+          <View style={styles.sparkle2}><Sparkle size={32} color={C.accentSoft} /></View>
         </>
       )}
     </View>
   );
 };
 
-const FeatureItem = ({ title, description, color, Icon, isLast }: any) => (
-  <View>
-    <View style={styles.featureContent}>
-      <View style={[styles.iconCircle, { backgroundColor: color }]}>
-        <Icon size={24} color="#00000040" />
+const FeatureItem = ({ title, description, color, Icon, isLast }: any) => {
+  const C = useColors();
+  return (
+    <View>
+      <View style={styles.featureContent}>
+        <View style={[styles.iconCircle, { backgroundColor: color }]}>
+          <Icon size={24} color="#00000040" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.featureTitle, { color: C.textPrimary }]}>{title}</Text>
+          <Text style={[styles.featureDescription, { color: C.textSecondary }]}>{description}</Text>
+        </View>
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.featureTitle}>{title}</Text>
-        <Text style={styles.featureDescription}>{description}</Text>
-      </View>
+      {!isLast && <View style={[styles.featureDivider, { backgroundColor: C.border }]} />}
     </View>
-    {!isLast && <View style={styles.featureDivider} />}
-  </View>
-);
+  );
+};
 
-const GoalCard = ({ title, selected, onPress }: any) => (
-  <Pressable
-    onPress={onPress}
-    style={[
-      styles.goalCard,
-      selected && styles.goalCardSelected
-    ]}
-  >
-    <Text style={[
-      styles.goalText,
-      selected && { color: tokens.colors.accent, fontWeight: '800' }
-    ]}>
-      {title}
-    </Text>
-    {selected && (
-      <View style={styles.goalCheck}>
-        <Text style={{ color: '#FFF', fontSize: 10 }}>✓</Text>
-      </View>
-    )}
-  </Pressable>
-);
+const GoalCard = ({ title, selected, onPress }: any) => {
+  const C = useColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.goalCard,
+        { backgroundColor: C.bgCard, shadowColor: C.accentSoft },
+        selected && [styles.goalCardSelected, { borderColor: C.accent, backgroundColor: C.mode === 'dark' ? 'rgba(139, 107, 174, 0.15)' : '#F8F6FB' }]
+      ]}
+    >
+      <Text style={[
+        styles.goalText,
+        { color: C.textPrimary },
+        selected && { color: C.accent, fontWeight: '800' }
+      ]}>
+        {title}
+      </Text>
+      {selected && (
+        <View style={[styles.goalCheck, { backgroundColor: C.accent }]}>
+          <Text style={{ color: '#FFF', fontSize: 10 }}>✓</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+};
 
 // ─── PAGES ───
 
 const Page1 = () => {
   const { height } = useWindowDimensions();
+  const C = useColors();
   return (
     <Animated.View exiting={FadeOutLeft} style={[styles.page, { paddingHorizontal: 0 }]}>
       <Mascot variant="welcome" />
       <View style={[styles.pageContent, { paddingHorizontal: 32, marginTop: height * 0.045 }]}>
-        <Text style={styles.heroTitle}>
-          Welcome to <Text style={{ color: tokens.colors.accent }}>Rizzze</Text>!
+        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>
+          Welcome to <Text style={{ color: C.accent }}>Rizzze</Text>!
         </Text>
-        <Text style={styles.heroSubtitle}>
+        <Text style={[styles.heroSubtitle, { color: C.textSecondary }]}>
           Settle in for a cozy night with sleep-inducing sounds, soft-read stories, and peaceful puzzles
         </Text>
       </View>
@@ -132,32 +144,31 @@ const Page1 = () => {
   );
 };
 
-import { CloudIcon, StoriesIcon, GamesIcon } from '../components/BedtimeIcons';
-
 const Page2 = () => {
+  const C = useColors();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <Mascot variant="teaching" />
       <View style={styles.pageContent}>
-        <Text style={styles.sectionLabel}>HOW WE HELP</Text>
-        <Text style={styles.sectionTitle}>Designed for deep rest</Text>
+        <Text style={[styles.sectionLabel, { color: C.accent }]}>HOW WE HELP</Text>
+        <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Designed for deep rest</Text>
         <View style={styles.featureList}>
           <FeatureItem
             title="White noise"
             description="High-fidelity environment sounds"
-            color={tokens.colors.softBlue}
+            color={C.softBlue}
             Icon={CloudIcon}
           />
           <FeatureItem
             title="Bedtime stories"
             description="Gentle stories and guided sessions"
-            color={tokens.colors.lavender}
+            color={C.lavender}
             Icon={StoriesIcon}
           />
           <FeatureItem
             title="Relaxing games"
             description="Mini-games to lower heart rate"
-            color={tokens.colors.blush}
+            color={C.blush}
             Icon={GamesIcon}
             isLast
           />
@@ -169,12 +180,13 @@ const Page2 = () => {
 
 const Page3 = ({ age, setAge }: any) => {
   const ages = ['18-24', '25-34', '35-44', '45+'];
+  const C = useColors();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <Mascot variant="reading" />
       <View style={styles.pageContent}>
-        <Text style={styles.sectionLabel}>TELL ME A LITTLE MORE ABOUT YOU</Text>
-        <Text style={styles.sectionTitle}>How old are you?</Text>
+        <Text style={[styles.sectionLabel, { color: C.accent }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
+        <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>How old are you?</Text>
         <View style={styles.selectionGrid}>
           {ages.map(a => (
             <GoalCard key={a} title={a} selected={age === a} onPress={() => setAge(a)} />
@@ -192,12 +204,13 @@ const Page4 = ({ goal, setGoal }: any) => {
     'Relax after a hard day',
     "I don't really know yet"
   ];
+  const C = useColors();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <Mascot variant="reading" />
       <View style={styles.pageContent}>
-        <Text style={styles.sectionLabel}>TELL ME A LITTLE MORE ABOUT YOU</Text>
-        <Text style={styles.sectionTitle}>What is your goal?</Text>
+        <Text style={[styles.sectionLabel, { color: C.accent }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
+        <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>What is your goal?</Text>
         <View style={styles.selectionGrid}>
           {goals.map(g => (
             <GoalCard key={g} title={g} selected={goal === g} onPress={() => setGoal(g)} />
@@ -216,6 +229,8 @@ export default function Onboarding() {
   const [age, setAge] = useState('');
   const [goal, setGoal] = useState('');
   const { height } = useWindowDimensions();
+  const C = useColors();
+  const { isDark } = useTheme();
 
   const next = () => {
     if (currentPage < 3) {
@@ -230,10 +245,8 @@ export default function Onboarding() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-
-
+    <View style={[styles.container, { backgroundColor: C.bgPrimary }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <SafeAreaView style={styles.safeArea}>
         {/* Progress Dots */}
@@ -243,11 +256,9 @@ export default function Onboarding() {
               key={i}
               style={[
                 styles.progressDot,
-                i === currentPage && styles.progressDotActive,
-                i < currentPage && styles.progressDotCompleted,
-                currentPage === 0 && {
-                  backgroundColor: i === currentPage ? tokens.colors.accent : tokens.colors.accentLight
-                }
+                { backgroundColor: C.accentLight },
+                i === currentPage && [styles.progressDotActive, { backgroundColor: C.accent }],
+                i < currentPage && [styles.progressDotCompleted, { backgroundColor: C.accentSoft }],
               ]}
             />
           ))}
@@ -265,17 +276,18 @@ export default function Onboarding() {
         <View style={[styles.navigation, { paddingBottom: Math.max(24, height * 0.04) }]}>
           {currentPage > 0 && (
             <TouchableOpacity onPress={back} style={styles.backButton}>
-              <Text style={styles.backButtonText}>Back</Text>
+              <Text style={[styles.backButtonText, { color: C.textSecondary }]}>Back</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
             onPress={next}
             style={[
               styles.nextButton,
+              { backgroundColor: C.accent },
               currentPage === 0 && { width: '100%' },
-              (currentPage === 2 && !age || currentPage === 3 && !goal) && styles.nextButtonDisabled
+              (currentPage === 2 && !age || currentPage === 3 && !goal) && [styles.nextButtonDisabled, { backgroundColor: C.accentSoft }]
             ]}
-            disabled={currentPage === 2 && !age || currentPage === 3 && !goal}
+            disabled={(currentPage === 2 && !age) || (currentPage === 3 && !goal)}
           >
             <Text style={styles.nextButtonText}>
               {(currentPage === 2 && !age) || (currentPage === 3 && !goal)
@@ -292,7 +304,6 @@ export default function Onboarding() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.bgPrimary,
   },
   safeArea: {
     flex: 1,
@@ -308,14 +319,11 @@ const styles = StyleSheet.create({
     width: 20,
     height: 4,
     borderRadius: 2,
-    backgroundColor: tokens.colors.accentLight,
   },
   progressDotActive: {
-    backgroundColor: tokens.colors.accent,
     width: 32,
   },
   progressDotCompleted: {
-    backgroundColor: tokens.colors.accentSoft,
   },
   viewPager: {
     flex: 1,
@@ -337,7 +345,6 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
     borderRadius: 28,
-    backgroundColor: '#E8DFF0',
     padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
@@ -358,7 +365,6 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.caption,
     fontSize: 11,
     fontWeight: '800',
-    color: tokens.colors.textMuted,
     letterSpacing: 2,
     marginBottom: 8,
   },
@@ -366,14 +372,12 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.heading,
     fontSize: 32,
     fontWeight: '900',
-    color: tokens.colors.textPrimary,
     textAlign: 'center',
     letterSpacing: -0.64,
   },
   heroSubtitle: {
     fontFamily: tokens.fonts.body,
     fontSize: 18,
-    color: tokens.colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 50,
     marginTop: 16,
@@ -384,7 +388,6 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.caption,
     fontSize: 12,
     fontWeight: '800',
-    color: tokens.colors.accent,
     textAlign: 'center',
     letterSpacing: 1,
     marginBottom: 8,
@@ -393,7 +396,6 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.heading,
     fontSize: 24,
     fontWeight: '900',
-    color: tokens.colors.textPrimary,
     marginBottom: tokens.spacing.lg,
   },
   featureList: {
@@ -407,7 +409,6 @@ const styles = StyleSheet.create({
   },
   featureDivider: {
     height: 1,
-    backgroundColor: '#E8E2D8',
   },
   iconCircle: {
     width: 48,
@@ -420,46 +421,37 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.heading,
     fontSize: 18,
     fontWeight: '700',
-    color: tokens.colors.textPrimary,
     marginBottom: 2,
   },
   featureDescription: {
     fontFamily: tokens.fonts.body,
     fontSize: 13,
-    color: tokens.colors.textSecondary,
   },
   selectionGrid: {
     width: '100%',
     gap: 16,
   },
   goalCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 0,
-    borderColor: tokens.colors.accent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
     paddingHorizontal: 20,
     // Top shadow effect
-    shadowColor: tokens.colors.accentSoft,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 4,
   },
   goalCardSelected: {
-    borderColor: tokens.colors.accent,
     borderWidth: 2,
-    backgroundColor: '#F8F6FB',
-    shadowColor: tokens.colors.accent,
     shadowOpacity: 0.2,
   },
   goalText: {
     fontFamily: tokens.fonts.body,
     fontSize: 16,
-    color: tokens.colors.textPrimary,
   },
   goalCheck: {
     position: 'absolute',
@@ -467,7 +459,6 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: tokens.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -478,7 +469,6 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     flex: 2,
-    backgroundColor: tokens.colors.accent,
     height: 56,
     borderRadius: tokens.radii.xl,
     alignItems: 'center',
@@ -486,7 +476,6 @@ const styles = StyleSheet.create({
     ...tokens.shadows.elevated,
   },
   nextButtonDisabled: {
-    backgroundColor: tokens.colors.accentSoft,
     shadowOpacity: 0,
     elevation: 0,
     opacity: 0.6,
@@ -507,6 +496,5 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.body,
     fontSize: 16,
     fontWeight: '700',
-    color: tokens.colors.textSecondary,
   },
 });

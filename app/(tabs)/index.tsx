@@ -8,36 +8,15 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { tokens } from '../../constants/theme';
+import { useColors } from '@/hooks/useColors';
 import { useAudio } from '@/context/AudioContext';
 import { useStreak } from '@/context/StreakContext';
 import * as SoundGraphics from '@/components/SoundGraphics';
 import { BottomNav } from '@/components/BottomNav';
-
-// ─── COLORS ───────────────────────────────────────────────────────────────────
-const C = {
-  bg: '#F8F4EE',
-  accent: '#8B6DAE',
-  accentLight: '#EDE5F5',
-  lavender: '#E8DFF0',
-  textPrimary: '#2D2B3D',
-  textSecondary: '#7A7589',
-  textMuted: '#A9A3B5',
-  border: '#E8E2D8',
-  white: '#FFFFFF',
-  // Category cards
-  sleepBg: '#E8DFF0',
-  sleepIcon: '#6B5A8E',
-  soundsBg: '#C8DEF0',
-  soundsIcon: '#2B5A80',
-  storiesBg: '#F0D8D0',
-  storiesIcon: '#8B4A40',
-  gamesBg: '#F5F0E8',
-  gamesIcon: '#6B6560',
-};
+import { SleepingSheep } from '@/components/SleepingSheep';
 
 // ─── GREETING ─────────────────────────────────────────────────────────────────
 function getGreeting(): { greeting: string; subtitle: string } {
@@ -59,7 +38,7 @@ const SCENES = [
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────
 
 // Sleep: crescent moon
-const MoonIcon = ({ size = 24, color = C.sleepIcon }: { size?: number; color?: string }) => (
+const MoonIcon = ({ size = 24, color }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
@@ -69,7 +48,7 @@ const MoonIcon = ({ size = 24, color = C.sleepIcon }: { size?: number; color?: s
 );
 
 // Sounds: cloud with rain
-const CloudRainIcon = ({ size = 24, color = C.soundsIcon }: { size?: number; color?: string }) => (
+const CloudRainIcon = ({ size = 24, color }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"
@@ -87,7 +66,7 @@ const CloudRainIcon = ({ size = 24, color = C.soundsIcon }: { size?: number; col
 );
 
 // Stories: book / lines icon
-const StoriesIcon = ({ size = 24, color = C.storiesIcon }: { size?: number; color?: string }) => (
+const StoriesIcon = ({ size = 24, color }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x={3} y={3} width={18} height={18} rx={3} fill={color} opacity={0.15} />
     <Rect x={7} y={8} width={10} height={2} rx={1} fill={color} />
@@ -97,7 +76,7 @@ const StoriesIcon = ({ size = 24, color = C.storiesIcon }: { size?: number; colo
 );
 
 // Games: 2x2 grid
-const GamesIcon = ({ size = 24, color = C.gamesIcon }: { size?: number; color?: string }) => (
+const GamesIcon = ({ size = 24, color }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x={4} y={4} width={7} height={7} rx={2} fill={color} />
     <Rect x={13} y={4} width={7} height={7} rx={2} fill={color} />
@@ -107,38 +86,29 @@ const GamesIcon = ({ size = 24, color = C.gamesIcon }: { size?: number; color?: 
 );
 
 // Mascot sheep (simple geometric path for avatar + thumbnail)
-const SheepIcon = ({ size = 28 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-    <Circle cx={20} cy={22} r={11} fill={C.white} />
-    <Circle cx={20} cy={12} r={7} fill={C.white} />
-    <Circle cx={17.5} cy={13} r={1.2} fill={C.textPrimary} />
-    <Circle cx={22.5} cy={13} r={1.2} fill={C.textPrimary} />
-    <Circle cx={13} cy={11} r={2.5} fill={C.lavender} />
-    <Circle cx={27} cy={11} r={2.5} fill={C.lavender} />
-    <Rect x={14} y={31} width={3} height={5} rx={1.5} fill={'#A9A3B5'} />
-    <Rect x={23} y={31} width={3} height={5} rx={1.5} fill={'#A9A3B5'} />
-  </Svg>
-);
+// SheepIcon removed in favor of SleepingSheep component
 
 // Play triangle
-const PlayIcon = ({ size = 16 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-    <Path d="M4 2.5L13 8L4 13.5V2.5Z" fill={C.white} />
-  </Svg>
-);
-
-// Streak Bars Section removed local icons
+const PlayIcon = ({ size = 16 }: { size?: number }) => {
+  const C = useColors();
+  return (
+    <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <Path d="M4 2.5L13 8L4 13.5V2.5Z" fill={C.white} />
+    </Svg>
+  );
+};
 
 const StreakSection = () => {
   const { streakCount, lastSevenDays, todayIndex } = useStreak();
+  const C = useColors();
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   return (
     <View style={styles.streakSection}>
       {/* Label row */}
       <View style={styles.streakHeader}>
-        <Text style={styles.overline}>YOUR STREAK</Text>
-        <Text style={styles.streakCount}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
+        <Text style={[styles.overline, { color: C.textMuted }]}>YOUR STREAK</Text>
+        <Text style={[styles.streakCount, { color: C.accent }]}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
       </View>
       {/* Bars */}
       <View style={styles.barsRow}>
@@ -159,7 +129,8 @@ const StreakSection = () => {
             key={i}
             style={[
               styles.dayLabel,
-              i === todayIndex && styles.dayLabelActive,
+              { color: C.textMuted },
+              i === todayIndex && { color: C.accent, fontFamily: 'Nunito_800ExtraBold' },
             ]}
           >
             {d}
@@ -181,30 +152,32 @@ type CategoryCardProps = {
   onPress?: () => void;
 };
 
-const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border, onPress }: CategoryCardProps) => (
-  <TouchableOpacity
-    style={[
-      styles.categoryCard,
-      { backgroundColor: bg },
-      border && styles.categoryCardBorder,
-    ]}
-    activeOpacity={0.85}
-    onPress={onPress}
-  >
-    <View style={styles.categoryIconWrap}>
-      <Icon size={28} color={iconColor} />
-    </View>
-    <View style={styles.categoryTextWrap}>
-      <Text style={styles.categoryTitle}>{title}</Text>
-      <Text style={styles.categorySubtitle}>{subtitle}</Text>
-    </View>
-  </TouchableOpacity>
-);
-
-// Removed local BottomNav component
+const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border, onPress }: CategoryCardProps) => {
+  const C = useColors();
+  return (
+    <TouchableOpacity
+      style={[
+        styles.categoryCard,
+        { backgroundColor: bg },
+        border && { borderColor: C.border, borderWidth: 1 },
+      ]}
+      activeOpacity={0.85}
+      onPress={onPress}
+    >
+      <View style={styles.categoryIconWrap}>
+        <Icon size={28} color={iconColor} />
+      </View>
+      <View style={styles.categoryTextWrap}>
+        <Text style={[styles.categoryTitle, { color: C.textPrimary }]}>{title}</Text>
+        <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>{subtitle}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
+  const C = useColors();
   const { greeting, subtitle } = useMemo(() => getGreeting(), []);
   const router = useRouter();
   const { activeSound } = useAudio();
@@ -212,21 +185,20 @@ export default function HomeScreen() {
   const PickGraphic = randomScene?.graphicId ? (SoundGraphics as any)[randomScene.graphicId] : null;
 
   return (
-    <View style={styles.root}>
-      <StatusBar style="dark" />
+    <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
           {/* ── HEADER ── */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>{greeting}</Text>
-              <Text style={styles.headerSubtitle}>{subtitle}</Text>
+              <Text style={[styles.headerTitle, { color: C.textPrimary }]}>{greeting}</Text>
+              <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>{subtitle}</Text>
             </View>
             <TouchableOpacity 
-              style={styles.sheepButton}
+              style={[styles.sheepButton, { backgroundColor: C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
               onPress={() => router.push('/profile')}
               activeOpacity={0.8}
             >
-              <SheepIcon size={30} />
+              <SleepingSheep size={34} />
             </TouchableOpacity>
           </View>
 
@@ -238,7 +210,7 @@ export default function HomeScreen() {
 
           {/* ── TONIGHT'S PICK ── */}
           <TouchableOpacity 
-            style={styles.pickCard}
+            style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
             activeOpacity={0.85}
             onPress={() => router.push({
               pathname: '/player',
@@ -251,17 +223,17 @@ export default function HomeScreen() {
             })}
           >
             {/* Scene thumbnail */}
-            <View style={[styles.pickThumb, { overflow: 'hidden', padding: 0 }]}>
-              {PickGraphic ? <PickGraphic w={52} h={52} /> : <SheepIcon size={36} />}
+            <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
+              {PickGraphic ? <PickGraphic w={52} h={52} /> : <SleepingSheep size={42} />}
             </View>
             {/* Content */}
             <View style={styles.pickContent}>
-              <Text style={styles.pickOverline}>TONIGHT'S PICK</Text>
-              <Text style={styles.pickTitle}>{randomScene.title}</Text>
-              <Text style={styles.pickSubtitle}>{randomScene.tag}</Text>
+              <Text style={[styles.pickOverline, { color: C.accent }]}>TONIGHT'S PICK</Text>
+              <Text style={[styles.pickTitle, { color: C.textPrimary }]}>{randomScene.title}</Text>
+              <Text style={[styles.pickSubtitle, { color: C.textSecondary }]}>{randomScene.tag}</Text>
             </View>
             {/* Play button */}
-            <View style={styles.playButton}>
+            <View style={[styles.playButton, { backgroundColor: C.accent }]}>
               <PlayIcon size={16} />
             </View>
           </TouchableOpacity>
@@ -271,7 +243,7 @@ export default function HomeScreen() {
 
           {/* ── EXPLORE GRID ── */}
           <View style={styles.exploreSection}>
-            <Text style={styles.overline}>EXPLORE</Text>
+            <Text style={[styles.overline, { color: C.textMuted }]}>EXPLORE</Text>
             <View style={styles.categoryGrid}>
               <CategoryCard
                 title="Sleep"
@@ -319,7 +291,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: C.bg,
   },
   safeArea: {
     flex: 1,
@@ -343,41 +314,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontFamily: 'Nunito_900Black',
+    fontFamily: tokens.fonts.heading,
     fontSize: 28,
     fontWeight: '900',
-    color: C.textPrimary,
     letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 15,
     fontWeight: '600',
-    color: C.textSecondary,
     marginTop: -2,
   },
   sheepButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: C.lavender,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139, 107, 174, 0.15)',
   },
 
   // Tonight's Pick Card
   pickCard: {
-    backgroundColor: C.white,
     borderRadius: 20,
     borderTopWidth: 3,
-    borderTopColor: C.accent,
     borderLeftWidth: 0,
     borderRightWidth: 0,
     borderBottomWidth: 0,
-    borderColor: C.accent,
-    shadowColor: C.textPrimary,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.10,
     shadowRadius: 40,
@@ -391,7 +354,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 14,
-    backgroundColor: C.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -400,29 +362,25 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   pickOverline: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: tokens.fonts.caption,
     fontSize: 11,
     fontWeight: '800',
-    color: C.accent,
     letterSpacing: 1.2,
   },
   pickTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: tokens.fonts.caption,
     fontSize: 15,
     fontWeight: '800',
-    color: C.textPrimary,
   },
   pickSubtitle: {
-    fontFamily: 'Nunito_500Medium',
+    fontFamily: tokens.fonts.body,
     fontSize: 12,
     fontWeight: '500',
-    color: C.textSecondary,
   },
   playButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: C.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -437,10 +395,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   streakCount: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: tokens.fonts.caption,
     fontSize: 13,
     fontWeight: '800',
-    color: C.accent,
   },
   barsRow: {
     flexDirection: 'row',
@@ -458,23 +415,16 @@ const styles = StyleSheet.create({
   dayLabel: {
     flex: 1,
     textAlign: 'center',
-    fontFamily: 'Nunito_500Medium',
+    fontFamily: tokens.fonts.body,
     fontSize: 10,
     fontWeight: '500',
-    color: C.textMuted,
-  },
-  dayLabelActive: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontWeight: '800',
-    color: C.accent,
   },
 
   // Overline shared
   overline: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: tokens.fonts.caption,
     fontSize: 11,
     fontWeight: '800',
-    color: C.textMuted,
     letterSpacing: 1.5,
   },
 
@@ -494,10 +444,6 @@ const styles = StyleSheet.create({
     padding: 18,
     justifyContent: 'space-between',
   },
-  categoryCardBorder: {
-    borderWidth: 1,
-    borderColor: C.border,
-  },
   categoryIconWrap: {
     alignSelf: 'flex-end',
   },
@@ -505,16 +451,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   categoryTitle: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: tokens.fonts.caption,
     fontSize: 16,
     fontWeight: '800',
-    color: C.textPrimary,
   },
   categorySubtitle: {
-    fontFamily: 'Nunito_500Medium',
+    fontFamily: tokens.fonts.body,
     fontSize: 11,
     fontWeight: '500',
-    color: C.textSecondary,
   },
 
   // End of styles

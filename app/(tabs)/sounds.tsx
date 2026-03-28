@@ -18,30 +18,14 @@ import {
 } from '@/components/SoundGraphics';
 import { useAudio } from '@/context/AudioContext';
 import { BottomNav } from '@/components/BottomNav';
+import { useColors } from '@/hooks/useColors';
+import { tokens } from '@/constants/theme';
+import { SleepingSheep } from '@/components/SleepingSheep';
 
-const C = {
-  bg: '#F8F4EE',
-  accent: '#8B6DAE',
-  textPrimary: '#2D2B3D',
-  textSecondary: '#7A7589',
-  border: '#E8E2D8',
-  white: '#FFFFFF',
-  lavender: '#E8DFF0',
-};
+// Local C removed in favor of useColors()
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
-const SheepIcon = ({ size = 28 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-    <Circle cx={20} cy={22} r={11} fill={C.white} />
-    <Circle cx={20} cy={12} r={7} fill={C.white} />
-    <Circle cx={17.5} cy={13} r={1.2} fill={C.textPrimary} />
-    <Circle cx={22.5} cy={13} r={1.2} fill={C.textPrimary} />
-    <Circle cx={13} cy={11} r={2.5} fill={C.lavender} />
-    <Circle cx={27} cy={11} r={2.5} fill={C.lavender} />
-    <Rect x={14} y={31} width={3} height={5} rx={1.5} fill={'#A9A3B5'} />
-    <Rect x={23} y={31} width={3} height={5} rx={1.5} fill={'#A9A3B5'} />
-  </Svg>
-);
+// SheepIcon removed in favor of SleepingSheep component
 
 // Icons removed
 
@@ -104,26 +88,27 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
   );
 };
 
-// ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 export default function SoundsScreen() {
   const { activeSound } = useAudio();
   const router = useRouter();
+  const C = useColors();
+
   return (
-    <View style={styles.root}>
-      <StatusBar style="dark" />
+    <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
+      <StatusBar style={C.mode === 'dark' ? 'light' : 'dark'} />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* HEADER */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.headerTitle}>Sounds</Text>
-            <Text style={styles.headerSubtitle}>Immerse yourself</Text>
+            <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Sounds</Text>
+            <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Immerse yourself</Text>
           </View>
           <TouchableOpacity 
-            style={styles.sheepButton} 
+            style={[styles.sheepButton, { backgroundColor: C.accentLight }]}
             activeOpacity={0.8}
             onPress={() => router.push('/profile')}
           >
-            <SheepIcon size={30} />
+            <SleepingSheep size={34} />
           </TouchableOpacity>
         </View>
 
@@ -134,7 +119,7 @@ export default function SoundsScreen() {
         >
           {/* SCENES */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>SCENES</Text>
+            <Text style={[styles.sectionLabel, { color: C.textSecondary }]}>SCENES</Text>
             <View style={styles.sceneGrid}>
               <SceneCard
                 title="Forest night"
@@ -201,7 +186,7 @@ export default function SoundsScreen() {
 
           {/* SIMPLE SOUNDS */}
           <View style={styles.sectionSimpleSounds}>
-            <Text style={styles.sectionLabel}>SIMPLE SOUNDS</Text>
+            <Text style={[styles.sectionLabel, { color: C.textSecondary }]}>SIMPLE SOUNDS</Text>
             <View style={styles.simpleSoundGrid}>
               <SimpleSoundCard title="Rain" BgGraphic={RainBg} soundFile="simple_rain.m4a" graphicId="RainBg" />
               <SimpleSoundCard title="Fan" BgGraphic={FanBg} soundFile="simple_fan.m4a" graphicId="FanBg" />
@@ -221,7 +206,6 @@ export default function SoundsScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: C.bg,
   },
   safeArea: {
     flex: 1,
@@ -235,24 +219,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontFamily: 'Nunito_900Black',
+    fontFamily: tokens.fonts.heading,
     fontSize: 28,
     fontWeight: '900',
-    color: C.textPrimary,
     letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontFamily: 'Nunito_600SemiBold',
     fontSize: 15,
     fontWeight: '600',
-    color: C.textSecondary,
     marginTop: -2,
   },
   sheepButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: C.lavender,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -273,10 +254,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   sectionLabel: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: tokens.fonts.caption,
     fontSize: 11,
     fontWeight: '800',
-    color: '#7A7589',
     letterSpacing: 1.1,
     textTransform: 'uppercase',
     marginBottom: 14,

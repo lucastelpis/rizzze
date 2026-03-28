@@ -3,12 +3,11 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
-
-const C = tokens.colors;
+import { useColors } from '@/hooks/useColors';
 
 // ─── ICON COMPONENTS ──────────────────────────────────────────────────────────
 
-const HomeNavIcon = ({ active }: { active: boolean }) => (
+const HomeNavIcon = ({ active, C }: { active: boolean, C: any }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
     <Path 
       d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" 
@@ -20,7 +19,7 @@ const HomeNavIcon = ({ active }: { active: boolean }) => (
   </Svg>
 );
 
-const SleepNavIcon = ({ active }: { active: boolean }) => (
+const SleepNavIcon = ({ active, C }: { active: boolean, C: any }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
     <Path 
       d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" 
@@ -32,7 +31,7 @@ const SleepNavIcon = ({ active }: { active: boolean }) => (
   </Svg>
 );
 
-const SoundsNavIcon = ({ active }: { active: boolean }) => (
+const SoundsNavIcon = ({ active, C }: { active: boolean, C: any }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
     <Path 
       d="M9 18V5l12-2v13" 
@@ -46,7 +45,7 @@ const SoundsNavIcon = ({ active }: { active: boolean }) => (
   </Svg>
 );
 
-const ProfileNavIcon = ({ active }: { active: boolean }) => (
+const ProfileNavIcon = ({ active, C }: { active: boolean, C: any }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
     <Circle cx={12} cy={8} r={4} fill={active ? C.accent : 'none'} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} />
     <Path 
@@ -73,25 +72,30 @@ interface BottomNavProps {
 
 export const BottomNav = ({ active }: BottomNavProps) => {
   const router = useRouter();
+  const C = useColors();
 
   return (
-    <View style={styles.bottomNav}>
+    <View style={[styles.bottomNav, { backgroundColor: C.bgPrimary, borderTopColor: C.border }]}>
       {NAV_TABS.map(({ key, label, Icon, route }) => {
         const isActive = active === key;
         return (
           <TouchableOpacity
             key={key}
-            style={[styles.navTab, !isActive && styles.navTabInactive]}
+            style={styles.navTab}
             onPress={() => {
               if (!isActive) router.push(route as any);
             }}
             activeOpacity={0.7}
           >
-            <Icon active={isActive} />
-            <Text style={[styles.navLabel, isActive ? styles.navLabelActive : styles.navLabelInactive]}>
+            <Icon active={isActive} C={C} />
+            <Text style={[
+              styles.navLabel, 
+              { color: isActive ? C.accent : C.textMuted },
+              !isActive && { opacity: 0.6 }
+            ]}>
               {label}
             </Text>
-            {isActive && <View style={styles.navDot} />}
+            {isActive && <View style={[styles.navDot, { backgroundColor: C.accent }]} />}
           </TouchableOpacity>
         );
       })}
@@ -104,8 +108,6 @@ const styles = StyleSheet.create({
     height: 68,
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: C.border,
-    backgroundColor: C.bgPrimary,
     paddingBottom: 8,
   },
   navTab: {
@@ -115,19 +117,10 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingTop: 8,
   },
-  navTabInactive: {
-    opacity: 0.4,
-  },
   navLabel: {
     fontFamily: tokens.fonts.caption, // Nunito_800ExtraBold
     fontSize: 10,
     fontWeight: '800',
-  },
-  navLabelActive: {
-    color: C.accent,
-  },
-  navLabelInactive: {
-    color: C.textSecondary,
   },
   navDot: {
     position: 'absolute',
@@ -135,6 +128,5 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: C.accent,
   },
 });
