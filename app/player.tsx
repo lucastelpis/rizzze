@@ -108,54 +108,106 @@ export default function PlayerScreen() {
     };
   });
 
-  // Modern expo-audio Setup
+  // Modern Ping-Pong Dual Audio Setup
   const asset = SOUND_ASSETS[soundFile || 'forest.m4a'];
-  // updateInterval set to 30ms for smooth progress bar updates
-  const player = useAudioPlayer(asset, { updateInterval: 30 });
-  const status = useAudioPlayerStatus(player);
+  // Instantiate two players to crossfade slightly at loop points
+  const player1 = useAudioPlayer(asset, { updateInterval: 30 });
+  const player2 = useAudioPlayer(asset, { updateInterval: 30 });
+  const status1 = useAudioPlayerStatus(player1);
+  const status2 = useAudioPlayerStatus(player2);
+
+  const [activePlayerIdx, setActivePlayerIdx] = useState(0);
+  const activeStatus = activePlayerIdx === 0 ? status1 : status2;
 
   useEffect(() => {
-    // Auto-play and set initial loop state when loaded
-    player.loop = isLooping;
-    player.play();
-  }, [player]);
+    // Both players must NOT native-loop; we trigger them manually
+    player1.loop = false;
+    player2.loop = false;
+    player1.play();
+  }, [player1, player2]);
 
-  // Derived state from expo-audio (times are in seconds, we need millis for formatTime)
-  const isPlaying = status.playing;
-  const duration = (status.duration || 1) * 1000;
-  const position = isScrubbing ? scrubPosition : (status.currentTime || 0) * 1000;
+  useEffect(() => {
+    if (!activeStatus.duration) return;
+
+    const isAnyPlaying = status1.playing || status2.playing;
+
+    // Ping-pong Overlap Logic
+    if (isLooping && isAnyPlaying) {
+      const remainingTime = activeStatus.duration - activeStatus.currentTime;
+      // Increase overlap to 1.2 seconds to fully mask gaps and load times
+      const OVERLAP = 1.2; 
+
+      if (remainingTime <= OVERLAP && remainingTime > 0) {
+        const nextIdx = activePlayerIdx === 0 ? 1 : 0;
+        const nextPlayer = nextIdx === 0 ? player1 : player2;
+        const nextStatus = nextIdx === 0 ? status1 : status2;
+        
+        // Start the other player if it hasn't already started
+        if (!nextStatus.playing) {
+          nextPlayer.play();
+        }
+      }
+    }
+
+    // Switch UI control to the new player naturally just as current reaches its very end
+    if (activeStatus.currentTime >= activeStatus.duration - 0.05 && activeStatus.duration > 0) {
+      if (isLooping) {
+        const nextIdx = activePlayerIdx === 0 ? 1 : 0;
+        const finishedPlayer = activePlayerIdx === 0 ? player1 : player2;
+        
+        // Rewind the player that just finished for the NEXT loop
+        setTimeout(() => {
+          finishedPlayer.seekTo(0);
+        }, 300);
+
+        setActivePlayerIdx(nextIdx);
+      }
+    }
+  }, [activeStatus.currentTime, activeStatus.duration, activePlayerIdx, isLooping, status1.playing, status2.playing, player1, player2]);
+
+  // Derived state spanning both players
+  const isPlaying = status1.playing || status2.playing;
+  const duration = (activeStatus.duration || status1.duration || 1) * 1000;
+  const position = isScrubbing ? scrubPosition : (activeStatus.currentTime || 0) * 1000;
 
   // Controls
   const togglePlayPause = () => {
     if (isPlaying) {
-      player.pause();
+      player1.pause();
+      player2.pause();
     } else {
-      // expo-audio duration is in seconds
-      if (player.currentTime >= (status.duration || 0)) {
-        player.seekTo(0);
+      const activePlayer = activePlayerIdx === 0 ? player1 : player2;
+      if (activeStatus.currentTime >= (activeStatus.duration || 0)) {
+        activePlayer.seekTo(0);
       }
-      player.play();
+      activePlayer.play();
     }
   };
 
   const toggleLoop = () => {
-    const newLoop = !isLooping;
-    setIsLooping(newLoop);
-    player.loop = newLoop;
+    setIsLooping(!isLooping);
   };
 
   const handleScrub = (e: any) => {
-    const padding = 28; // Container horizontal padding
-    const barWidth = width - (padding * 2) - 8; // Adjust for internal progress padding
+    const padding = 28; // horizontal padding
+    const barWidth = width - (padding * 2) - 8;
     const constrainedX = Math.max(0, Math.min(e.nativeEvent.locationX, barWidth));
     const newPercent = constrainedX / barWidth;
     
-    // newPosition is in millis for UI tracking
     const newPosition = duration * newPercent;
     setScrubPosition(newPosition);
     
-    // expo-audio seekTo expects seconds
-    player.seekTo(newPosition / 1000);
+    // Stop the inactive player to prevent ghost playback
+    const inactivePlayer = activePlayerIdx === 0 ? player2 : player1;
+    inactivePlayer.pause();
+    inactivePlayer.seekTo(0);
+
+    // Seek the active player
+    const activePlayer = activePlayerIdx === 0 ? player1 : player2;
+    activePlayer.seekTo(newPosition / 1000);
+    if (isPlaying) {
+      activePlayer.play();
+    }
   };
 
   const progressPercent = Math.min(100, Math.max(0, (position / duration) * 100));
