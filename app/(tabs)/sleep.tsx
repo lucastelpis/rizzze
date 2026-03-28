@@ -118,12 +118,7 @@ const TODAY_DAY = new Date().getDate();
 const ACTUAL_MONTH = new Date().getMonth();
 const ACTUAL_YEAR = new Date().getFullYear();
 
-const yesterday = new Date();
-yesterday.setDate(yesterday.getDate() - 1);
-const YEST_DAY = yesterday.getDate();
-const YEST_MONTH = yesterday.getMonth();
-const YEST_YEAR = yesterday.getFullYear();
-const YEST_KEY = `${YEST_YEAR}-${YEST_MONTH + 1}-${YEST_DAY}`;
+const TODAY_KEY = `${ACTUAL_YEAR}-${ACTUAL_MONTH + 1}-${TODAY_DAY}`;
 
 const MONTH_NAMES = [
   'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
@@ -167,7 +162,7 @@ export default function SleepScreen() {
 
   const handleRateDate = async (dateKey: string, quality: SleepQuality) => {
     const newData = { ...sleepData, [dateKey]: quality };
-    if (dateKey === YEST_KEY) setSelectedRating(quality as string);
+    if (dateKey === TODAY_KEY) setSelectedRating(quality as string);
     setSleepData(newData);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
@@ -232,18 +227,18 @@ export default function SleepScreen() {
           {/* RATING */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.overline, { color: C.textSecondary }]}>HOW DID YOU SLEEP LAST NIGHT?</Text>
+              <Text style={[styles.overline, { color: C.textSecondary }]}>HOW DID YOU SLEEP?</Text>
             </View>
             <Text style={[styles.helperText, { color: C.textMuted }]}>Tap to rate today</Text>
 
             <View style={styles.ratingRow}>
               {ratingOptions.map(({ key, label, bg, faceColor, labelColor, Face }) => {
-                const isSelected = selectedRating === key || sleepData[YEST_KEY] === key;
+                const isSelected = selectedRating === key || sleepData[TODAY_KEY] === key;
                 return (
                   <TouchableOpacity 
                     key={key} 
-                    onPress={() => handleRateDate(YEST_KEY, key as SleepQuality)}
-                    style={[styles.ratingItem, isSelected && { opacity: 1 }, !isSelected && (selectedRating || sleepData[YEST_KEY]) && { opacity: 0.5 }]}
+                    onPress={() => handleRateDate(TODAY_KEY, key as SleepQuality)}
+                    style={[styles.ratingItem, isSelected && { opacity: 1 }, !isSelected && (selectedRating || sleepData[TODAY_KEY]) && { opacity: 0.5 }]}
                   >
                     <View style={[styles.ratingIcon, { backgroundColor: bg }, isSelected && { borderWidth: 2, borderColor: faceColor }]}>
                       <Face color={faceColor} />

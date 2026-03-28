@@ -1,8 +1,8 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Pressable } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
 import { useAudio } from '@/context/AudioContext';
@@ -63,6 +63,28 @@ export default function ProfileScreen() {
   const C = useColors();
   const router = useRouter();
 
+  const handleReset = async () => {
+    Alert.alert(
+      "Reset App Data",
+      "Are you sure? This will permanently delete your streaks, sleep history, and preferences.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Reset", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              await AsyncStorage.clear();
+              router.replace('/');
+            } catch (e) {
+              console.error("Failed to clear storage", e);
+            }
+          } 
+        }
+      ]
+    );
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -89,20 +111,23 @@ export default function ProfileScreen() {
           {/* Theme Selector */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: C.textMuted }]}>APPEARANCE</Text>
-            <View style={[styles.themeSelector, { backgroundColor: C.bgMuted }]}>
+            <View style={[styles.themeSelector, { backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : C.bgMuted }]}>
               {(['auto', 'light', 'dark'] as const).map((mode) => (
                 <Pressable
                   key={mode}
                   onPress={() => setThemeMode(mode)}
                   style={[
                     styles.themeOption,
-                    themeMode === mode && [styles.themeOptionActive, { backgroundColor: C.bgCard }]
+                    themeMode === mode && [
+                      styles.themeOptionActive, 
+                      { backgroundColor: isDark ? '#4A4668' : C.bgCard }
+                    ]
                   ]}
                 >
                   <Text style={[
                       styles.themeText, 
                       { color: C.textSecondary },
-                      themeMode === mode && { color: C.accent, fontFamily: 'Nunito_800ExtraBold' }
+                      themeMode === mode && { color: isDark ? C.white : C.accent, fontFamily: 'Nunito_800ExtraBold' }
                     ]}
                   >
                     {mode.toUpperCase()}
@@ -139,6 +164,10 @@ export default function ProfileScreen() {
 
           <TouchableOpacity style={styles.logoutBtn}>
             <Text style={styles.logoutText}>Log out</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.logoutBtn, { marginTop: 0 }]} onPress={handleReset}>
+            <Text style={[styles.logoutText, { color: C.textMuted, fontSize: 13 }]}>Reset app data</Text>
           </TouchableOpacity>
         </ScrollView>
 
@@ -192,9 +221,9 @@ const styles = StyleSheet.create({
   themeOptionActive: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 4,
   },
   themeText: {
     fontFamily: 'Nunito_600SemiBold',

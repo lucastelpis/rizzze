@@ -61,7 +61,7 @@ const Mascot = ({ variant, size = 200 }: { variant: 'welcome' | 'features' | 'te
 
   return (
     <View style={styles.mascotContainer}>
-      <View style={[styles.mascotBgBox, { backgroundColor: C.lavender }]}>
+      <View style={[styles.mascotBgBox, { backgroundColor: C.sleepBg }]}>
         <Animated.View style={animatedStyle}>
           <Image
             source={images[variant]}
@@ -85,7 +85,7 @@ const FeatureItem = ({ title, description, color, Icon, isLast }: any) => {
     <View>
       <View style={styles.featureContent}>
         <View style={[styles.iconCircle, { backgroundColor: color }]}>
-          <Icon size={24} color="#00000040" />
+          <Icon size={24} color={C.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.4)'} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.featureTitle, { color: C.textPrimary }]}>{title}</Text>
@@ -156,19 +156,19 @@ const Page2 = () => {
           <FeatureItem
             title="White noise"
             description="High-fidelity environment sounds"
-            color={C.softBlue}
+            color={C.soundsBg}
             Icon={CloudIcon}
           />
           <FeatureItem
             title="Bedtime stories"
             description="Gentle stories and guided sessions"
-            color={C.lavender}
+            color={C.sleepBg}
             Icon={StoriesIcon}
           />
           <FeatureItem
             title="Relaxing games"
             description="Mini-games to lower heart rate"
-            color={C.blush}
+            color={C.storiesBg}
             Icon={GamesIcon}
             isLast
           />
