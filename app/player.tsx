@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -88,6 +88,10 @@ export default function PlayerScreen() {
   const [isLooping, setIsLooping] = useState(true); // Default to ON
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubPosition, setScrubPosition] = useState(0);
+  const [visualProgress, setVisualProgress] = useState(0);
+  const scrubPositionRef = useRef(0);
+  const wasPlayingRef = useRef(false);
+  const lastTimeRef = useRef(Date.now());
 
   // Bobbing animation for sheep
   const translateY = useSharedValue(0);
@@ -167,8 +171,39 @@ export default function PlayerScreen() {
 
   // Derived state spanning both players
   const isPlaying = status1.playing || status2.playing;
-  const duration = (activeStatus.duration || status1.duration || 1) * 1000;
-  const position = isScrubbing ? scrubPosition : (activeStatus.currentTime || 0) * 1000;
+  const isSimpleSound = subtitle && subtitle.includes('Simple');
+  const visualDuration = isSimpleSound ? 60 * 1000 : 5 * 60 * 1000; // 1 min vs 5 mins
+
+  // Custom UI timer decoupled from short native audio duration
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isPlaying && !isScrubbing) {
+      lastTimeRef.current = Date.now();
+      interval = setInterval(() => {
+        const now = Date.now();
+        const delta = now - lastTimeRef.current;
+        lastTimeRef.current = now;
+
+        setVisualProgress((prev) => {
+          const next = prev + delta;
+          if (next >= visualDuration) {
+            if (isLooping) {
+              return next % visualDuration;
+            } else {
+              player1.pause();
+              player2.pause();
+              return visualDuration;
+            }
+          }
+          return next;
+        });
+      }, 50);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, isScrubbing, isLooping, visualDuration]);
+
+  const displayDuration = visualDuration;
+  const displayPosition = isScrubbing ? scrubPosition : visualProgress;
 
   // Controls
   const togglePlayPause = () => {
@@ -177,7 +212,8 @@ export default function PlayerScreen() {
       player2.pause();
     } else {
       const activePlayer = activePlayerIdx === 0 ? player1 : player2;
-      if (activeStatus.currentTime >= (activeStatus.duration || 0)) {
+      if (visualProgress >= visualDuration && !isLooping) {
+        setVisualProgress(0);
         activePlayer.seekTo(0);
       }
       activePlayer.play();
@@ -188,29 +224,47 @@ export default function PlayerScreen() {
     setIsLooping(!isLooping);
   };
 
-  const handleScrub = (e: any) => {
+  const handleScrubMove = (e: any) => {
     const padding = 28; // horizontal padding
     const barWidth = width - (padding * 2) - 8;
     const constrainedX = Math.max(0, Math.min(e.nativeEvent.locationX, barWidth));
     const newPercent = constrainedX / barWidth;
     
-    const newPosition = duration * newPercent;
+    const newPosition = visualDuration * newPercent;
+    scrubPositionRef.current = newPosition;
     setScrubPosition(newPosition);
+    setVisualProgress(newPosition);
+  };
+
+  const handleScrubStart = (e: any) => {
+    setIsScrubbing(true);
+    wasPlayingRef.current = isPlaying;
+    player1.pause();
+    player2.pause();
+    handleScrubMove(e);
+  };
+
+  const handleScrubEnd = () => {
+    setIsScrubbing(false);
     
     // Stop the inactive player to prevent ghost playback
     const inactivePlayer = activePlayerIdx === 0 ? player2 : player1;
     inactivePlayer.pause();
     inactivePlayer.seekTo(0);
 
-    // Seek the active player
+    // Seek the active player loosely based on visual percentage
     const activePlayer = activePlayerIdx === 0 ? player1 : player2;
-    activePlayer.seekTo(newPosition / 1000);
-    if (isPlaying) {
+    if (activeStatus.duration) {
+      const nativeSeek = (scrubPositionRef.current / 1000) % activeStatus.duration;
+      activePlayer.seekTo(nativeSeek);
+    }
+    
+    if (wasPlayingRef.current) {
       activePlayer.play();
     }
   };
 
-  const progressPercent = Math.min(100, Math.max(0, (position / duration) * 100));
+  const progressPercent = Math.min(100, Math.max(0, (displayPosition / displayDuration) * 100));
   const GraphicComponent = (SoundGraphics as any)[graphicId || 'ForestNightBg'];
 
   return (
@@ -257,23 +311,22 @@ export default function PlayerScreen() {
 
           {/* PROGRESS BAR */}
           <View style={styles.progressContainer}>
-            <TouchableOpacity 
-              activeOpacity={1} 
+            <View 
               style={styles.progressTouchable}
-              onPressIn={(e) => {
-                setIsScrubbing(true);
-                handleScrub(e);
-              }}
-              onPressOut={() => setIsScrubbing(false)}
+              onStartShouldSetResponder={() => true}
+              onResponderGrant={handleScrubStart}
+              onResponderMove={handleScrubMove}
+              onResponderRelease={handleScrubEnd}
+              onResponderTerminate={handleScrubEnd}
             >
               <View style={styles.progressTrack} pointerEvents="none">
                 <View style={[styles.progressFilled, { width: `${progressPercent}%` }]} />
                 <View style={[styles.scrubberDot, { left: `${progressPercent}%`, transform: [{ translateX: -6 }] }]} />
               </View>
-            </TouchableOpacity>
+            </View>
             <View style={styles.timeRow}>
-              <Text style={styles.timeText}>{formatTime(position)}</Text>
-              <Text style={styles.timeText}>{formatTime(duration)}</Text>
+              <Text style={styles.timeText}>{formatTime(displayPosition)}</Text>
+              <Text style={styles.timeText}>{formatTime(displayDuration)}</Text>
             </View>
           </View>
 
