@@ -72,6 +72,19 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   // Reset logic when a new sound is selected
   useEffect(() => {
     if (activeSound) {
+      const metadata = {
+        title: activeSound.title,
+        artist: 'Rizzze',
+        album: activeSound.subtitle || 'Scenes',
+      };
+      
+      (player1 as any).setMetadata?.(metadata);
+      (player2 as any).setMetadata?.(metadata);
+      
+      // For lock screen controls
+      (player1 as any).setActiveForLockScreen?.(true, metadata);
+      (player2 as any).setActiveForLockScreen?.(true, metadata);
+      
       player1.loop = false;
       player2.loop = false;
       player1.seekTo(0);

@@ -28,6 +28,7 @@ export const tokens = {
     
     // UI
     border: "#E8E2D8",
+    white: "#FFFFFF",
   },
   
   fonts: {

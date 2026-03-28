@@ -14,6 +14,7 @@ import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { tokens } from '../../constants/theme';
 import { useAudio } from '@/context/AudioContext';
 import * as SoundGraphics from '@/components/SoundGraphics';
+import { BottomNav } from '@/components/BottomNav';
 
 // ─── COLORS ───────────────────────────────────────────────────────────────────
 const C = {
@@ -107,19 +108,14 @@ const GamesIcon = ({ size = 24, color = C.gamesIcon }: { size?: number; color?: 
 // Mascot sheep (simple geometric path for avatar + thumbnail)
 const SheepIcon = ({ size = 28 }: { size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-    {/* Body */}
     <Circle cx={20} cy={22} r={11} fill={C.white} />
-    {/* Head */}
     <Circle cx={20} cy={12} r={7} fill={C.white} />
-    {/* Face */}
     <Circle cx={17.5} cy={13} r={1.2} fill={C.textPrimary} />
     <Circle cx={22.5} cy={13} r={1.2} fill={C.textPrimary} />
-    {/* Ears */}
     <Circle cx={13} cy={11} r={2.5} fill={C.lavender} />
     <Circle cx={27} cy={11} r={2.5} fill={C.lavender} />
-    {/* Legs */}
-    <Rect x={14} y={31} width={3} height={5} rx={1.5} fill={C.textMuted} />
-    <Rect x={23} y={31} width={3} height={5} rx={1.5} fill={C.textMuted} />
+    <Rect x={14} y={31} width={3} height={5} rx={1.5} fill={'#A9A3B5'} />
+    <Rect x={23} y={31} width={3} height={5} rx={1.5} fill={'#A9A3B5'} />
   </Svg>
 );
 
@@ -130,56 +126,7 @@ const PlayIcon = ({ size = 16 }: { size?: number }) => (
   </Svg>
 );
 
-// ─── NAV ICONS ────────────────────────────────────────────────────────────────
-const HomeNavIcon = ({ active }: { active: boolean }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z"
-      fill={active ? C.accent : 'none'}
-      stroke={active ? C.accent : C.textSecondary}
-      strokeWidth={2}
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
-const SleepNavIcon = ({ active }: { active: boolean }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-      fill={active ? C.accent : 'none'}
-      stroke={active ? C.accent : C.textSecondary}
-      strokeWidth={2}
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
-const SoundsNavIcon = ({ active }: { active: boolean }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M9 18V5l12-2v13"
-      stroke={active ? C.accent : C.textSecondary}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Circle cx={6} cy={18} r={3} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} />
-    <Circle cx={18} cy={16} r={3} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} />
-  </Svg>
-);
-
-const ProfileNavIcon = ({ active }: { active: boolean }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Circle cx={12} cy={8} r={4} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} />
-    <Path
-      d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
-      stroke={active ? C.accent : C.textSecondary}
-      strokeWidth={2}
-      strokeLinecap="round"
-    />
-  </Svg>
-);
+// Streak Bars Section removed local icons
 
 // ─── STREAK BARS ──────────────────────────────────────────────────────────────
 const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -252,40 +199,7 @@ const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border, onPress }:
   </TouchableOpacity>
 );
 
-// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
-const tabs = [
-  { key: 'home', label: 'Home', Icon: HomeNavIcon, route: '/(tabs)' },
-  { key: 'sleep', label: 'Sleep', Icon: SleepNavIcon, route: '/(tabs)/sleep' },
-  { key: 'sounds', label: 'Sounds', Icon: SoundsNavIcon, route: '/(tabs)/sounds' },
-  { key: 'profile', label: 'Profile', Icon: ProfileNavIcon, route: '/(tabs)/profile' },
-];
-
-const BottomNav = ({ active }: { active: string }) => {
-  const router = useRouter();
-  return (
-    <View style={styles.bottomNav}>
-      {tabs.map(({ key, label, Icon, route }) => {
-        const isActive = active === key;
-        return (
-          <TouchableOpacity
-            key={key}
-            style={[styles.navTab, !isActive && { opacity: 0.4 }]}
-            onPress={() => {
-              if (!isActive) router.push(route as any);
-            }}
-            activeOpacity={0.7}
-          >
-            <Icon active={isActive} />
-            <Text style={[styles.navLabel, isActive && styles.navLabelActive, !isActive && styles.navLabelInactive]}>
-              {label}
-            </Text>
-            {isActive && <View style={styles.navDot} />}
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-};
+// Removed local BottomNav component
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
@@ -299,21 +213,26 @@ export default function HomeScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
+          {/* ── HEADER ── */}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.headerTitle}>{greeting}</Text>
+              <Text style={styles.headerSubtitle}>{subtitle}</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.sheepButton}
+              onPress={() => router.push('/profile')}
+              activeOpacity={0.8}
+            >
+              <SheepIcon size={30} />
+            </TouchableOpacity>
+          </View>
+
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 92 }]}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── HEADER ── */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.greetingSubtitle}>{subtitle}</Text>
-            </View>
-            <View style={styles.avatarCircle}>
-              <SheepIcon size={30} />
-            </View>
-          </View>
 
           {/* ── TONIGHT'S PICK ── */}
           <TouchableOpacity 
@@ -413,36 +332,37 @@ const styles = StyleSheet.create({
     gap: 24,
   },
 
-  // Header
   header: {
+    paddingHorizontal: 24,
+    marginTop: 12,
+    marginBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  greeting: {
+  headerTitle: {
     fontFamily: 'Nunito_900Black',
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '900',
     color: C.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
-  greetingSubtitle: {
-    fontFamily: 'Nunito_500Medium',
-    fontSize: 13,
-    fontWeight: '500',
+  headerSubtitle: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 15,
+    fontWeight: '600',
     color: C.textSecondary,
+    marginTop: -2,
   },
-  avatarCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  sheepButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: C.lavender,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 107, 174, 0.15)',
   },
 
   // Tonight's Pick Card
@@ -595,40 +515,5 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
   },
 
-  // Bottom Nav
-  bottomNav: {
-    height: 68,
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    backgroundColor: C.bg,
-    paddingBottom: 8,
-  },
-  navTab: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    paddingTop: 8,
-  },
-  navLabel: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  navLabelActive: {
-    color: C.accent,
-  },
-  navLabelInactive: {
-    color: C.textSecondary,
-    opacity: 0.4,
-  },
-  navDot: {
-    position: 'absolute',
-    bottom: 2,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.accent,
-  },
+  // End of styles
 });

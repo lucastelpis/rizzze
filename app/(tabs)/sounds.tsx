@@ -17,6 +17,7 @@ import {
   RainBg, FanBg, StaticBg, AcBg
 } from '@/components/SoundGraphics';
 import { useAudio } from '@/context/AudioContext';
+import { BottomNav } from '@/components/BottomNav';
 
 const C = {
   bg: '#F8F4EE',
@@ -42,64 +43,7 @@ const SheepIcon = ({ size = 28 }: { size?: number }) => (
   </Svg>
 );
 
-const HomeNavIcon = ({ active }: { active: boolean }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" fill={active ? C.accent : 'none'} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} strokeLinejoin="round" />
-  </Svg>
-);
-const SleepNavIcon = ({ active }: { active: boolean }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill={active ? C.accent : 'none'} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} strokeLinejoin="round" />
-  </Svg>
-);
-const SoundsNavIcon = ({ active }: { active: boolean }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 18V5l12-2v13" stroke={active ? C.accent : C.textSecondary} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <Circle cx={6} cy={18} r={3} fill={active ? C.accent : 'none'} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} />
-    <Circle cx={18} cy={16} r={3} fill={active ? C.accent : 'none'} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} />
-  </Svg>
-);
-const ProfileNavIcon = ({ active }: { active: boolean }) => (
-  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Circle cx={12} cy={8} r={4} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} />
-    <Path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={active ? C.accent : C.textSecondary} strokeWidth={2} strokeLinecap="round" />
-  </Svg>
-);
-
-// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
-const navTabs = [
-  { key: 'home', label: 'Home', Icon: HomeNavIcon, route: '/(tabs)' },
-  { key: 'sleep', label: 'Sleep', Icon: SleepNavIcon, route: '/(tabs)/sleep' },
-  { key: 'sounds', label: 'Sounds', Icon: SoundsNavIcon, route: '/(tabs)/sounds' },
-  { key: 'profile', label: 'Profile', Icon: ProfileNavIcon, route: '/(tabs)/profile' },
-];
-
-const BottomNav = ({ active }: { active: string }) => {
-  const router = useRouter();
-  return (
-    <View style={styles.bottomNav}>
-      {navTabs.map(({ key, label, Icon, route }) => {
-        const isActive = active === key;
-        return (
-          <TouchableOpacity
-            key={key}
-            style={[styles.navTab, !isActive && { opacity: 0.4 }]}
-            onPress={() => {
-              if (!isActive) router.push(route as any);
-            }}
-            activeOpacity={0.7}
-          >
-            <Icon active={isActive} />
-            <Text style={[styles.navLabel, isActive ? styles.navLabelActive : styles.navLabelInactive]}>
-              {label}
-            </Text>
-            {isActive && <View style={styles.navDot} />}
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-};
+// Icons removed
 
 // Background components are now imported from SoundGraphics
 
@@ -163,6 +107,7 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 export default function SoundsScreen() {
   const { activeSound } = useAudio();
+  const router = useRouter();
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
@@ -173,7 +118,11 @@ export default function SoundsScreen() {
             <Text style={styles.headerTitle}>Sounds</Text>
             <Text style={styles.headerSubtitle}>Immerse yourself</Text>
           </View>
-          <TouchableOpacity style={styles.sheepButton} activeOpacity={0.8}>
+          <TouchableOpacity 
+            style={styles.sheepButton} 
+            activeOpacity={0.8}
+            onPress={() => router.push('/profile')}
+          >
             <SheepIcon size={30} />
           </TouchableOpacity>
         </View>
@@ -278,34 +227,36 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 8,
     paddingHorizontal: 24,
-    paddingBottom: 20,
+    marginTop: 12,
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerTitle: {
     fontFamily: 'Nunito_900Black',
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '900',
-    color: '#2D2B3D',
-    letterSpacing: -0.44, // -0.02em = -2%
+    color: C.textPrimary,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
-    fontFamily: 'Nunito_500Medium',
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#7A7589',
-    marginTop: 2,
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.textSecondary,
+    marginTop: -2,
   },
   sheepButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F0EBE3',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.lavender,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 107, 174, 0.15)',
   },
   scroll: {
     flex: 1,
@@ -384,41 +335,5 @@ const styles = StyleSheet.create({
     color: '#F5F0E8',
   },
   
-  // Bottom Nav
-  bottomNav: {
-    height: 68,
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    backgroundColor: C.bg,
-    paddingBottom: 8,
-  },
-  navTab: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    paddingTop: 8,
-  },
-  navLabel: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  navLabelActive: {
-    color: C.accent,
-    fontWeight: '800',
-  },
-  navLabelInactive: {
-    color: C.textSecondary,
-    fontWeight: '600',
-  },
-  navDot: {
-    position: 'absolute',
-    bottom: 2,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.accent,
-  },
+  // Bottom Nav styles removed
 });
