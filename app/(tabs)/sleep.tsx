@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { useAudio } from '@/context/AudioContext';
 import { BottomNav } from '@/components/BottomNav';
+import { useStreak } from '@/context/StreakContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from 'react';
 import { Modal, Pressable } from 'react-native';
@@ -223,6 +224,7 @@ export default function SleepScreen() {
   const [tipIndex, setTipIndex] = useState(0);
   const [evalTarget, setEvalTarget] = useState<{ day: number, month: number, year: number, dateKey: string } | null>(null);
   const [displayTarget, setDisplayTarget] = useState(evalTarget);
+  const { markActivity } = useStreak();
   const router = useRouter();
 
   useEffect(() => {
@@ -271,6 +273,7 @@ export default function SleepScreen() {
     setSleepData(newSleepData);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSleepData));
+      markActivity();
     } catch (e) {
       console.error('Failed to save sleep data', e);
     }

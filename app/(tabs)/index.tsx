@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { tokens } from '../../constants/theme';
 import { useAudio } from '@/context/AudioContext';
+import { useStreak } from '@/context/StreakContext';
 import * as SoundGraphics from '@/components/SoundGraphics';
 import { BottomNav } from '@/components/BottomNav';
 
@@ -128,45 +129,46 @@ const PlayIcon = ({ size = 16 }: { size?: number }) => (
 
 // Streak Bars Section removed local icons
 
-// ─── STREAK BARS ──────────────────────────────────────────────────────────────
-const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-const todayIndex = 6; // Sunday = current highlighted day (7-night streak means all filled)
+const StreakSection = () => {
+  const { streakCount, lastSevenDays, todayIndex } = useStreak();
+  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-const StreakSection = () => (
-  <View style={styles.streakSection}>
-    {/* Label row */}
-    <View style={styles.streakHeader}>
-      <Text style={styles.overline}>YOUR STREAK</Text>
-      <Text style={styles.streakCount}>7 nights</Text>
+  return (
+    <View style={styles.streakSection}>
+      {/* Label row */}
+      <View style={styles.streakHeader}>
+        <Text style={styles.overline}>YOUR STREAK</Text>
+        <Text style={styles.streakCount}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
+      </View>
+      {/* Bars */}
+      <View style={styles.barsRow}>
+        {days.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.streakBar,
+              { backgroundColor: lastSevenDays[i] ? C.accent : C.border },
+            ]}
+          />
+        ))}
+      </View>
+      {/* Day labels */}
+      <View style={styles.daysRow}>
+        {days.map((d, i) => (
+          <Text
+            key={i}
+            style={[
+              styles.dayLabel,
+              i === todayIndex && styles.dayLabelActive,
+            ]}
+          >
+            {d}
+          </Text>
+        ))}
+      </View>
     </View>
-    {/* Bars */}
-    <View style={styles.barsRow}>
-      {days.map((_, i) => (
-        <View
-          key={i}
-          style={[
-            styles.streakBar,
-            { backgroundColor: i <= todayIndex ? C.accent : C.border },
-          ]}
-        />
-      ))}
-    </View>
-    {/* Day labels */}
-    <View style={styles.daysRow}>
-      {days.map((d, i) => (
-        <Text
-          key={i}
-          style={[
-            styles.dayLabel,
-            i === todayIndex && styles.dayLabelActive,
-          ]}
-        >
-          {d}
-        </Text>
-      ))}
-    </View>
-  </View>
-);
+  );
+};
 
 // ─── CATEGORY CARD ────────────────────────────────────────────────────────────
 type CategoryCardProps = {
@@ -273,7 +275,7 @@ export default function HomeScreen() {
             <View style={styles.categoryGrid}>
               <CategoryCard
                 title="Sleep"
-                subtitle="8 sessions"
+                subtitle="Track and improve"
                 bg={C.sleepBg}
                 Icon={MoonIcon}
                 iconColor={C.sleepIcon}
@@ -281,7 +283,7 @@ export default function HomeScreen() {
               />
               <CategoryCard
                 title="Sounds"
-                subtitle="12 sounds"
+                subtitle="Calming soundscapes"
                 bg={C.soundsBg}
                 Icon={CloudRainIcon}
                 iconColor={C.soundsIcon}
@@ -289,14 +291,14 @@ export default function HomeScreen() {
               />
               <CategoryCard
                 title="Stories"
-                subtitle="6 tales"
+                subtitle="Bedtime tales"
                 bg={C.storiesBg}
                 Icon={StoriesIcon}
                 iconColor={C.storiesIcon}
               />
               <CategoryCard
                 title="Games"
-                subtitle="4 games"
+                subtitle="Focus and unwind"
                 bg={C.gamesBg}
                 Icon={GamesIcon}
                 iconColor={C.gamesIcon}

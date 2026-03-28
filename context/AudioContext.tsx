@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
+import { useStreak } from './StreakContext';
 
 setAudioModeAsync({
   playsInSilentMode: true,
@@ -52,6 +53,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubPosition, setScrubPosition] = useState(0);
   const [visualProgress, setVisualProgress] = useState(0);
+  const { markActivity } = useStreak();
   
   const lastTimeRef = useRef(Date.now());
   const scrubPositionRef = useRef(0);
@@ -176,6 +178,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     player1.pause();
     player2.pause();
     setActiveSound(sound);
+    markActivity();
   };
 
   const togglePlayPause = () => {

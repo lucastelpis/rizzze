@@ -14,6 +14,7 @@ import {
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AudioProvider } from '@/context/AudioContext';
+import { StreakProvider } from '@/context/StreakContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,13 +39,15 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AudioProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="player" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-        </Stack>
-      </AudioProvider>
+      <StreakProvider>
+        <AudioProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="player" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+          </Stack>
+        </AudioProvider>
+      </StreakProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
   );
