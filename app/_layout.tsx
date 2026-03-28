@@ -13,6 +13,7 @@ import {
 } from '@expo-google-fonts/nunito';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AudioProvider } from '@/context/AudioContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,11 +38,13 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="player" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-      </Stack>
+      <AudioProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="player" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+        </Stack>
+      </AudioProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
   );

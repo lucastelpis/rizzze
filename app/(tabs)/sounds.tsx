@@ -16,6 +16,8 @@ import {
   ForestNightBg, OceanShoreBg, CityRainBg, FireplaceBg, BambooGroveBg, CozyCafeBg,
   RainBg, FanBg, StaticBg, AcBg
 } from '@/components/SoundGraphics';
+import { useAudio } from '@/context/AudioContext';
+
 const C = {
   bg: '#F8F4EE',
   accent: '#8B6DAE',
@@ -160,6 +162,7 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
 
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 export default function SoundsScreen() {
+  const { activeSound } = useAudio();
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
@@ -175,7 +178,11 @@ export default function SoundsScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.scroll} 
+          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
+          showsVerticalScrollIndicator={false}
+        >
           {/* SCENES */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>SCENES</Text>

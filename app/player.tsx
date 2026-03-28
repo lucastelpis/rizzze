@@ -4,20 +4,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
-import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
+import { useAudio } from '@/context/AudioContext';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as SoundGraphics from '@/components/SoundGraphics';
-
-// Configure App-Wide Audio Session for Silent Mode
-setAudioModeAsync({
-  playsInSilentMode: true,
-  interruptionMode: 'doNotMix',
-  allowsRecording: false,
-  shouldPlayInBackground: true,
-  shouldRouteThroughEarpiece: false,
-}).catch(console.error);
 
 // ─── UTILS & DATA ─────────────────────────────────────────────────────────────
 const formatTime = (millis: number) => {
@@ -26,18 +17,6 @@ const formatTime = (millis: number) => {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-};
-
-const SOUND_ASSETS: Record<string, any> = {
-  'forest.m4a': require('@/assets/sounds/forest.m4a'),
-  'beach.m4a': require('@/assets/sounds/beach.m4a'),
-  'city_rain.m4a': require('@/assets/sounds/city_rain.m4a'),
-  'fireplace.m4a': require('@/assets/sounds/fireplace.m4a'),
-  'coffeeshop.m4a': require('@/assets/sounds/coffeeshop.m4a'),
-  'simple_rain.m4a': require('@/assets/sounds/simple_rain.m4a'),
-  'simple_fan.m4a': require('@/assets/sounds/simple_fan.m4a'),
-  'simple_static.m4a': require('@/assets/sounds/simple_static.m4a'),
-  'simple_ac.m4a': require('@/assets/sounds/simple_ac.m4a'),
 };
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
@@ -85,13 +64,24 @@ export default function PlayerScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
-  const [isLooping, setIsLooping] = useState(true); // Default to ON
-  const [isScrubbing, setIsScrubbing] = useState(false);
-  const [scrubPosition, setScrubPosition] = useState(0);
-  const [visualProgress, setVisualProgress] = useState(0);
-  const scrubPositionRef = useRef(0);
-  const wasPlayingRef = useRef(false);
-  const lastTimeRef = useRef(Date.now());
+  const {
+    activeSound,
+    isPlaying,
+    isLooping,
+    toggleLoop,
+    visualDuration,
+    displayPosition,
+    playSelectedSound,
+    togglePlayPause,
+    scrubTo,
+    setIsScrubbing
+  } = useAudio();
+
+  useEffect(() => {
+    if (soundFile) {
+      playSelectedSound({ title, subtitle, soundFile, graphicId });
+    }
+  }, [soundFile]);
 
   // Bobbing animation for sheep
   const translateY = useSharedValue(0);
@@ -112,156 +102,24 @@ export default function PlayerScreen() {
     };
   });
 
-  // Modern Ping-Pong Dual Audio Setup
-  const asset = SOUND_ASSETS[soundFile || 'forest.m4a'];
-  // Instantiate two players to crossfade slightly at loop points
-  const player1 = useAudioPlayer(asset, { updateInterval: 30 });
-  const player2 = useAudioPlayer(asset, { updateInterval: 30 });
-  const status1 = useAudioPlayerStatus(player1);
-  const status2 = useAudioPlayerStatus(player2);
-
-  const [activePlayerIdx, setActivePlayerIdx] = useState(0);
-  const activeStatus = activePlayerIdx === 0 ? status1 : status2;
-
-  useEffect(() => {
-    // Both players must NOT native-loop; we trigger them manually
-    player1.loop = false;
-    player2.loop = false;
-    player1.play();
-  }, [player1, player2]);
-
-  useEffect(() => {
-    if (!activeStatus.duration) return;
-
-    const isAnyPlaying = status1.playing || status2.playing;
-
-    // Ping-pong Overlap Logic
-    if (isLooping && isAnyPlaying) {
-      const remainingTime = activeStatus.duration - activeStatus.currentTime;
-      // Increase overlap to 1.2 seconds to fully mask gaps and load times
-      const OVERLAP = 1.2; 
-
-      if (remainingTime <= OVERLAP && remainingTime > 0) {
-        const nextIdx = activePlayerIdx === 0 ? 1 : 0;
-        const nextPlayer = nextIdx === 0 ? player1 : player2;
-        const nextStatus = nextIdx === 0 ? status1 : status2;
-        
-        // Start the other player if it hasn't already started
-        if (!nextStatus.playing) {
-          nextPlayer.play();
-        }
-      }
-    }
-
-    // Switch UI control to the new player naturally just as current reaches its very end
-    if (activeStatus.currentTime >= activeStatus.duration - 0.05 && activeStatus.duration > 0) {
-      if (isLooping) {
-        const nextIdx = activePlayerIdx === 0 ? 1 : 0;
-        const finishedPlayer = activePlayerIdx === 0 ? player1 : player2;
-        
-        // Rewind the player that just finished for the NEXT loop
-        setTimeout(() => {
-          finishedPlayer.seekTo(0);
-        }, 300);
-
-        setActivePlayerIdx(nextIdx);
-      }
-    }
-  }, [activeStatus.currentTime, activeStatus.duration, activePlayerIdx, isLooping, status1.playing, status2.playing, player1, player2]);
-
-  // Derived state spanning both players
-  const isPlaying = status1.playing || status2.playing;
-  const isSimpleSound = subtitle && subtitle.includes('Simple');
-  const visualDuration = isSimpleSound ? 60 * 1000 : 5 * 60 * 1000; // 1 min vs 5 mins
-
-  // Custom UI timer decoupled from short native audio duration
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (isPlaying && !isScrubbing) {
-      lastTimeRef.current = Date.now();
-      interval = setInterval(() => {
-        const now = Date.now();
-        const delta = now - lastTimeRef.current;
-        lastTimeRef.current = now;
-
-        setVisualProgress((prev) => {
-          const next = prev + delta;
-          if (next >= visualDuration) {
-            if (isLooping) {
-              return next % visualDuration;
-            } else {
-              player1.pause();
-              player2.pause();
-              return visualDuration;
-            }
-          }
-          return next;
-        });
-      }, 50);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, isScrubbing, isLooping, visualDuration]);
-
   const displayDuration = visualDuration;
-  const displayPosition = isScrubbing ? scrubPosition : visualProgress;
-
-  // Controls
-  const togglePlayPause = () => {
-    if (isPlaying) {
-      player1.pause();
-      player2.pause();
-    } else {
-      const activePlayer = activePlayerIdx === 0 ? player1 : player2;
-      if (visualProgress >= visualDuration && !isLooping) {
-        setVisualProgress(0);
-        activePlayer.seekTo(0);
-      }
-      activePlayer.play();
-    }
-  };
-
-  const toggleLoop = () => {
-    setIsLooping(!isLooping);
-  };
 
   const handleScrubMove = (e: any) => {
     const padding = 28; // horizontal padding
     const barWidth = width - (padding * 2) - 8;
     const constrainedX = Math.max(0, Math.min(e.nativeEvent.locationX, barWidth));
     const newPercent = constrainedX / barWidth;
-    
     const newPosition = visualDuration * newPercent;
-    scrubPositionRef.current = newPosition;
-    setScrubPosition(newPosition);
-    setVisualProgress(newPosition);
+    scrubTo(newPosition);
   };
 
   const handleScrubStart = (e: any) => {
     setIsScrubbing(true);
-    wasPlayingRef.current = isPlaying;
-    player1.pause();
-    player2.pause();
     handleScrubMove(e);
   };
 
   const handleScrubEnd = () => {
     setIsScrubbing(false);
-    
-    // Stop the inactive player to prevent ghost playback
-    const inactivePlayer = activePlayerIdx === 0 ? player2 : player1;
-    inactivePlayer.pause();
-    inactivePlayer.seekTo(0);
-
-    // Seek the active player loosely based on visual percentage
-    const activePlayer = activePlayerIdx === 0 ? player1 : player2;
-    if (activeStatus.duration) {
-      const nativeSeek = (scrubPositionRef.current / 1000) % activeStatus.duration;
-      activePlayer.seekTo(nativeSeek);
-    }
-    
-    if (wasPlayingRef.current) {
-      activePlayer.play();
-    }
   };
 
   const progressPercent = Math.min(100, Math.max(0, (displayPosition / displayDuration) * 100));

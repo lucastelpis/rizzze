@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { tokens } from '../../constants/theme';
+import { useAudio } from '@/context/AudioContext';
 
 // ─── COLORS ───────────────────────────────────────────────────────────────────
 const C = {
@@ -289,6 +290,7 @@ const BottomNav = ({ active }: { active: string }) => {
 export default function HomeScreen() {
   const { greeting, subtitle } = useMemo(() => getGreeting(), []);
   const router = useRouter();
+  const { activeSound } = useAudio();
   const randomScene = useMemo(() => SCENES[Math.floor(Math.random() * SCENES.length)], []);
 
   return (
@@ -297,7 +299,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 92 }]}
           showsVerticalScrollIndicator={false}
         >
           {/* ── HEADER ── */}
