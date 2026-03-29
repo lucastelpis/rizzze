@@ -24,7 +24,7 @@ export default function StoriesScreen() {
   const router = useRouter();
 
   // Pick "The tea master's morning" as the featured story for Screen 1
-  const featuredStory = STORIES.find(s => s.id === 'tea-master') || STORIES[0];
+  const featuredStory = STORIES.find(s => s.id === 'the-tea-masters-morning') || STORIES[0];
 
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
@@ -61,7 +61,7 @@ export default function StoriesScreen() {
           >
             <View style={styles.featuredContent}>
               <View style={styles.thumbWrap}>
-                <StoryGraphics.TeaMasterThumb size={52} />
+                <StoryGraphics.TheTeaMastersMorningThumb size={52} />
               </View>
               
               <View style={styles.featuredText}>

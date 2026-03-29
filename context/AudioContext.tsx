@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 import { useStreak } from './StreakContext';
+import { NARRATION_ASSETS } from '@/constants/narrationAssets';
 
 setAudioModeAsync({
   playsInSilentMode: true,
@@ -21,7 +22,7 @@ export const SOUND_ASSETS: Record<string, any> = {
   'simple_fan.m4a': require('@/assets/sounds/simple_fan.m4a'),
   'simple_static.m4a': require('@/assets/sounds/simple_static.m4a'),
   'simple_ac.m4a': require('@/assets/sounds/simple_ac.m4a'),
-  'narration-tea-master.mp3': require('@/assets/audio/narration/narration-tea-master.mp3'),
+  ...NARRATION_ASSETS,
 };
 
 export type SoundMeta = {
