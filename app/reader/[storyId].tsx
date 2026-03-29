@@ -1,0 +1,579 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Dimensions, Animated, Modal, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
+import * as Speech from 'expo-speech';
+import { tokens } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
+import { CATEGORIES, STORIES, Story } from '@/constants/stories';
+import { useAudio, SOUND_ASSETS } from '@/context/AudioContext';
+import { useAudioPlayer } from 'expo-audio';
+import { SleepingSheep } from '@/components/SleepingSheep';
+
+const { width } = Dimensions.get('window');
+
+// ─── ICONS ────────────────────────────────────────────────────────────────────
+
+const BackChevron = ({ color = '#7A7589' }) => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M15 18L9 12L15 6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const PlusIcon = ({ color = '#7A7589' }) => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 5V19M5 12H19" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
+const MinusIcon = ({ color = '#7A7589' }) => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M5 12H19" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
+const ArrowDownIcon = ({ color = '#6B5A8E' }) => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 5V19M5 12L12 19L19 12" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const MusicIcon = ({ color = '#6B5A8E' }) => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 18V5l12-2v13" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Circle cx={6} cy={18} r={3} stroke={color} strokeWidth={2} />
+    <Circle cx={18} cy={16} r={3} stroke={color} strokeWidth={2} />
+  </Svg>
+);
+
+const FontIcon = ({ color = '#6B5A8E' }) => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path d="M4 19L10 5H14L20 19M6 15H18M9 8L6 15M15 8L18 15" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Rect x={2} y={2} width={20} height={20} rx={4} stroke={color} strokeWidth={1} strokeDasharray="2 2" />
+  </Svg>
+);
+
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
+
+export default function ReaderScreen() {
+  const { storyId } = useLocalSearchParams();
+  const C = useColors();
+  const router = useRouter();
+  const { stopSound } = useAudio();
+  
+  // Dedicated local player for fireplace ambiance
+  const localFireplacePlayer = useAudioPlayer(SOUND_ASSETS['fireplace.m4a']);
+  useEffect(() => {
+    if (localFireplacePlayer) {
+      localFireplacePlayer.loop = true;
+    }
+  }, [localFireplacePlayer]);
+
+  const [isAutoScroll, setIsAutoScroll] = useState(false);
+  const [fontSize, setFontSize] = useState(17);
+  const [showFontSettings, setShowFontSettings] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isNarrating, setIsNarrating] = useState(false);
+  const [currentPara, setCurrentPara] = useState(0);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const contentHeight = useRef(0);
+  const layoutHeight = useRef(0);
+
+  const story = STORIES.find(s => s.id === storyId) || STORIES[0];
+  const category = CATEGORIES.find(c => c.id === story.category) || CATEGORIES[1];
+
+  const narratorActive = useRef(false);
+  const britishVoice = useRef<string | null>(null);
+
+  // Auto-scroll logic
+  useEffect(() => {
+    // Fetch available voices to find a British accent
+    const fetchVoices = async () => {
+      try {
+        const voices = await Speech.getAvailableVoicesAsync();
+        const gbVoice = voices.find(v => v.language.startsWith('en-GB') || v.language === 'en-GB');
+        if (gbVoice) {
+          britishVoice.current = gbVoice.identifier;
+        }
+      } catch (e) {
+        console.warn('Could not fetch voices', e);
+      }
+    };
+    fetchVoices();
+  }, []);
+
+  // Auto-scroll logic
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isAutoScroll) {
+      interval = setInterval(() => {
+        if (scrollY.current < contentHeight.current - layoutHeight.current) {
+          scrollY.current += 1;
+          scrollRef.current?.scrollTo({ y: scrollY.current, animated: false });
+        } else {
+          setIsAutoScroll(false);
+        }
+      }, 50);
+    }
+    return () => clearInterval(interval);
+  }, [isAutoScroll]);
+
+  // Handle Speech Narration
+  useEffect(() => {
+    if (isNarrating) {
+      narratorActive.current = true;
+      
+      // Start fireplace ambiance immediately
+      try {
+        localFireplacePlayer.play();
+      } catch (e) {
+        console.warn('Fireplace play error', e);
+      }
+      
+      // Small delay to ensure ambient sound session is established first
+      const timer = setTimeout(() => {
+        if (narratorActive.current) speakParagraph(currentPara);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      narratorActive.current = false;
+      Speech.stop();
+      try {
+        localFireplacePlayer.pause();
+      } catch (e) {
+        // Ignore if already paused or during unmount transitions
+      }
+    }
+    return () => { 
+      narratorActive.current = false;
+      Speech.stop(); 
+      try {
+        localFireplacePlayer.pause();
+      } catch (e) {
+        // Ignore errors during unmount
+      }
+    };
+  }, [isNarrating]);
+
+  const speakParagraph = (index: number) => {
+    if (!narratorActive.current || index >= story.content.length) {
+      setIsNarrating(false);
+      if (index >= story.content.length) setCurrentPara(0);
+      return;
+    }
+
+    Speech.speak(story.content[index], {
+      rate: 0.65, // Ultra-relaxed speed for deep sleep
+      pitch: 0.8, // Deeper, more grounded tone for narration
+      onDone: () => {
+        if (narratorActive.current) {
+          setCurrentPara(index + 1);
+          speakParagraph(index + 1);
+        }
+      },
+      onError: (e) => {
+        // Robust check for intentional cancellations on Web
+        const errorStr = String(e).toLowerCase();
+        if (errorStr.includes('canceled') || errorStr.includes('interrupted')) return;
+        
+        // Also check if the error is an object with an 'error' property equal to 'canceled'
+        if (typeof e === 'object' && e !== null && 'error' in e && (e as any).error === 'canceled') return;
+
+        console.error('Narrator error:', e);
+        setIsNarrating(false);
+      }
+    });
+  };
+
+  const handleScroll = (event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    scrollY.current = contentOffset.y;
+    contentHeight.current = contentSize.height;
+    layoutHeight.current = layoutMeasurement.height;
+    
+    const currentProgress = Math.min(
+      Math.max(0, contentOffset.y / (contentSize.height - layoutMeasurement.height)),
+      1
+    );
+    setProgress(currentProgress);
+  };
+
+  const handleToggleListen = () => {
+    if (isNarrating) {
+      setIsNarrating(false);
+    } else {
+      setIsNarrating(true);
+      // Mode A settings (0.8x rate, 0.9x pitch) are applied in speakParagraph
+    }
+  };
+
+  const handleBack = () => {
+    // Force stop everything immediately before navigating
+    narratorActive.current = false;
+    setIsNarrating(false);
+    Speech.stop();
+    try {
+      localFireplacePlayer.pause();
+    } catch (e) {}
+    router.back();
+  };
+
+  const handleProfile = () => {
+    // Stop audio before leaving to profile
+    narratorActive.current = false;
+    setIsNarrating(false);
+    Speech.stop();
+    try {
+      localFireplacePlayer.pause();
+    } catch (e) {}
+    router.push('/profile');
+  };
+
+  const changeFontSize = (delta: number) => {
+    setFontSize(prev => Math.min(Math.max(14, prev + delta), 28));
+  };
+
+  return (
+    <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        {/* TOP BAR */}
+        <View style={styles.topBar}>
+          <TouchableOpacity 
+            style={[styles.circleButton, { backgroundColor: '#F0EBE3' }]}
+            onPress={handleBack}
+          >
+            <BackChevron />
+          </TouchableOpacity>
+          
+          <View style={styles.topBarCenter}>
+            <Text style={[styles.headerCategory, { color: C.textSecondary }]}>
+              {category.title.toUpperCase()}
+            </Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.sheepBtn, { backgroundColor: C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+            onPress={handleProfile}
+            activeOpacity={0.8}
+          >
+            <SleepingSheep size={24} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView 
+          ref={scrollRef}
+          style={styles.scroll} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={handleScroll}
+          onContentSizeChange={(w, h) => { contentHeight.current = h; }}
+          onLayout={(e) => { layoutHeight.current = e.nativeEvent.layout.height; }}
+        >
+          {/* STORY HEADER */}
+          <View style={styles.storyHeader}>
+            <Text style={[styles.storyTitle, { color: C.textPrimary }]}>{story.title}</Text>
+            <Text style={[styles.storyMeta, { color: C.textSecondary }]}>
+              {story.origin ? `${story.origin} · ` : ''}{story.readTime}
+            </Text>
+            <View style={[styles.divider, { backgroundColor: '#E8E2D8' }]} />
+          </View>
+
+          {/* STORY BODY */}
+          <View style={styles.bodyContainer}>
+            {story.content.map((para, idx) => {
+              const isItalic = story.italicParagraphs?.includes(idx);
+              const isActive = isNarrating && idx === currentPara;
+
+              return (
+                <Text 
+                  key={idx} 
+                  style={[
+                    styles.paragraph, 
+                    { 
+                      color: isActive ? C.accent : (isItalic ? C.textSecondary : C.textPrimary),
+                      fontSize: fontSize,
+                      lineHeight: fontSize * 1.9,
+                      backgroundColor: isActive ? 'rgba(139, 109, 174, 0.05)' : 'transparent',
+                    },
+                    isItalic && styles.italicPara
+                  ]}
+                >
+                  {para}
+                </Text>
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        {/* FONT SETTINGS OVERLAY */}
+        {showFontSettings && (
+          <View style={[styles.fontOverlay, { backgroundColor: C.bgCard, shadowColor: '#000' }]}>
+            <TouchableOpacity 
+              style={styles.closeOverlayBtn}
+              onPress={() => setShowFontSettings(false)}
+            >
+              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 20, color: C.textMuted }}>×</Text>
+            </TouchableOpacity>
+            
+            <Text style={[styles.overlayLabel, { color: C.textSecondary }]}>Line Height: 1.9x</Text>
+            <View style={styles.controlRow}>
+              <TouchableOpacity style={styles.fontAdjBtn} onPress={() => changeFontSize(-1)}>
+                <MinusIcon color={C.textPrimary} />
+              </TouchableOpacity>
+              <Text style={[styles.fontSizeLabel, { color: C.textPrimary }]}>{fontSize}px</Text>
+              <TouchableOpacity style={styles.fontAdjBtn} onPress={() => changeFontSize(1)}>
+                <PlusIcon color={C.textPrimary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* FOOTER */}
+        <View style={[styles.footer, { backgroundColor: C.bgPrimary, borderTopColor: '#E8E2D8' }]}>
+          {/* Progress Section */}
+          <View style={styles.progressRow}>
+            <View style={[styles.progressBarBase, { backgroundColor: '#E8E2D8' }]}>
+              <View style={[styles.progressBarFill, { backgroundColor: C.accent, width: `${progress * 100}%` }]} />
+            </View>
+            <Text style={[styles.progressLabel, { color: C.textMuted }]}>{Math.round(progress * 100)}%</Text>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actionsRow}>
+            <TouchableOpacity 
+              style={[
+                styles.actionBtn, 
+                { backgroundColor: isAutoScroll ? '#EDE5F5' : '#F0EBE3' }
+              ]}
+              onPress={() => setIsAutoScroll(!isAutoScroll)}
+              activeOpacity={0.8}
+            >
+              <ArrowDownIcon color={isAutoScroll ? C.accent : '#6B5A8E'} />
+              <Text style={[
+                styles.actionLabel, 
+                { color: isAutoScroll ? C.accent : '#6B5A8E' }
+              ]}>{isAutoScroll ? 'Scrolling' : 'Auto-scroll'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[
+                styles.actionBtn, 
+                { backgroundColor: isNarrating ? '#EDE5F5' : '#F0EBE3' }
+              ]}
+              activeOpacity={0.8}
+              onPress={handleToggleListen}
+            >
+              <MusicIcon color={isNarrating ? C.accent : '#6B5A8E'} />
+              <Text style={[styles.actionLabel, { color: isNarrating ? C.accent : '#6B5A8E' }]}>
+                {isNarrating ? 'Narrating' : 'Listen'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[
+                styles.fontBtn, 
+                { backgroundColor: showFontSettings ? '#EDE5F5' : '#F0EBE3' }
+              ]}
+              activeOpacity={0.8}
+              onPress={() => setShowFontSettings(!showFontSettings)}
+            >
+              <FontIcon color={showFontSettings ? C.accent : '#6B5A8E'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  safeArea: { flex: 1 },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+  },
+  circleButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheepBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  topBarCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerCategory: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+
+  scroll: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 28,
+    paddingTop: 24,
+    paddingBottom: 160,
+  },
+
+  storyHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  storyTitle: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 22,
+    fontWeight: '900',
+    textAlign: 'center',
+    letterSpacing: -0.44,
+  },
+  storyMeta: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  divider: {
+    width: 40,
+    height: 2,
+    borderRadius: 9999,
+    marginTop: 16,
+  },
+
+  bodyContainer: {
+    gap: 20,
+  },
+  paragraph: {
+    paddingHorizontal: 4,
+    borderRadius: 4,
+    fontFamily: 'Nunito_400Regular',
+    fontWeight: '400',
+  },
+  italicPara: {
+    fontStyle: 'italic',
+  },
+
+  fontOverlay: {
+    position: 'absolute',
+    bottom: 120,
+    right: 24,
+    left: 24,
+    borderRadius: 20,
+    padding: 20,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+    alignItems: 'center',
+  },
+  overlayLabel: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    marginBottom: 16,
+  },
+  controlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  fontAdjBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F0EBE3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fontSizeLabel: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 18,
+    fontWeight: '800',
+    minWidth: 40,
+    textAlign: 'center',
+  },
+  closeOverlayBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    padding: 4,
+  },
+
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+    paddingHorizontal: 32,
+    paddingTop: 12,
+    paddingBottom: 28,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  progressBarBase: {
+    flex: 1,
+    height: 3,
+    borderRadius: 9999,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 9999,
+  },
+  progressLabel: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 11,
+    fontWeight: '600',
+    width: 42,
+    textAlign: 'right',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  actionLabel: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  fontBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

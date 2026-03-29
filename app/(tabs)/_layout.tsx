@@ -15,6 +15,7 @@ export default function TabLayout() {
         <Tabs.Screen name="index" options={{ title: 'Home' }} />
         <Tabs.Screen name="sleep" options={{ title: 'Sleep' }} />
         <Tabs.Screen name="sounds" options={{ title: 'Sounds' }} />
+        <Tabs.Screen name="stories" options={{ title: 'Stories' }} />
         <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
       </Tabs>
       <MiniPlayer />

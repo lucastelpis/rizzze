@@ -267,6 +267,7 @@ export default function HomeScreen() {
                 bg={C.storiesBg}
                 Icon={StoriesIcon}
                 iconColor={C.storiesIcon}
+                onPress={() => router.push('/(tabs)/stories')}
               />
               <CategoryCard
                 title="Games"

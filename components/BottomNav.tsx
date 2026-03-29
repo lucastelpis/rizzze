@@ -57,17 +57,38 @@ const ProfileNavIcon = ({ active, C }: { active: boolean, C: any }) => (
   </Svg>
 );
 
+const StoriesNavIcon = ({ active, C }: { active: boolean, C: any }) => (
+  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" 
+      stroke={active ? C.accent : C.textSecondary} 
+      strokeWidth={2} 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+    />
+    <Path 
+      d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z" 
+      fill={active ? C.accent : 'none'} 
+      stroke={active ? C.accent : C.textSecondary} 
+      strokeWidth={2} 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+    />
+  </Svg>
+);
+
 // ─── NAVIGATION CONFIG ────────────────────────────────────────────────────────
 
 const NAV_TABS = [
   { key: 'home', label: 'Home', Icon: HomeNavIcon, route: '/(tabs)' },
   { key: 'sleep', label: 'Sleep', Icon: SleepNavIcon, route: '/(tabs)/sleep' },
   { key: 'sounds', label: 'Sounds', Icon: SoundsNavIcon, route: '/(tabs)/sounds' },
+  { key: 'stories', label: 'Stories', Icon: StoriesNavIcon, route: '/(tabs)/stories' },
   { key: 'profile', label: 'Profile', Icon: ProfileNavIcon, route: '/(tabs)/profile' },
 ];
 
 interface BottomNavProps {
-  active: 'home' | 'sleep' | 'sounds' | 'profile';
+  active: 'home' | 'sleep' | 'sounds' | 'stories' | 'profile';
 }
 
 export const BottomNav = ({ active }: BottomNavProps) => {

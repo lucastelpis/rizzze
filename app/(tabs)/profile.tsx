@@ -12,6 +12,13 @@ import { useColors } from '@/hooks/useColors';
 import { useStreak } from '@/context/StreakContext';
 import { SleepingSheep } from '@/components/SleepingSheep';
 
+// Back Chevron Icon
+const BackChevron = ({ color = '#7A7589' }) => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M15 18L9 12L15 6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
 // SheepIcon removed in favor of SleepingSheep component
 
 const SettingsIcon = ({ size = 20 }: { size?: number }) => {
@@ -89,9 +96,22 @@ export default function ProfileScreen() {
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Top Bar - Always visible as per user request */}
+        <View style={styles.topBar}>
+          <TouchableOpacity 
+            style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
+            onPress={() => router.back()}
+          >
+            <BackChevron color={isDark ? C.white : C.textPrimary} />
+          </TouchableOpacity>
+        </View>
+
         <ScrollView 
           style={styles.scroll} 
-          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
+          contentContainerStyle={[
+            styles.scrollContent, 
+            activeSound && { paddingBottom: 100 }
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
@@ -180,9 +200,22 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   safeArea: { flex: 1 },
+  topBar: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingBottom: 20 },
-  header: { alignItems: 'center', marginTop: 32, marginBottom: 32 },
+  header: { alignItems: 'center', marginTop: 12, marginBottom: 32 },
   avatarContainer: { position: 'relative', marginBottom: 16 },
   avatarCircle: { 
     width: 100, 

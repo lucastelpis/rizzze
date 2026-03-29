@@ -4,13 +4,13 @@ import { useStreak } from './StreakContext';
 
 setAudioModeAsync({
   playsInSilentMode: true,
-  interruptionMode: 'doNotMix',
+  interruptionMode: 'mixWithOthers',
   allowsRecording: false,
   shouldPlayInBackground: true,
   shouldRouteThroughEarpiece: false,
 }).catch(console.error);
 
-const SOUND_ASSETS: Record<string, any> = {
+export const SOUND_ASSETS: Record<string, any> = {
   'forest.m4a': require('@/assets/sounds/forest.m4a'),
   'beach.m4a': require('@/assets/sounds/beach.m4a'),
   'city_rain.m4a': require('@/assets/sounds/city_rain.m4a'),
@@ -170,35 +170,48 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   const playSelectedSound = (sound: SoundMeta) => {
     if (activeSound?.soundFile === sound.soundFile) {
-      // If it's the exact same sound, just make sure it's playing
       if (!isPlaying) togglePlayPause();
       return;
     }
-    // New sound
-    player1.pause();
-    player2.pause();
+    
+    // New sound: pause existing first safely
+    try {
+      player1.pause();
+      player2.pause();
+    } catch (err) {
+      // Ignore if players aren't ready to pause
+    }
+    
     setActiveSound(sound);
     markActivity();
   };
 
   const togglePlayPause = () => {
     if (!activeSound) return;
-    if (isPlaying) {
-      player1.pause();
-      player2.pause();
-    } else {
-      const activePlayer = activePlayerIdx === 0 ? player1 : player2;
-      if (visualProgress >= visualDuration && !isLooping) {
-        setVisualProgress(0);
-        activePlayer.seekTo(0);
+    try {
+      if (isPlaying) {
+        player1.pause();
+        player2.pause();
+      } else {
+        const activePlayer = activePlayerIdx === 0 ? player1 : player2;
+        if (visualProgress >= visualDuration && !isLooping) {
+          setVisualProgress(0);
+          activePlayer.seekTo(0);
+        }
+        activePlayer.play();
       }
-      activePlayer.play();
+    } catch (err) {
+      console.warn('Audio toggle failed:', err);
     }
   };
 
   const stopSound = () => {
-    player1.pause();
-    player2.pause();
+    try {
+      player1.pause();
+      player2.pause();
+    } catch (err) {
+      // Safe to ignore if already stopped or not ready
+    }
     setActiveSound(null);
   };
 
