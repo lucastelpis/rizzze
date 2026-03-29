@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import * as Speech from 'expo-speech';
 import { tokens } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { CATEGORIES, STORIES, Story } from '@/constants/stories';
 import { useAudio, SOUND_ASSETS } from '@/context/AudioContext';
@@ -58,6 +59,7 @@ const FontIcon = ({ color = '#6B5A8E' }) => (
 
 export default function ReaderScreen() {
   const { storyId } = useLocalSearchParams();
+  const { isDark } = useTheme();
   const C = useColors();
   const router = useRouter();
   const { stopSound } = useAudio();
@@ -242,10 +244,10 @@ export default function ReaderScreen() {
         {/* TOP BAR */}
         <View style={styles.topBar}>
           <TouchableOpacity 
-            style={[styles.circleButton, { backgroundColor: '#F0EBE3' }]}
+            style={[styles.circleButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
             onPress={handleBack}
           >
-            <BackChevron />
+            <BackChevron color={isDark ? C.white : '#7A7589'} />
           </TouchableOpacity>
           
           <View style={styles.topBarCenter}>
@@ -255,7 +257,7 @@ export default function ReaderScreen() {
           </View>
           
           <TouchableOpacity 
-            style={[styles.sheepBtn, { backgroundColor: C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+            style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
             onPress={handleProfile}
             activeOpacity={0.8}
           >
@@ -321,11 +323,17 @@ export default function ReaderScreen() {
             
             <Text style={[styles.overlayLabel, { color: C.textSecondary }]}>Line Height: 1.9x</Text>
             <View style={styles.controlRow}>
-              <TouchableOpacity style={styles.fontAdjBtn} onPress={() => changeFontSize(-1)}>
+              <TouchableOpacity 
+                style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]} 
+                onPress={() => changeFontSize(-1)}
+              >
                 <MinusIcon color={C.textPrimary} />
               </TouchableOpacity>
               <Text style={[styles.fontSizeLabel, { color: C.textPrimary }]}>{fontSize}px</Text>
-              <TouchableOpacity style={styles.fontAdjBtn} onPress={() => changeFontSize(1)}>
+              <TouchableOpacity 
+                style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]} 
+                onPress={() => changeFontSize(1)}
+              >
                 <PlusIcon color={C.textPrimary} />
               </TouchableOpacity>
             </View>
@@ -500,7 +508,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#F0EBE3',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -16,6 +16,7 @@ import { useAudio } from '@/context/AudioContext';
 import { useStreak } from '@/context/StreakContext';
 import * as SoundGraphics from '@/components/SoundGraphics';
 import { BottomNav } from '@/components/BottomNav';
+import { useTheme } from '@/context/ThemeContext';
 import { SleepingSheep } from '@/components/SleepingSheep';
 
 // ─── GREETING ─────────────────────────────────────────────────────────────────
@@ -177,6 +178,7 @@ const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border, onPress }:
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
+  const { isDark } = useTheme();
   const C = useColors();
   const { greeting, subtitle } = useMemo(() => getGreeting(), []);
   const router = useRouter();
@@ -194,7 +196,7 @@ export default function HomeScreen() {
               <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>{subtitle}</Text>
             </View>
             <TouchableOpacity 
-              style={[styles.sheepButton, { backgroundColor: C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+              style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
               onPress={() => router.push('/profile')}
               activeOpacity={0.8}
             >

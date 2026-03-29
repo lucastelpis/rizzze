@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { BottomNav } from '@/components/BottomNav';
 import { SleepingSheep } from '@/components/SleepingSheep';
@@ -18,6 +19,7 @@ const ChevronRight = ({ color = '#C4AED8' }: { color?: string }) => (
 );
 
 export default function StoriesScreen() {
+  const { isDark } = useTheme();
   const C = useColors();
   const router = useRouter();
 
@@ -34,7 +36,7 @@ export default function StoriesScreen() {
             <Text style={[styles.subtitle, { color: C.textSecondary }]}>Short reads to quiet your mind</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >

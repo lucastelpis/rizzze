@@ -19,6 +19,7 @@ import {
 import { useAudio } from '@/context/AudioContext';
 import { BottomNav } from '@/components/BottomNav';
 import { useColors } from '@/hooks/useColors';
+import { useTheme } from '@/context/ThemeContext';
 import { tokens } from '@/constants/theme';
 import { SleepingSheep } from '@/components/SleepingSheep';
 
@@ -89,6 +90,7 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
 };
 
 export default function SoundsScreen() {
+  const { isDark } = useTheme();
   const { activeSound } = useAudio();
   const router = useRouter();
   const C = useColors();
@@ -104,11 +106,11 @@ export default function SoundsScreen() {
             <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Immerse yourself</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: C.accentLight }]}
+            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
             activeOpacity={0.8}
             onPress={() => router.push('/profile')}
           >
-            <SleepingSheep size={34} />
+            <SleepingSheep size={28} />
           </TouchableOpacity>
         </View>
 
@@ -231,13 +233,12 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   sheepButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139, 107, 174, 0.15)',
   },
   scroll: {
     flex: 1,

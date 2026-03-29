@@ -1,25 +1,14 @@
+import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Pressable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
 import { useAudio } from '@/context/AudioContext';
-import { BottomNav } from '@/components/BottomNav';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { useStreak } from '@/context/StreakContext';
 import { SleepingSheep } from '@/components/SleepingSheep';
-
-// Back Chevron Icon
-const BackChevron = ({ color = '#7A7589' }) => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    <Path d="M15 18L9 12L15 6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
-
-// SheepIcon removed in favor of SleepingSheep component
 
 const SettingsIcon = ({ size = 20 }: { size?: number }) => {
   const C = useColors();
@@ -63,7 +52,7 @@ const SettingsItem = ({ label, value, last }: { label: string; value?: string; l
   );
 };
 
-export default function ProfileScreen() {
+export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   const { activeSound } = useAudio();
   const { themeMode, setThemeMode, isDark } = useTheme();
   const { streakCount } = useStreak();
@@ -93,126 +82,91 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Top Bar - Always visible as per user request */}
-        <View style={styles.topBar}>
-          <TouchableOpacity 
-            style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
-            onPress={() => router.back()}
-          >
-            <BackChevron color={isDark ? C.white : C.textPrimary} />
+    <ScrollView 
+      style={styles.scroll} 
+      contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }, isModal && { paddingTop: 12 }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.avatarContainer}>
+          <View style={[styles.avatarCircle, { backgroundColor: C.accentLight }]}>
+            <SleepingSheep size={80} />
+          </View>
+          <TouchableOpacity style={[styles.editBadge, { backgroundColor: C.white, borderColor: C.bgPrimary }]}>
+            <SettingsIcon size={12} />
           </TouchableOpacity>
         </View>
+        <Text style={[styles.userName, { color: C.textPrimary }]}>Lucas Telpis</Text>
+        <Text style={[styles.userJoined, { color: C.textSecondary }]}>Zen sleeper since March 2026</Text>
+      </View>
 
-        <ScrollView 
-          style={styles.scroll} 
-          contentContainerStyle={[
-            styles.scrollContent, 
-            activeSound && { paddingBottom: 100 }
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.avatarContainer}>
-              <View style={[styles.avatarCircle, { backgroundColor: C.accentLight }]}>
-                <SleepingSheep size={80} />
-              </View>
-              <TouchableOpacity style={[styles.editBadge, { backgroundColor: C.white, borderColor: C.bgPrimary }]}>
-                <SettingsIcon size={12} />
-              </TouchableOpacity>
-            </View>
-            <Text style={[styles.userName, { color: C.textPrimary }]}>Lucas Telpis</Text>
-            <Text style={[styles.userJoined, { color: C.textSecondary }]}>Zen sleeper since March 2026</Text>
-          </View>
+      {/* Theme Selector */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>APPEARANCE</Text>
+        <View style={[styles.themeSelector, { backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : C.bgMuted }]}>
+          {(['auto', 'light', 'dark'] as const).map((mode) => (
+            <Pressable
+              key={mode}
+              onPress={() => setThemeMode(mode)}
+              style={[
+                styles.themeOption,
+                themeMode === mode && [
+                  styles.themeOptionActive, 
+                  { backgroundColor: isDark ? '#4A4668' : C.bgCard }
+                ]
+              ]}
+            >
+              <Text style={[
+                  styles.themeText, 
+                  { color: C.textSecondary },
+                  themeMode === mode && { color: isDark ? C.white : C.accent, fontFamily: 'Nunito_800ExtraBold' }
+                ]}
+              >
+                {mode.toUpperCase()}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
 
-          {/* Theme Selector */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: C.textMuted }]}>APPEARANCE</Text>
-            <View style={[styles.themeSelector, { backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : C.bgMuted }]}>
-              {(['auto', 'light', 'dark'] as const).map((mode) => (
-                <Pressable
-                  key={mode}
-                  onPress={() => setThemeMode(mode)}
-                  style={[
-                    styles.themeOption,
-                    themeMode === mode && [
-                      styles.themeOptionActive, 
-                      { backgroundColor: isDark ? '#4A4668' : C.bgCard }
-                    ]
-                  ]}
-                >
-                  <Text style={[
-                      styles.themeText, 
-                      { color: C.textSecondary },
-                      themeMode === mode && { color: isDark ? C.white : C.accent, fontFamily: 'Nunito_800ExtraBold' }
-                    ]}
-                  >
-                    {mode.toUpperCase()}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
+      {/* Stats */}
+      <View style={styles.statsGrid}>
+        <StatCard label="Current streak" value={streakCount.toString()} color={C.sleepBg} />
+        <StatCard label="Hours slept" value="28.5" color={C.soundsBg} />
+      </View>
 
-          {/* Stats */}
-          <View style={styles.statsGrid}>
-            <StatCard label="Current streak" value={streakCount.toString()} color={C.sleepBg} />
-            <StatCard label="Hours slept" value="28.5" color={C.soundsBg} />
-          </View>
+      {/* Settings Section */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>MY SLEEP</Text>
+        <View style={[styles.settingsCard, { backgroundColor: C.bgCard }]}>
+          <SettingsItem label="Bedtime goal" value="11:30 PM" />
+          <SettingsItem label="Wake up goal" value="7:30 AM" />
+          <SettingsItem label="Daily reminders" value="On" last />
+        </View>
+      </View>
 
-          {/* Settings Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: C.textMuted }]}>MY SLEEP</Text>
-            <View style={[styles.settingsCard, { backgroundColor: C.bgCard }]}>
-              <SettingsItem label="Bedtime goal" value="11:30 PM" />
-              <SettingsItem label="Wake up goal" value="7:30 AM" />
-              <SettingsItem label="Daily reminders" value="On" last />
-            </View>
-          </View>
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>ACCOUNT</Text>
+        <View style={[styles.settingsCard, { backgroundColor: C.bgCard }]}>
+          <SettingsItem label="Subscription" value="Rizzze Pro" />
+          <SettingsItem label="Notifications" />
+          <SettingsItem label="Support & Feedback" last />
+        </View>
+      </View>
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: C.textMuted }]}>ACCOUNT</Text>
-            <View style={[styles.settingsCard, { backgroundColor: C.bgCard }]}>
-              <SettingsItem label="Subscription" value="Rizzze Pro" />
-              <SettingsItem label="Notifications" />
-              <SettingsItem label="Support & Feedback" last />
-            </View>
-          </View>
+      <TouchableOpacity style={styles.logoutBtn}>
+        <Text style={styles.logoutText}>Log out</Text>
+      </TouchableOpacity>
 
-          <TouchableOpacity style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>Log out</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.logoutBtn, { marginTop: 0 }]} onPress={handleReset}>
-            <Text style={[styles.logoutText, { color: C.textMuted, fontSize: 13 }]}>Reset app data</Text>
-          </TouchableOpacity>
-        </ScrollView>
-
-        <BottomNav active="profile" />
-      </SafeAreaView>
-    </View>
+      <TouchableOpacity style={[styles.logoutBtn, { marginTop: 0 }]} onPress={handleReset}>
+        <Text style={[styles.logoutText, { color: C.textMuted, fontSize: 13 }]}>Reset app data</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  safeArea: { flex: 1 },
-  topBar: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingBottom: 20 },
   header: { alignItems: 'center', marginTop: 12, marginBottom: 32 },

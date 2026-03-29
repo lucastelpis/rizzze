@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { BottomNav } from '@/components/BottomNav';
 import * as StoryGraphics from '@/components/StoryGraphics';
@@ -26,6 +27,7 @@ const ChevronRight = ({ color = '#A9A3B5' }) => (
 
 export default function StoryListScreen() {
   const { categoryId } = useLocalSearchParams();
+  const { isDark } = useTheme();
   const C = useColors();
   const router = useRouter();
 
@@ -70,17 +72,17 @@ export default function StoryListScreen() {
         {/* TOP BAR */}
         <View style={styles.topBar}>
           <TouchableOpacity 
-            style={[styles.backButton, { backgroundColor: '#F0EBE3' }]}
+            style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
             onPress={() => router.back()}
           >
-            <BackChevron />
+            <BackChevron color={isDark ? C.white : '#7A7589'} />
           </TouchableOpacity>
           <View style={styles.topBarText}>
             <Text style={[styles.categoryTitle, { color: C.textPrimary }]}>{category.title}</Text>
             <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>{category.subtitle}</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.sheepBtn, { backgroundColor: '#EDE5F5', borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+            style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#EDE5F5', borderColor: 'rgba(139, 107, 174, 0.15)' }]}
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >

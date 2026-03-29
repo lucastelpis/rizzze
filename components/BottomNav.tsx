@@ -84,7 +84,7 @@ const NAV_TABS = [
   { key: 'sleep', label: 'Sleep', Icon: SleepNavIcon, route: '/(tabs)/sleep' },
   { key: 'sounds', label: 'Sounds', Icon: SoundsNavIcon, route: '/(tabs)/sounds' },
   { key: 'stories', label: 'Stories', Icon: StoriesNavIcon, route: '/(tabs)/stories' },
-  { key: 'profile', label: 'Profile', Icon: ProfileNavIcon, route: '/(tabs)/profile' },
+  { key: 'profile', label: 'Profile', Icon: ProfileNavIcon, route: '/profile' },
 ];
 
 interface BottomNavProps {
