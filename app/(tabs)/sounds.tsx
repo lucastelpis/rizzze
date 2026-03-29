@@ -53,8 +53,7 @@ const SceneCard = ({ title, subtitle, tag, bgColor, BgGraphic, gradientOverlay, 
     </View>
     <LinearGradient
       colors={['transparent', gradientOverlay]}
-      style={StyleSheet.absoluteFill}
-      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}
     />
     <View style={styles.sceneCardContent}>
       <Text style={styles.sceneCardTitle}>{title}</Text>
@@ -79,7 +78,7 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
       params: { title, subtitle: 'Simple sounds collection', soundFile, graphicId }
     })}
   >
-    <View style={StyleSheet.absoluteFill}>
+    <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
       <BgGraphic w={cardW} h={cardH} />
     </View>
     <View style={styles.simpleSoundCardContent}>

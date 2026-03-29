@@ -9,7 +9,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { CATEGORIES, STORIES, Story } from '@/constants/stories';
 import { useAudio, SOUND_ASSETS } from '@/context/AudioContext';
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { SleepingSheep } from '@/components/SleepingSheep';
 
 const { width } = Dimensions.get('window');
@@ -66,11 +66,24 @@ export default function ReaderScreen() {
   
   // Dedicated local player for fireplace ambiance
   const localFireplacePlayer = useAudioPlayer(SOUND_ASSETS['fireplace.m4a']);
+  
+  // High-fidelity neural narration player (Pro Mode)
+  const story = STORIES.find(s => s.id === storyId) || STORIES[0];
+  const proNarrationPlayer = useAudioPlayer(story.audioFile ? SOUND_ASSETS[story.audioFile] : null);
+  const proStatus = useAudioPlayerStatus(proNarrationPlayer);
+
   useEffect(() => {
     if (localFireplacePlayer) {
       localFireplacePlayer.loop = true;
+      localFireplacePlayer.volume = 0.05; // Extremely subtle backdrop (5%) for maximum voice clarity
     }
   }, [localFireplacePlayer]);
+
+  useEffect(() => {
+    if (proNarrationPlayer) {
+      proNarrationPlayer.volume = 1.0; // Ensure professional audio is at full volume
+    }
+  }, [proNarrationPlayer]);
 
   const [isAutoScroll, setIsAutoScroll] = useState(false);
   const [fontSize, setFontSize] = useState(17);
@@ -79,12 +92,24 @@ export default function ReaderScreen() {
   const [isNarrating, setIsNarrating] = useState(false);
   const [currentPara, setCurrentPara] = useState(0);
 
+  // Sync current paragraph with audio progress (Pro Mode only)
+  useEffect(() => {
+    if (isNarrating && story.audioFile && proStatus.duration > 0) {
+      const progress = proStatus.currentTime / proStatus.duration;
+      const totalParas = story.content.length;
+      const estimatedPara = Math.min(Math.floor(progress * totalParas), totalParas - 1);
+      
+      if (estimatedPara !== currentPara) {
+        setCurrentPara(estimatedPara);
+      }
+    }
+  }, [proStatus.currentTime, isNarrating, story.audioFile]);
+
   const scrollRef = useRef<ScrollView>(null);
   const scrollY = useRef(0);
   const contentHeight = useRef(0);
   const layoutHeight = useRef(0);
 
-  const story = STORIES.find(s => s.id === storyId) || STORIES[0];
   const category = CATEGORIES.find(c => c.id === story.category) || CATEGORIES[1];
 
   const narratorActive = useRef(false);
@@ -125,40 +150,55 @@ export default function ReaderScreen() {
 
   // Handle Speech Narration
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
     if (isNarrating) {
       narratorActive.current = true;
       
-      // Start fireplace ambiance immediately
+      // 1. Start fireplace ambiance immediately
       try {
         localFireplacePlayer.play();
       } catch (e) {
         console.warn('Fireplace play error', e);
       }
       
-      // Small delay to ensure ambient sound session is established first
-      const timer = setTimeout(() => {
-        if (narratorActive.current) speakParagraph(currentPara);
-      }, 500);
-      return () => clearTimeout(timer);
+      const hasProAudio = Boolean(story.audioFile);
+
+      if (hasProAudio && proNarrationPlayer) {
+        // 2a. Pro Audio starts INSTANTLY for maximum responsiveness
+        console.log('[NAR] Starting Pro Narration audio...');
+        proNarrationPlayer.volume = 1.0; 
+        proNarrationPlayer.play();
+      } else {
+        // 2b. TTS Fallback starts with a small delay for session safety
+        timer = setTimeout(() => {
+          if (narratorActive.current) {
+            console.log('[NAR] Starting TTS fallback (robot)...');
+            speakParagraph(currentPara);
+          }
+        }, 500);
+      }
     } else {
+      // 3. STOP EVERYTHING IMMEDIATELY
       narratorActive.current = false;
       Speech.stop();
       try {
         localFireplacePlayer.pause();
+        if (proNarrationPlayer) proNarrationPlayer.pause();
       } catch (e) {
-        // Ignore if already paused or during unmount transitions
+        // Ignore errors during state transitions
       }
     }
-    return () => { 
+
+    return () => {
       narratorActive.current = false;
-      Speech.stop(); 
+      if (timer) clearTimeout(timer);
+      Speech.stop();
       try {
-        localFireplacePlayer.pause();
-      } catch (e) {
-        // Ignore errors during unmount
-      }
+        if (proNarrationPlayer) proNarrationPlayer.pause();
+      } catch (e) {}
     };
-  }, [isNarrating]);
+  }, [isNarrating, story.audioFile, proNarrationPlayer]);
 
   const speakParagraph = (index: number) => {
     if (!narratorActive.current || index >= story.content.length) {
@@ -204,12 +244,7 @@ export default function ReaderScreen() {
   };
 
   const handleToggleListen = () => {
-    if (isNarrating) {
-      setIsNarrating(false);
-    } else {
-      setIsNarrating(true);
-      // Mode A settings (0.8x rate, 0.9x pitch) are applied in speakParagraph
-    }
+    setIsNarrating(!isNarrating);
   };
 
   const handleBack = () => {
@@ -219,6 +254,7 @@ export default function ReaderScreen() {
     Speech.stop();
     try {
       localFireplacePlayer.pause();
+      if (proNarrationPlayer) proNarrationPlayer.pause();
     } catch (e) {}
     router.back();
   };
@@ -230,6 +266,7 @@ export default function ReaderScreen() {
     Speech.stop();
     try {
       localFireplacePlayer.pause();
+      if (proNarrationPlayer) proNarrationPlayer.pause();
     } catch (e) {}
     router.push('/profile');
   };
@@ -379,6 +416,11 @@ export default function ReaderScreen() {
               <Text style={[styles.actionLabel, { color: isNarrating ? C.accent : '#6B5A8E' }]}>
                 {isNarrating ? 'Narrating' : 'Listen'}
               </Text>
+              {story.audioFile && !isNarrating && (
+                <View style={[styles.proBadge, { backgroundColor: C.accent }]}>
+                  <Text style={[styles.proBadgeText, { color: C.white }]}>Studio</Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -575,6 +617,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito_700Bold',
     fontSize: 13,
     fontWeight: '700',
+  },
+  proBadge: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginLeft: 4,
+  },
+  proBadgeText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   fontBtn: {
     width: 44,

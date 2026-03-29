@@ -55,6 +55,11 @@ export default function StoryListScreen() {
               <Text style={[styles.originTag, { color: C.textSecondary }]}>{item.origin}</Text>
               <Text style={[styles.dot, { color: '#E8E2D8' }]}>·</Text>
               <Text style={[styles.readTimeTag, { color: C.accent }]}>{item.readTime}</Text>
+              {item.audioFile && (
+                <View style={[styles.studioBadge, { backgroundColor: C.accent }]}>
+                  <Text style={[styles.studioBadgeText, { color: C.white }]}>Studio</Text>
+                </View>
+              )}
             </View>
           </View>
           <ChevronRight color="#A9A3B5" />
@@ -112,6 +117,11 @@ export default function StoryListScreen() {
                 <View style={[styles.pill, { backgroundColor: 'rgba(245,240,232,0.12)' }]}>
                   <Text style={[styles.pillTextTime, { color: '#C4AED8' }]}>{featuredStory.readTime}</Text>
                 </View>
+                {featuredStory.audioFile && (
+                  <View style={[styles.pill, { backgroundColor: C.accent }]}>
+                    <Text style={[styles.pillTextFeatured, { fontSize: 9, textTransform: 'none' }]}>Studio</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.featuredStoryTitle}>{featuredStory.title}</Text>
               <Text style={[styles.featuredStorySubtitle, { color: '#C4AED8' }]}>
@@ -189,5 +199,17 @@ const styles = StyleSheet.create({
   originTag: { fontFamily: 'Nunito_600SemiBold', fontSize: 11, fontWeight: '600' },
   dot: { marginHorizontal: 4, fontWeight: '900' },
   readTimeTag: { fontFamily: 'Nunito_600SemiBold', fontSize: 11, fontWeight: '600' },
+  studioBadge: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginLeft: 6,
+  },
+  studioBadgeText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   divider: { height: 1, width: '100%' },
 });

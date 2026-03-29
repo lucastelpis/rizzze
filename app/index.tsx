@@ -66,6 +66,7 @@ const Mascot = ({ variant, size = 200 }: { variant: 'welcome' | 'features' | 'te
           <Image
             source={images[variant]}
             style={styles.mascotImage}
+            resizeMode="contain"
           />
         </Animated.View>
       </View>
@@ -352,7 +353,6 @@ const styles = StyleSheet.create({
   mascotImage: {
     width: 100,
     height: 100,
-    resizeMode: 'contain',
   },
   mascotContainer: {
     position: 'relative',

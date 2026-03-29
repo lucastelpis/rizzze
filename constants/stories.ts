@@ -7,6 +7,8 @@ export interface Story {
   readTime: string;
   content: string[]; // split by paragraphs
   italicParagraphs?: number[]; // indices of paragraphs that should be italicized
+  audioFile?: string; // name of the narration file in assets
+  audioDuration?: string; // human readable duration like "1:15"
 }
 
 export interface Category {
@@ -97,6 +99,8 @@ export const STORIES: Story[] = [
       "Kenji sits again. He prepares a second bowl, just for himself. Not because he needs the caffeine. Because he needs the remembering—that in the midst of everything, there is always this: the present moment, warm in your hands."
     ],
     italicParagraphs: [5],
+    audioFile: 'narration-tea-master.mp3',
+    audioDuration: '1:15',
   },
   {
     id: 'shelter-storm',

@@ -21,6 +21,7 @@ export const SOUND_ASSETS: Record<string, any> = {
   'simple_fan.m4a': require('@/assets/sounds/simple_fan.m4a'),
   'simple_static.m4a': require('@/assets/sounds/simple_static.m4a'),
   'simple_ac.m4a': require('@/assets/sounds/simple_ac.m4a'),
+  'narration-tea-master.mp3': require('@/assets/audio/narration/narration-tea-master.mp3'),
 };
 
 export type SoundMeta = {
