@@ -299,6 +299,7 @@ export default function HomeScreen() {
                 Icon={GamesIcon}
                 iconColor={C.gamesIcon}
                 border
+                onPress={() => router.push('/(tabs)/games')}
               />
             </View>
           </View>

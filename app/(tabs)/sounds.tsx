@@ -114,7 +114,7 @@ export default function SoundsScreen() {
             activeOpacity={0.8}
             onPress={() => router.push('/profile')}
           >
-            <SleepingSheep size={28} />
+            <SleepingSheep size={34} />
           </TouchableOpacity>
         </View>
 
@@ -268,9 +268,9 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   sheepButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

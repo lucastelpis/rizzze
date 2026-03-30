@@ -52,10 +52,6 @@ export default function StoriesScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* TONIGHT'S READ */}
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.overline, { color: C.textSecondary }]}>TONIGHT'S READ</Text>
-          </View>
           
           <TouchableOpacity 
             style={[styles.featuredCard, { backgroundColor: C.bgCard, borderTopColor: '#C8A29A', shadowColor: C.textPrimary }]}

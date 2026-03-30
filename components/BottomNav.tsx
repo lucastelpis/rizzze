@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 
@@ -45,15 +45,12 @@ const SoundsNavIcon = ({ active, C }: { active: boolean, C: any }) => (
   </Svg>
 );
 
-const ProfileNavIcon = ({ active, C }: { active: boolean, C: any }) => (
+const GamesNavIcon = ({ active, C }: { active: boolean, C: any }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Circle cx={12} cy={8} r={4} fill={active ? C.accent : 'none'} stroke={active ? C.accent : C.textSecondary} strokeWidth={2} />
-    <Path 
-      d="M4 20c0-4 3.6-7 8-7s8 3 8 7" 
-      stroke={active ? C.accent : C.textSecondary} 
-      strokeWidth={2} 
-      strokeLinecap="round" 
-    />
+    <Rect x={4} y={4} width={7} height={7} rx={2} fill={active ? C.accent : C.textSecondary} />
+    <Rect x={13} y={13} width={7} height={7} rx={2} fill={active ? C.accent : C.textSecondary} />
+    <Rect x={13} y={4} width={7} height={7} rx={2} fill={active ? C.accent : C.textSecondary} opacity={0.6} />
+    <Rect x={4} y={13} width={7} height={7} rx={2} fill={active ? C.accent : C.textSecondary} opacity={0.6} />
   </Svg>
 );
 
@@ -84,11 +81,11 @@ const NAV_TABS = [
   { key: 'sleep', label: 'Sleep', Icon: SleepNavIcon, route: '/(tabs)/sleep' },
   { key: 'sounds', label: 'Sounds', Icon: SoundsNavIcon, route: '/(tabs)/sounds' },
   { key: 'stories', label: 'Stories', Icon: StoriesNavIcon, route: '/(tabs)/stories' },
-  { key: 'profile', label: 'Profile', Icon: ProfileNavIcon, route: '/profile' },
+  { key: 'games', label: 'Games', Icon: GamesNavIcon, route: '/(tabs)/games' },
 ];
 
 interface BottomNavProps {
-  active: 'home' | 'sleep' | 'sounds' | 'stories' | 'profile';
+  active: 'home' | 'sleep' | 'sounds' | 'stories' | 'games';
 }
 
 export const BottomNav = ({ active }: BottomNavProps) => {
@@ -143,6 +140,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.caption, // Nunito_800ExtraBold
     fontSize: 10,
     fontWeight: '800',
+    marginTop: 2,
   },
   navDot: {
     position: 'absolute',
