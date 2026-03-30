@@ -126,11 +126,26 @@ const MONTH_NAMES = [
 ];
 
 const SLEEP_TIPS = [
-  { title: "Improve Deep Sleep", text: "Reducing blue light 1 hour before bed can improve your deep sleep by up to 20%." },
-  { title: "Stable Schedule", text: "Going to bed and waking up at the same time every day stabilizes your rhythm." },
-  { title: "Perfect Temp", text: "A room temperature between 18-22°C (64-72°F) is ideal for restorative sleep." },
-  { title: "Limit Caffeine", text: "Avoid caffeine at least 6-8 hours before bed so your system can clear it." },
-  { title: "Morning Sun", text: "Exposing yourself to sunlight within 30 min of waking helps regulate your cycle." },
+  { title: "Avoid Blue Light", text: "Reducing screen use 1 hour before bed prevents blue light from suppressing your melatonin production." },
+  { title: "Stable Schedule", text: "Consistency helps synchronize your circadian rhythm, making it easier for your brain to trigger sleep." },
+  { title: "Perfect Temp", text: "Your core temperature must drop to initiate sleep; 18-22°C (64-72°F) is the scientifically ideal range." },
+  { title: "Avoid Late Caffeine", text: "Caffeine blocks adenosine—the chemical that creates 'sleep pressure'—and stays in your system for 8+ hours." },
+  { title: "Morning Sunlight", text: "Exposure to sun within 30 min of waking sets your internal clock for better melatonin release at night." },
+  { title: "Magnesium Rich Foods", text: "Magnesium acts as a natural GABA agonist, helping your nervous system enter a state of relaxation." },
+  { title: "Pre-Sleep Warm Bath", text: "A warm bath 90 min before bed causes vasodilation, which helps your core temperature drop faster for sleep." },
+  { title: "Cognitive Offloading", text: "Writing a to-do list before bed offloads future worries, reducing the time it takes to fall asleep." },
+  { title: "Deep Pressure Touch", text: "Weighted blankets provide 'Deep Pressure Stimulation,' which can lower cortisol and boost serotonin." },
+  { title: "Breathable Bedding", text: "Natural fibers like cotton or linen help with thermoregulation by preventing heat traps during the night." },
+  { title: "Lavender Aromatherapy", text: "Linalool in lavender has been shown to stimulate the parasympathetic nervous system for deeper relaxation." },
+  { title: "Dim the Lights", text: "Lowering ambient light 2 hours before bed triggers the 'Dim Light Melatonin Onset' (DLMO) phase." },
+  { title: "No Sleep with Alcohol", text: "Alcohol may act as a sedative, but it degrades sleep quality by fragmenting rest and suppressing REM." },
+  { title: "Paper Books Over E-Readers", text: "Reflected light from paper doesn't suppress melatonin like the emissive blue light from digital screens." },
+  { title: "Total Darkness", text: "Using an eye mask or blackouts ensures peak melatonin production by eliminating light pollution." },
+  { title: "White Noise Masking", text: "Consistent background sound masks sudden noise spikes that would otherwise trigger a 'startle response'." },
+  { title: "Early Digestive Window", text: "Finishing heavy meals 3 hours before bed prevents metabolic activity from interfering with your rest." },
+  { title: "Spinal Alignment", text: "Pillows that support your neck's natural curve reduce physical stress and prevents mid-night waking." },
+  { title: "Adenosine Buildup", text: "Physical activity during the day increases the buildup of adenosine, leading to higher 'sleep pressure' at night." },
+  { title: "Nap Efficiency", text: "Limiting naps to 20 mins avoids entering slow-wave sleep, preventing the 'grogginess' of sleep inertia." },
 ];
 
 type SleepQuality = 'bad' | 'okay' | 'good' | 'great' | 'perfect' | null;
@@ -144,6 +159,7 @@ export default function SleepScreen() {
   const [currentYear, setCurrentYear] = useState(ACTUAL_YEAR);
   const [tipIndex, setTipIndex] = useState(0);
   const [evalTarget, setEvalTarget] = useState<{ day: number, month: number, year: number, dateKey: string } | null>(null);
+  const [activeEval, setActiveEval] = useState<typeof evalTarget>(null);
   const { markActivity } = useStreak();
   const { activeSound } = useAudio();
   const router = useRouter();
@@ -159,6 +175,10 @@ export default function SleepScreen() {
     };
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (evalTarget) setActiveEval(evalTarget);
+  }, [evalTarget]);
 
   const handleRateDate = async (dateKey: string, quality: SleepQuality) => {
     const newData = { ...sleepData, [dateKey]: quality };
@@ -335,23 +355,23 @@ export default function SleepScreen() {
             <Pressable style={[styles.modalBg, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(45,43,61,0.4)' }]} onPress={() => setEvalTarget(null)} />
             <View style={[styles.modalContent, { backgroundColor: C.bgCard }]}>
               <Text style={[styles.modalTitle, { color: C.textPrimary }]}>How did you sleep?</Text>
-              <Text style={[styles.modalSubtitle, { color: C.textSecondary }]}>{evalTarget?.day} {MONTH_NAMES[evalTarget?.month || 0]} {evalTarget?.year}</Text>
+              <Text style={[styles.modalSubtitle, { color: C.textSecondary }]}>{activeEval?.day} {MONTH_NAMES[activeEval?.month || 0]} {activeEval?.year}</Text>
               <View style={styles.modalRatingRow}>
                 {ratingOptions.map(({ key, bg, faceColor, Face }) => (
                   <TouchableOpacity 
                     key={key} 
                     style={[styles.modalRatingIcon, { backgroundColor: bg }]}
-                    onPress={() => evalTarget && handleRateDate(evalTarget.dateKey, key as SleepQuality)}
+                    onPress={() => activeEval && handleRateDate(activeEval.dateKey, key as SleepQuality)}
                   >
                     <Face color={faceColor} />
                   </TouchableOpacity>
                 ))}
               </View>
               <View style={styles.modalFooterActions}>
-                {evalTarget && sleepData[evalTarget.dateKey] && (
+                {activeEval && sleepData[activeEval.dateKey] && (
                   <TouchableOpacity 
                     style={styles.clearButton}
-                    onPress={() => evalTarget && handleRateDate(evalTarget.dateKey, null)}
+                    onPress={() => activeEval && handleRateDate(activeEval.dateKey, null)}
                   >
                     <Text style={[styles.clearButtonText, { color: C.danger || '#FF6B6B' }]}>Clear Rating</Text>
                   </TouchableOpacity>

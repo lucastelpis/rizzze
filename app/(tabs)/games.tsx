@@ -11,6 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, G, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { tokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
@@ -157,6 +159,21 @@ export default function GamesScreen() {
   const { isDark } = useTheme();
   const C = useColors();
   const router = useRouter();
+  const [sheepHighScore, setSheepHighScore] = React.useState(0);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadHighScore = async () => {
+        try {
+          const val = await AsyncStorage.getItem('rizzze_highscore_sheepjumper');
+          if (val) setSheepHighScore(parseInt(val, 10));
+        } catch (e) {
+          console.error('Failed to load high score in hub', e);
+        }
+      };
+      loadHighScore();
+    }, [])
+  );
 
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
@@ -185,7 +202,7 @@ export default function GamesScreen() {
           <TouchableOpacity 
             style={styles.gameCard}
             activeOpacity={0.9}
-            onPress={() => console.log('Navigate to Sheep Jumper')}
+            onPress={() => router.push('/games/sheep-jumper')}
           >
             <SheepJumperBG />
             <LinearGradient
@@ -198,6 +215,11 @@ export default function GamesScreen() {
                 <View style={styles.badgePill}>
                   <Text style={styles.badgeText}>Endless</Text>
                 </View>
+                {sheepHighScore > 0 && (
+                  <View style={[styles.badgePill, { backgroundColor: 'rgba(232, 216, 192, 0.45)', marginLeft: 8, borderColor: 'rgba(232, 216, 192, 0.3)', borderWidth: 1 }]}>
+                    <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Best: {sheepHighScore}</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.cardTitle}>Sheep jumper</Text>
               <Text style={styles.cardSubtitle}>Tap to jump over fences. How far can you go?</Text>
@@ -296,9 +318,11 @@ const styles = StyleSheet.create({
     height: 22,
     paddingHorizontal: 10,
     borderRadius: 9999,
-    backgroundColor: 'rgba(245,240,232,0.2)',
+    backgroundColor: 'rgba(245,240,232,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(245,240,232,0.2)',
   },
   badgeText: {
     fontFamily: tokens.fonts.caption,
