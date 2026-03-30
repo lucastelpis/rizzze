@@ -325,7 +325,8 @@ export default function ReaderScreen() {
           <View style={styles.bodyContainer}>
             {story.content.map((para, idx) => {
               const isItalic = story.italicParagraphs?.includes(idx);
-              const isActive = isNarrating && idx === currentPara;
+              // Disable paragraph tracking for Studio Narration tracks as the timing estimation can be unreliable
+              const isActive = isNarrating && idx === currentPara && !story.audioFile;
 
               return (
                 <Text 
