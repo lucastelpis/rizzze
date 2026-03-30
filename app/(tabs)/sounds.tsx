@@ -22,6 +22,8 @@ import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
 import { tokens } from '@/constants/theme';
 import { SleepingSheep } from '@/components/SleepingSheep';
+import { SCENES_DATA } from '@/constants/sounds';
+import { getDailyPick } from '@/utils/dailyPicks';
 
 // Local C removed in favor of useColors()
 
@@ -94,6 +96,9 @@ export default function SoundsScreen() {
   const router = useRouter();
   const C = useColors();
 
+  const randomScene = React.useMemo(() => getDailyPick(SCENES_DATA), []);
+  const PickGraphic = randomScene?.graphicId ? (require('@/components/SoundGraphics') as any)[randomScene.graphicId] : null;
+
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <StatusBar style={C.mode === 'dark' ? 'light' : 'dark'} />
@@ -118,6 +123,37 @@ export default function SoundsScreen() {
           contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
           showsVerticalScrollIndicator={false}
         >
+          {/* TONIGHT'S SOUND */}
+          <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+            <TouchableOpacity 
+              style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
+              activeOpacity={0.85}
+              onPress={() => router.push({
+                pathname: '/player',
+                params: {
+                  title: randomScene.title,
+                  subtitle: 'Scenes collection',
+                  soundFile: randomScene.soundFile,
+                  graphicId: randomScene.graphicId
+                }
+              })}
+            >
+              <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
+                {PickGraphic ? <PickGraphic w={52} h={52} /> : <SleepingSheep size={42} />}
+              </View>
+              <View style={styles.pickContent}>
+                <Text style={[styles.pickOverline, { color: C.accent }]}>TONIGHT'S SOUND</Text>
+                <Text style={[styles.pickTitle, { color: C.textPrimary }]}>{randomScene.title}</Text>
+                <Text style={[styles.pickSubtitle, { color: C.textSecondary }]}>{randomScene.tag}</Text>
+              </View>
+              <View style={[styles.playButton, { backgroundColor: C.accent }]}>
+                <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+                  <Path d="M4 2.5L13 8L4 13.5V2.5Z" fill="#FFFFFF" />
+                </Svg>
+              </View>
+            </TouchableOpacity>
+          </View>
+
           {/* SCENES */}
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: C.textSecondary }]}>SCENES</Text>
@@ -246,8 +282,54 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   section: {
-    paddingTop: 0, // 20px was in header
     paddingHorizontal: 24,
+  },
+  // Tonight's Pick Card
+  pickCard: {
+    borderRadius: 20,
+    borderTopWidth: 3,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.10,
+    shadowRadius: 40,
+    elevation: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 14,
+  },
+  pickThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickContent: {
+    flex: 1,
+    gap: 2,
+  },
+  pickOverline: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  pickTitle: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  pickSubtitle: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  playButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionSimpleSounds: {
     paddingTop: 24,

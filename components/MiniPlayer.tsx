@@ -57,7 +57,7 @@ const SheepFallbackIcon = () => (
   </Svg>
 );
 
-export function MiniPlayer() {
+export function MiniPlayer({ bottomOffset = 78 }: { bottomOffset?: number }) {
   const { activeSound, isPlaying, isLooping, toggleLoop, visualProgress, visualDuration, togglePlayPause, stopSound } = useAudio();
   const { isDark } = useTheme();
   const router = useRouter();
@@ -97,7 +97,14 @@ export function MiniPlayer() {
   };
 
   return (
-    <Animated.View style={[styles.wrapper, animatedStyle]} pointerEvents={activeSound ? 'auto' : 'none'}>
+    <Animated.View 
+      style={[
+        styles.wrapper, 
+        { bottom: bottomOffset }, 
+        animatedStyle
+      ]} 
+      pointerEvents={activeSound ? 'auto' : 'none'}
+    >
       {activeSound && (
         <TouchableOpacity 
           style={[
@@ -152,7 +159,7 @@ export function MiniPlayer() {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 78, // 68 BottomNav + 10 gap
+    // bottom is passed as prop
     left: 12,
     right: 12,
     height: 62,

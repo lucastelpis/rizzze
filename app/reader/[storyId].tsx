@@ -11,6 +11,7 @@ import { CATEGORIES, STORIES, Story } from '@/constants/stories';
 import { useAudio, SOUND_ASSETS } from '@/context/AudioContext';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { SleepingSheep } from '@/components/SleepingSheep';
+import { MiniPlayer } from '@/components/MiniPlayer';
 
 const { width } = Dimensions.get('window');
 
@@ -158,6 +159,8 @@ export default function ReaderScreen() {
       // 1. Start fireplace ambiance immediately
       try {
         localFireplacePlayer.play();
+        // STOP background sounds (scenes/simple sounds) when starting a story narration
+        stopSound();
       } catch (e) {
         console.warn('Fireplace play error', e);
       }
@@ -417,7 +420,8 @@ export default function ReaderScreen() {
               <Text style={[styles.actionLabel, { color: isNarrating ? C.accent : '#6B5A8E' }]}>
                 {isNarrating ? 'Narrating' : 'Listen'}
               </Text>
-              {story.audioFile && !isNarrating && (
+              {/* Studio badge hidden for now - will be restored later */}
+              {false && story.audioFile && !isNarrating && (
                 <View style={[styles.proBadge, { backgroundColor: C.accent }]}>
                   <Text style={[styles.proBadgeText, { color: C.white }]}>Studio</Text>
                 </View>
@@ -436,6 +440,9 @@ export default function ReaderScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        
+        {/* Render MiniPlayer if a background sound is still playing (before pressing Listen) */}
+        {!isNarrating && <MiniPlayer bottomOffset={122} />}
       </SafeAreaView>
     </View>
   );

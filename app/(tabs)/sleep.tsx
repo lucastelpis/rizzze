@@ -162,11 +162,11 @@ export default function SleepScreen() {
 
   const handleRateDate = async (dateKey: string, quality: SleepQuality) => {
     const newData = { ...sleepData, [dateKey]: quality };
-    if (dateKey === TODAY_KEY) setSelectedRating(quality as string);
+    if (dateKey === TODAY_KEY) setSelectedRating(quality);
     setSleepData(newData);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-      markActivity();
+      if (quality) markActivity();
     } catch (e) {
       console.error('Failed save sleep', e);
     }
@@ -347,7 +347,19 @@ export default function SleepScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-              <TouchableOpacity onPress={() => setEvalTarget(null)}><Text style={{ color: C.textMuted, fontFamily: tokens.fonts.body }}>Cancel</Text></TouchableOpacity>
+              <View style={styles.modalFooterActions}>
+                {evalTarget && sleepData[evalTarget.dateKey] && (
+                  <TouchableOpacity 
+                    style={styles.clearButton}
+                    onPress={() => evalTarget && handleRateDate(evalTarget.dateKey, null)}
+                  >
+                    <Text style={[styles.clearButtonText, { color: C.danger || '#FF6B6B' }]}>Clear Rating</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => setEvalTarget(null)}>
+                  <Text style={[styles.cancelButtonText, { color: C.textMuted }]}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -395,4 +407,8 @@ const styles = StyleSheet.create({
   modalSubtitle: { fontFamily: 'Nunito_600SemiBold', fontSize: 13, marginTop: 4, marginBottom: 20 },
   modalRatingRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 24 },
   modalRatingIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  modalFooterActions: { width: '100%', alignItems: 'center', gap: 12 },
+  clearButton: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 12 },
+  clearButtonText: { fontFamily: 'Nunito_700Bold', fontSize: 14 },
+  cancelButtonText: { fontFamily: tokens.fonts.body, fontSize: 14 },
 });

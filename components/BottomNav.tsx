@@ -130,6 +130,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderTopWidth: 1,
     paddingBottom: 8,
+    paddingHorizontal: 12,
   },
   navTab: {
     flex: 1,

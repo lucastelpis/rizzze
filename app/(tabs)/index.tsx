@@ -18,6 +18,10 @@ import * as SoundGraphics from '@/components/SoundGraphics';
 import { BottomNav } from '@/components/BottomNav';
 import { useTheme } from '@/context/ThemeContext';
 import { SleepingSheep } from '@/components/SleepingSheep';
+import * as StoryGraphics from '@/components/StoryGraphics';
+import { STORIES } from '@/constants/stories';
+import { SCENES_DATA } from '@/constants/sounds';
+import { getDailyPick } from '@/utils/dailyPicks';
 
 // ─── GREETING ─────────────────────────────────────────────────────────────────
 function getGreeting(): { greeting: string; subtitle: string } {
@@ -27,14 +31,7 @@ function getGreeting(): { greeting: string; subtitle: string } {
   return { greeting: 'Good evening', subtitle: 'Ready to wind down?' };
 }
 
-const SCENES = [
-  { title: "Forest night", tag: "Crickets, wind, owls", soundFile: "forest.m4a", graphicId: "ForestNightBg" },
-  { title: "Ocean shore", tag: "Waves, seagulls, breeze", soundFile: "beach.m4a", graphicId: "OceanShoreBg" },
-  { title: "City rain", tag: "Rain, traffic hum, puddles", soundFile: "city_rain.m4a", graphicId: "CityRainBg" },
-  { title: "Fireplace", tag: "Crackling wood, warmth", soundFile: "fireplace.m4a", graphicId: "FireplaceBg" },
-  { title: "Birdsong fields", tag: "Birdsong, soft breeze, grass", soundFile: "birds.m4a", graphicId: "BirdsongFieldsBg" },
-  { title: "Cozy café", tag: "Coffee, chatter, soft jazz", soundFile: "coffeeshop.m4a", graphicId: "CozyCafeBg" },
-];
+// SCENES_DATA is now imported from @/constants/sounds
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────
 
@@ -183,8 +180,12 @@ export default function HomeScreen() {
   const { greeting, subtitle } = useMemo(() => getGreeting(), []);
   const router = useRouter();
   const { activeSound } = useAudio();
-  const randomScene = useMemo(() => SCENES[Math.floor(Math.random() * SCENES.length)], []);
+  const randomScene = useMemo(() => getDailyPick(SCENES_DATA), []);
   const PickGraphic = randomScene?.graphicId ? (SoundGraphics as any)[randomScene.graphicId] : null;
+
+  const randomStory = useMemo(() => getDailyPick(STORIES), []);
+  // Helper to get story thumb component
+  const StoryThumb = (StoryGraphics as any)[randomStory.id.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('') + 'Thumb'];
 
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
@@ -210,35 +211,55 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
 
-          {/* ── TONIGHT'S PICK ── */}
-          <TouchableOpacity 
-            style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
-            activeOpacity={0.85}
-            onPress={() => router.push({
-              pathname: '/player',
-              params: {
-                title: randomScene.title,
-                subtitle: 'Scenes collection',
-                soundFile: randomScene.soundFile,
-                graphicId: randomScene.graphicId
-              }
-            })}
-          >
-            {/* Scene thumbnail */}
-            <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
-              {PickGraphic ? <PickGraphic w={52} h={52} /> : <SleepingSheep size={42} />}
-            </View>
-            {/* Content */}
-            <View style={styles.pickContent}>
-              <Text style={[styles.pickOverline, { color: C.accent }]}>TONIGHT'S PICK</Text>
-              <Text style={[styles.pickTitle, { color: C.textPrimary }]}>{randomScene.title}</Text>
-              <Text style={[styles.pickSubtitle, { color: C.textSecondary }]}>{randomScene.tag}</Text>
-            </View>
-            {/* Play button */}
-            <View style={[styles.playButton, { backgroundColor: C.accent }]}>
-              <PlayIcon size={16} />
-            </View>
-          </TouchableOpacity>
+          <View style={{ gap: 12 }}>
+            {/* ── TONIGHT'S PICK: SOUND ── */}
+            <TouchableOpacity 
+              style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
+              activeOpacity={0.85}
+              onPress={() => router.push({
+                pathname: '/player',
+                params: {
+                  title: randomScene.title,
+                  subtitle: 'Scenes collection',
+                  soundFile: randomScene.soundFile,
+                  graphicId: randomScene.graphicId
+                }
+              })}
+            >
+              <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
+                {PickGraphic ? <PickGraphic w={52} h={52} /> : <SleepingSheep size={42} />}
+              </View>
+              <View style={styles.pickContent}>
+                <Text style={[styles.pickOverline, { color: C.accent }]}>TONIGHT'S SOUND</Text>
+                <Text style={[styles.pickTitle, { color: C.textPrimary }]}>{randomScene.title}</Text>
+                <Text style={[styles.pickSubtitle, { color: C.textSecondary }]}>{randomScene.tag}</Text>
+              </View>
+              <View style={[styles.playButton, { backgroundColor: C.accent }]}>
+                <PlayIcon size={16} />
+              </View>
+            </TouchableOpacity>
+
+            {/* ── TONIGHT'S PICK: STORY ── */}
+            <TouchableOpacity 
+              style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: '#C8A29A', shadowColor: C.textPrimary }]}
+              activeOpacity={0.85}
+              onPress={() => router.push(`/reader/${randomStory.id}`)}
+            >
+              <View style={[styles.pickThumb, { backgroundColor: 'rgba(240, 216, 208, 0.15)' }]}>
+                {StoryThumb ? <StoryThumb size={52} /> : <SleepingSheep size={42} />}
+              </View>
+              <View style={styles.pickContent}>
+                <Text style={[styles.pickOverline, { color: '#8B4A40' }]}>TONIGHT'S READ</Text>
+                <Text style={[styles.pickTitle, { color: C.textPrimary }]}>{randomStory.title}</Text>
+                <Text style={[styles.pickSubtitle, { color: '#9E7E78' }]} numberOfLines={1}>
+                  {randomStory.subtitle}
+                </Text>
+              </View>
+              <View style={[styles.playButton, { backgroundColor: '#8B4A40' }]}>
+                <PlayIcon size={16} />
+              </View>
+            </TouchableOpacity>
+          </View>
 
           {/* ── STREAK ── */}
           <StreakSection />

@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { SleepingSheep } from '@/components/SleepingSheep';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { CATEGORIES, STORIES } from '@/constants/stories';
+import { getDailyPick } from '@/utils/dailyPicks';
 
 // Chevron Right
 const ChevronRight = ({ color = '#C4AED8' }: { color?: string }) => (
@@ -23,8 +24,10 @@ export default function StoriesScreen() {
   const C = useColors();
   const router = useRouter();
 
-  // Pick "The tea master's morning" as the featured story for Screen 1
-  const featuredStory = STORIES.find(s => s.id === 'the-tea-masters-morning') || STORIES[0];
+  // Use deterministic daily pick for stories
+  const featuredStory = React.useMemo(() => getDailyPick(STORIES), []);
+  // Helper to get story thumb component
+  const StoryThumb = (StoryGraphics as any)[featuredStory.id.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('') + 'Thumb'];
 
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
@@ -55,29 +58,28 @@ export default function StoriesScreen() {
           </View>
           
           <TouchableOpacity 
-            style={[styles.featuredCard, { backgroundColor: C.bgCard, shadowColor: C.textPrimary }]}
+            style={[styles.featuredCard, { backgroundColor: C.bgCard, borderTopColor: '#C8A29A', shadowColor: C.textPrimary }]}
             activeOpacity={0.9}
             onPress={() => router.push(`/reader/${featuredStory.id}`)}
           >
             <View style={styles.featuredContent}>
-              <View style={styles.thumbWrap}>
-                <StoryGraphics.TheTeaMastersMorningThumb size={52} />
+              <View style={[styles.thumbWrap, { backgroundColor: 'rgba(240, 216, 208, 0.15)' }]}>
+                {StoryThumb ? <StoryThumb size={52} /> : <SleepingSheep size={42} />}
               </View>
               
               <View style={styles.featuredText}>
-                <View style={styles.badgeRow}>
-                  <View style={[styles.badge, { backgroundColor: C.accentLight }]}>
-                    <Text style={[styles.badgeText, { color: C.accent }]}>Cozy</Text>
-                  </View>
-                  <Text style={[styles.readTime, { color: C.textMuted }]}>{featuredStory.readTime}</Text>
-                </View>
+                <Text style={[styles.overline, { color: '#8B4A40', marginBottom: 2 }]}>TONIGHT'S READ</Text>
                 <Text style={[styles.featuredTitle, { color: C.textPrimary }]}>{featuredStory.title}</Text>
-                <Text style={[styles.featuredSubtitle, { color: C.textSecondary }]} numberOfLines={1}>
+                <Text style={[styles.featuredSubtitle, { color: '#9E7E78' }]} numberOfLines={1}>
                   {featuredStory.subtitle}
                 </Text>
               </View>
               
-              <ChevronRight color="#C4AED8" />
+              <View style={[styles.playButton, { backgroundColor: '#8B4A40' }]}>
+                <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+                  <Path d="M4 2.5L13 8L4 13.5V2.5Z" fill="#FFFFFF" />
+                </Svg>
+              </View>
             </View>
           </TouchableOpacity>
 
@@ -166,22 +168,31 @@ const styles = StyleSheet.create({
   featuredCard: {
     borderRadius: 20,
     borderTopWidth: 3,
-    borderTopColor: '#8B6DAE',
-    padding: 18,
+    padding: 16,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.1,
     shadowRadius: 40,
     elevation: 8,
   },
-  featuredContent: { flexDirection: 'row', alignItems: 'center' },
-  thumbWrap: { width: 52, height: 52, borderRadius: 14, overflow: 'hidden' },
-  featuredText: { flex: 1, marginLeft: 14, marginRight: 8 },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 9999 },
-  badgeText: { fontFamily: 'Nunito_700Bold', fontSize: 10, fontWeight: '700' },
-  readTime: { fontFamily: 'Nunito_600SemiBold', fontSize: 10, fontWeight: '600', marginLeft: 8 },
+  featuredContent: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  thumbWrap: { 
+    width: 52, 
+    height: 52, 
+    borderRadius: 14, 
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredText: { flex: 1, gap: 2 },
   featuredTitle: { fontFamily: tokens.fonts.caption, fontSize: 15, fontWeight: '800' },
   featuredSubtitle: { fontFamily: tokens.fonts.body, fontSize: 12, fontWeight: '500' },
+  playButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   categoryGrid: { 
     flexDirection: 'row', 

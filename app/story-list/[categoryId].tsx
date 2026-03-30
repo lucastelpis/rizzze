@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/BottomNav';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { CATEGORIES, STORIES, Story } from '@/constants/stories';
 import { SleepingSheep } from '@/components/SleepingSheep';
+import { MiniPlayer } from '@/components/MiniPlayer';
 
 // Chevron Left (Back)
 const BackChevron = ({ color = '#7A7589' }) => (
@@ -55,7 +56,8 @@ export default function StoryListScreen() {
               <Text style={[styles.originTag, { color: C.textSecondary }]}>{item.origin}</Text>
               <Text style={[styles.dot, { color: '#E8E2D8' }]}>·</Text>
               <Text style={[styles.readTimeTag, { color: C.accent }]}>{item.readTime}</Text>
-              {item.audioFile && (
+              {/* Studio badge hidden for now - will be restored later */}
+              {false && item.audioFile && (
                 <View style={[styles.studioBadge, { backgroundColor: C.accent }]}>
                   <Text style={[styles.studioBadgeText, { color: C.white }]}>Studio</Text>
                 </View>
@@ -117,7 +119,8 @@ export default function StoryListScreen() {
                 <View style={[styles.pill, { backgroundColor: 'rgba(245,240,232,0.12)' }]}>
                   <Text style={[styles.pillTextTime, { color: '#C4AED8' }]}>{featuredStory.readTime}</Text>
                 </View>
-                {featuredStory.audioFile && (
+                {/* Studio badge hidden for now - will be restored later */}
+                {false && featuredStory.audioFile && (
                   <View style={[styles.pill, { backgroundColor: C.accent }]}>
                     <Text style={[styles.pillTextFeatured, { fontSize: 9, textTransform: 'none' }]}>Studio</Text>
                   </View>
@@ -145,6 +148,7 @@ export default function StoryListScreen() {
         </ScrollView>
 
         <BottomNav active="stories" />
+        <MiniPlayer />
       </SafeAreaView>
     </View>
   );
