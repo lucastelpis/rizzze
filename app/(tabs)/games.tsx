@@ -160,18 +160,22 @@ export default function GamesScreen() {
   const C = useColors();
   const router = useRouter();
   const [sheepHighScore, setSheepHighScore] = React.useState(0);
+  const [cozyFarmHighScore, setCozyFarmHighScore] = React.useState(0);
 
   useFocusEffect(
     React.useCallback(() => {
-      const loadHighScore = async () => {
+      const loadHighScores = async () => {
         try {
-          const val = await AsyncStorage.getItem('rizzze_highscore_sheepjumper');
-          if (val) setSheepHighScore(parseInt(val, 10));
+          const sheepVal = await AsyncStorage.getItem('rizzze_highscore_sheepjumper');
+          if (sheepVal) setSheepHighScore(parseInt(sheepVal, 10));
+
+          const farmVal = await AsyncStorage.getItem('rizzze_highscore_cozyfarm');
+          if (farmVal) setCozyFarmHighScore(parseInt(farmVal, 10));
         } catch (e) {
-          console.error('Failed to load high score in hub', e);
+          console.error('Failed to load high scores in hub', e);
         }
       };
-      loadHighScore();
+      loadHighScores();
     }, [])
   );
 
@@ -230,7 +234,7 @@ export default function GamesScreen() {
           <TouchableOpacity 
             style={styles.gameCard}
             activeOpacity={0.9}
-            onPress={() => console.log('Navigate to Cozy Farm')}
+            onPress={() => router.push('/games/cozy-farm')}
           >
             <CozyFarmBG />
             <LinearGradient
@@ -243,6 +247,11 @@ export default function GamesScreen() {
                 <View style={styles.badgePill}>
                   <Text style={styles.badgeText}>Puzzle</Text>
                 </View>
+                {cozyFarmHighScore > 0 && (
+                  <View style={[styles.badgePill, { backgroundColor: 'rgba(232, 216, 192, 0.45)', marginLeft: 8, borderColor: 'rgba(232, 216, 192, 0.3)', borderWidth: 1 }]}>
+                    <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Best: {cozyFarmHighScore}</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.cardTitle}>Cozy farm</Text>
               <Text style={styles.cardSubtitle}>Clear stones and weeds to restore a peaceful garden</Text>
