@@ -1,34 +1,36 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Dimensions,
-  Animated,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAudioPlayer } from 'expo-audio';
-import * as Haptics from 'expo-haptics';
-import { useAudio } from '@/context/AudioContext';
-import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { AwakeSheepNoBorder } from '@/components/AwakeSheepNoBorder';
 import { AwakeSheepWalking } from '@/components/AwakeSheepWalking';
 import { SleepingSheep } from '@/components/SleepingSheep';
+import { useAudio } from '@/context/AudioContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAudioPlayer } from 'expo-audio';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // GAME CONSTANTS
-const GROUND_Y = SCREEN_HEIGHT * 0.75;
+const GROUND_HEIGHT = 240;
 const SHEEP_X = 80;
 const SHEEP_SIZE = 80;
-const SHEEP_FEET_OFFSET = (54 / 64) * SHEEP_SIZE; // Sheep feet are at y=54 in a 64x64 grid
+const SHEEP_FEET_OFFSET = (54 / 64) * SHEEP_SIZE; // Sheep feet are at y=54 from top in a 64x64 grid
+const SHEEP_FEET_TO_BOTTOM = SHEEP_SIZE - SHEEP_FEET_OFFSET; // Space below feet
 const FENCE_WIDTH = 48;
 const FENCE_HEIGHT = 56;
-const JUMP_VELOCITY = -12.5; // Tuned for taller fences and larger sprite
-const GRAVITY = 0.42; // Heavier gravity for snappier movement
+const JUMP_VELOCITY = 12.5; // Positive is UP
+const GRAVITY = -0.42; // Negative is DOWN
 
 const HIGHSCORE_KEY = 'rizzze_highscore_sheepjumper';
 
@@ -56,9 +58,19 @@ interface Cloud {
   speed: number;
 }
 
+interface Star {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  opacity: number;
+  speed: number;
+}
+
 export default function SheepJumper() {
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const router = useRouter();
-  
+
   // Game state
   const [gameState, setGameState] = useState<'playing' | 'gameOver'>('playing');
   const [score, setScore] = useState(0);
@@ -69,9 +81,9 @@ export default function SheepJumper() {
   const scoreRef = useRef(0);
   const highScoreRef = useRef(0);
   const jumpCount = useRef(0);
-  
+
   // Refs for high-performance animation
-  const sheepY = useRef(GROUND_Y - SHEEP_FEET_OFFSET);
+  const sheepFeetY = useRef(GROUND_HEIGHT); // Y position of feet from bottom
   const sheepVelocity = useRef(0);
   const isJumping = useRef(false);
   const fences = useRef<Fence[]>([]);
@@ -80,6 +92,7 @@ export default function SheepJumper() {
     { id: 2, x: SCREEN_WIDTH * 0.6, y: SCREEN_HEIGHT * 0.25, radius: 18, opacity: 0.15, speed: 2.5 / 60 },
     { id: 3, x: SCREEN_WIDTH * 0.8, y: SCREEN_HEIGHT * 0.1, radius: 20, opacity: 0.25, speed: 3.5 / 60 },
   ]);
+  const stars = useRef<Star[]>([]);
   const grassTufts = useRef<GrassTuft[]>([]);
   const gameSpeed = useRef(180 / 60); // 180px per second initially (scaled up)
   const fenceCounter = useRef(0);
@@ -99,11 +112,11 @@ export default function SheepJumper() {
   useEffect(() => {
     // 1. Stop any currently playing sleep sounds
     stopSound();
-    
+
     // 2. Setup theme player
     themePlayer.loop = true;
     themePlayer.play();
-    
+
     const initialTufts: GrassTuft[] = [];
     for (let i = 0; i < 10; i++) {
       initialTufts.push({
@@ -113,6 +126,21 @@ export default function SheepJumper() {
       });
     }
     grassTufts.current = initialTufts;
+
+    // Initialize Stars
+    const initialStars: Star[] = [];
+    for (let i = 0; i < 40; i++) {
+      initialStars.push({
+        id: i,
+        x: Math.random() * SCREEN_WIDTH,
+        y: Math.random() * (SCREEN_HEIGHT * 0.7),
+        size: 1 + Math.random() * 2,
+        opacity: 0.2 + Math.random() * 0.5,
+        speed: (0.1 + Math.random() * 0.3) / 60 * 60, // Slow drift
+      });
+    }
+    stars.current = initialStars;
+
     fences.current = [
       { id: Date.now(), x: SCREEN_WIDTH + 800, passed: false }
     ];
@@ -131,7 +159,7 @@ export default function SheepJumper() {
       }
     };
     loadHighScore();
-    
+
     return () => {
       try {
         themePlayer.pause();
@@ -156,18 +184,18 @@ export default function SheepJumper() {
 
   const jump = useCallback(() => {
     if (gameState !== 'playing' || isJumping.current) return;
-    
+
     isJumping.current = true;
     sheepVelocity.current = JUMP_VELOCITY;
     jumpCount.current += 1;
-    
+
     // Add haptic feedback
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (e) {
       // Ignore if not supported
     }
-    
+
     if (jumpCount.current === 3) {
       Animated.timing(instructionOpacity, {
         toValue: 0,
@@ -182,7 +210,7 @@ export default function SheepJumper() {
     setScore(0);
     scoreRef.current = 0;
     setIsNewBest(false);
-    sheepY.current = GROUND_Y - SHEEP_FEET_OFFSET;
+    sheepFeetY.current = GROUND_HEIGHT;
     sheepVelocity.current = 0;
     isJumping.current = false;
     fences.current = [{ id: Date.now(), x: SCREEN_WIDTH + 800, passed: false }];
@@ -198,10 +226,10 @@ export default function SheepJumper() {
       // Update sheep
       if (isJumping.current) {
         sheepVelocity.current += GRAVITY;
-        sheepY.current += sheepVelocity.current;
-        
-        if (sheepY.current >= GROUND_Y - SHEEP_FEET_OFFSET) {
-          sheepY.current = GROUND_Y - SHEEP_FEET_OFFSET;
+        sheepFeetY.current += sheepVelocity.current;
+
+        if (sheepFeetY.current <= GROUND_HEIGHT) {
+          sheepFeetY.current = GROUND_HEIGHT;
           sheepVelocity.current = 0;
           isJumping.current = false;
         }
@@ -212,6 +240,15 @@ export default function SheepJumper() {
         cloud.x -= cloud.speed;
         if (cloud.x + cloud.radius < 0) {
           cloud.x = SCREEN_WIDTH + cloud.radius;
+        }
+      });
+
+      // Update stars (parallax)
+      stars.current.forEach(star => {
+        star.x -= star.speed;
+        if (star.x < -star.size) {
+          star.x = SCREEN_WIDTH + star.size;
+          star.y = Math.random() * (SCREEN_HEIGHT * 0.7); // Variety while recycling
         }
       });
 
@@ -255,26 +292,26 @@ export default function SheepJumper() {
           });
         }
 
-        // Collision
+        // Collision (Bottom-up coordinate system)
         const sheepHitbox = {
           left: SHEEP_X + HITBOX_PADDING,
           right: SHEEP_X + SHEEP_SIZE - HITBOX_PADDING,
-          top: sheepY.current + HITBOX_PADDING,
-          bottom: sheepY.current + SHEEP_SIZE - HITBOX_PADDING,
+          bottom: sheepFeetY.current, // Feet level
+          top: sheepFeetY.current + SHEEP_FEET_OFFSET - HITBOX_PADDING, // Visible head level
         };
 
         const fenceHitbox = {
           left: fence.x + (FENCE_WIDTH * 0.1),
           right: fence.x + (FENCE_WIDTH * 0.9),
-          top: GROUND_Y - FENCE_HEIGHT,
-          bottom: GROUND_Y,
+          bottom: GROUND_HEIGHT,
+          top: GROUND_HEIGHT + FENCE_HEIGHT,
         };
 
         if (
           sheepHitbox.right > fenceHitbox.left &&
           sheepHitbox.left < fenceHitbox.right &&
-          sheepHitbox.bottom > fenceHitbox.top &&
-          sheepHitbox.top < fenceHitbox.bottom
+          sheepHitbox.top > fenceHitbox.bottom &&
+          sheepHitbox.bottom < fenceHitbox.top
         ) {
           endGame();
         }
@@ -301,7 +338,7 @@ export default function SheepJumper() {
   const endGame = async () => {
     if (gameState !== 'playing') return;
     setGameState('gameOver');
-    
+
     const finalScore = scoreRef.current;
     if (finalScore > highScoreRef.current) {
       setHighScore(finalScore);
@@ -323,22 +360,24 @@ export default function SheepJumper() {
   }, [gameState]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, overflow: 'hidden' }]}>
       {/* 2. SKY */}
-      <View style={[styles.sky, { backgroundColor: '#D8E8D0' }]}>
-        <View style={styles.sun} />
-        {clouds.current.map(cloud => (
+      <View style={[styles.sky, { backgroundColor: '#1A2338' }]}>
+        {/* Moon */}
+        <View style={styles.moon} />
+
+        {/* Animated Stars */}
+        {stars.current.map(star => (
           <View
-            key={cloud.id}
+            key={`star-${star.id}`}
             style={[
-              styles.cloud,
+              styles.star,
               {
-                left: cloud.x,
-                top: cloud.y,
-                width: cloud.radius * 2,
-                height: cloud.radius * 2,
-                borderRadius: cloud.radius,
-                opacity: cloud.opacity,
+                left: star.x,
+                top: star.y,
+                width: star.size,
+                height: star.size,
+                opacity: star.opacity,
               },
             ]}
           />
@@ -351,22 +390,22 @@ export default function SheepJumper() {
         <Svg width="100%" height="100%" viewBox={`0 0 ${SCREEN_WIDTH} ${SCREEN_HEIGHT * 0.25}`} style={styles.hills}>
           <Path
             d={`M0 ${SCREEN_HEIGHT * 0.1} Q${SCREEN_WIDTH * 0.25} ${SCREEN_HEIGHT * 0.05} ${SCREEN_WIDTH * 0.5} ${SCREEN_HEIGHT * 0.1} T${SCREEN_WIDTH} ${SCREEN_HEIGHT * 0.1} V${SCREEN_HEIGHT * 0.25} H0 Z`}
-            fill="#90B888"
+            fill="#1E2B1E"
           />
         </Svg>
-        
+
         {/* Front ground */}
-        <View style={[styles.frontGround, { backgroundColor: '#A8C5A0' }]}>
+        <View style={[styles.frontGround, { backgroundColor: '#2D3D2D' }]}>
           {/* Ground line */}
           <Svg width="100%" height="20" style={styles.groundLine}>
             <Path
               d={`M0 10 Q${SCREEN_WIDTH * 0.25} 5 ${SCREEN_WIDTH * 0.5} 10 T${SCREEN_WIDTH} 10`}
               fill="none"
-              stroke="#98C090"
+              stroke="#243324"
               strokeWidth={3}
             />
           </Svg>
-          
+
           {/* Grass tufts - we'll just render a few that move with the fences roughly */}
           {/* For simplicity in this first draft, I'll use static tufts or move them in the loop */}
         </View>
@@ -374,7 +413,7 @@ export default function SheepJumper() {
 
       {/* FENCES */}
       {fences.current.map(fence => (
-        <View key={fence.id} style={[styles.fenceContainer, { left: fence.x, top: GROUND_Y - FENCE_HEIGHT }]}>
+        <View key={fence.id} style={[styles.fenceContainer, { left: fence.x, bottom: GROUND_HEIGHT }]}>
           <Svg width={FENCE_WIDTH} height={FENCE_HEIGHT} viewBox="0 0 30 35">
             {/* Posts */}
             <Rect x="0" y="0" width="6" height="35" fill="#8B7050" />
@@ -388,11 +427,11 @@ export default function SheepJumper() {
 
       {/* GRASS TUFTS */}
       {grassTufts.current.map(tuft => (
-        <View key={tuft.id} style={[styles.grassTuft, { left: tuft.x, top: GROUND_Y - tuft.height, height: tuft.height }]} />
+        <View key={tuft.id} style={[styles.grassTuft, { left: tuft.x, bottom: GROUND_HEIGHT, height: tuft.height }]} />
       ))}
 
       {/* SHEEP */}
-      <View style={[styles.sheepContainer, { left: SHEEP_X, top: sheepY.current }]}>
+      <View style={[styles.sheepContainer, { left: SHEEP_X, bottom: sheepFeetY.current - SHEEP_FEET_TO_BOTTOM }]}>
         {isWalkFrame ? (
           <AwakeSheepWalking size={SHEEP_SIZE} />
         ) : (
@@ -401,33 +440,43 @@ export default function SheepJumper() {
       </View>
 
       {/* TOUCH SURFACE (COVERS WORLD BUT NOT HUD) */}
-      <View 
-        style={StyleSheet.absoluteFill} 
+      <View
+        style={StyleSheet.absoluteFill}
         onTouchStart={jump}
         pointerEvents="auto"
       />
 
-      {/* HUD */}
-      <SafeAreaView style={styles.hud} pointerEvents="box-none">
-        <View style={styles.backButtonWrap}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <Path d="M15 18L9 12L15 6" stroke="#4A6040" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>SHEEP JUMPER</Text>
-        </View>
+      {/* 🚀 ABSOLUTE HUD OVERLAY (Standardized) */}
+      <SafeAreaView style={styles.hudOverlay} edges={['top']} pointerEvents="box-none">
+        <View style={styles.headerContainer}>
+          <View style={styles.backButtonWrap}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)/games');
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <Path d="M15 18L9 12L15 6" stroke="#E8F0E0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.topRightHub}>
-          <Text style={styles.miniBestTitle}>BEST</Text>
-          <Text style={styles.miniBestValue}>{highScore}</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>SHEEP JUMPER</Text>
+          </View>
+
+          <View style={styles.statsWrap}>
+            <View style={styles.topRightHub}>
+              <Text style={styles.miniBestTitle}>BEST:</Text>
+              <Text style={styles.miniBestValue}>{highScore}</Text>
+            </View>
+          </View>
         </View>
       </SafeAreaView>
 
@@ -443,38 +492,41 @@ export default function SheepJumper() {
       </Animated.View>
 
       {/* MUSIC TOGGLE (BOTTOM RIGHT) */}
-      <TouchableOpacity 
-        style={[styles.musicToggleButton, isMuted && styles.musicToggleButtonMuted]} 
+      <TouchableOpacity
+        style={[styles.musicToggleButton, isMuted && styles.musicToggleButtonMuted]}
         onPress={() => setIsMuted(!isMuted)}
         activeOpacity={0.7}
       >
         <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <Path 
-            d="M9 18V5L21 3V16" 
-            stroke={isMuted ? "#B0B0B0" : "#4A6040"} 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
+          <Path
+            d="M9 18V5L21 3V16"
+            stroke="#E8F0E0"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={isMuted ? 0.4 : 1}
           />
-          <Circle 
-            cx="6" cy="18" r="3" 
-            stroke={isMuted ? "#B0B0B0" : "#4A6040"} 
-            strokeWidth="2" 
+          <Circle
+            cx="6" cy="18" r="3"
+            stroke="#E8F0E0"
+            strokeWidth="2"
+            opacity={isMuted ? 0.4 : 1}
           />
-          <Circle 
-            cx="18" cy="16" r="3" 
-            stroke={isMuted ? "#B0B0B0" : "#4A6040"} 
-            strokeWidth="2" 
+          <Circle
+            cx="18" cy="16" r="3"
+            stroke="#E8F0E0"
+            strokeWidth="2"
+            opacity={isMuted ? 0.4 : 1}
           />
           {isMuted && (
-            <Path d="M3 21L21 3" stroke="#B0B0B0" strokeWidth="2.5" strokeLinecap="round" />
+            <Path d="M3 21L21 3" stroke="#E8F0E0" strokeWidth="2.5" strokeLinecap="round" />
           )}
         </Svg>
       </TouchableOpacity>
 
       {/* GAME OVER OVERLAY */}
       {gameState === 'gameOver' && (
-        <View style={styles.overlay}>
+        <View style={[styles.overlay, { width: SCREEN_WIDTH, height: SCREEN_HEIGHT }]}>
           <View style={styles.gameOverCard}>
             {isNewBest && (
               <View style={styles.newBestBanner}>
@@ -486,13 +538,13 @@ export default function SheepJumper() {
             <Text style={styles.gameOverTitle}>Sweet dreams</Text>
             <Text style={styles.gameOverSubtitle}>You cleared {score} fences</Text>
             <View style={{ height: 20 }} />
-            
+
             <TouchableOpacity style={styles.primaryButton} onPress={resetGame}>
               <Text style={styles.primaryButtonText}>Play again</Text>
             </TouchableOpacity>
-            
+
             <View style={{ height: 10 }} />
-            
+
             <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
               <Text style={styles.secondaryButtonText}>Back to games</Text>
             </TouchableOpacity>
@@ -505,35 +557,41 @@ export default function SheepJumper() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#D8E8D0',
+    position: 'relative',
   },
   sky: {
     ...StyleSheet.absoluteFillObject,
   },
-  sun: {
+  moon: {
     position: 'absolute',
-    top: 60,
+    top: 150, // Moved down to avoid header
     right: 40,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40, // Smaller moon
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#F5F0E8',
-    opacity: 0.3,
+    opacity: 1, // Solid moon as requested
+    shadowColor: '#F5F0E8',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 8,
   },
-  cloud: {
+  star: {
     position: 'absolute',
     backgroundColor: '#FFFFFF',
+    borderRadius: 1,
   },
   groundContainer: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    height: SCREEN_HEIGHT * 0.25,
+    height: GROUND_HEIGHT,
   },
   hills: {
     position: 'absolute',
-    top: -SCREEN_HEIGHT * 0.05,
+    top: -40, // Consistent hill height
     width: '100%',
   },
   frontGround: {
@@ -560,18 +618,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#7A9A50',
     opacity: 0.3,
   },
-  hud: {
+  hudOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 24,
+    zIndex: 1000,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    height: 60,
+    paddingHorizontal: 24,
+    paddingTop: 12,
   },
   backButton: {
-    width: 32, // Keeping the inner circular button size
+    width: 32,
     height: 32,
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.4)',
@@ -579,8 +642,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backButtonWrap: {
-    width: 60, // Match the width of topRightHub for perfect title centering
+    width: 80,
     alignItems: 'flex-start',
+  },
+  statsWrap: {
+    width: 80,
+    alignItems: 'flex-end',
   },
   titleContainer: {
     flex: 1,
@@ -590,7 +657,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#4A6040',
+    color: '#E8F0E0',
     letterSpacing: 0.65, // 0.05em
   },
   musicToggleButton: {
@@ -629,32 +696,32 @@ const styles = StyleSheet.create({
   largeScoreText: {
     fontSize: 48,
     fontWeight: '900',
-    color: '#4A6040',
+    color: '#E8F0E0',
     opacity: 0.8,
   },
   fencesLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#4A6040',
+    color: '#E8F0E0',
     letterSpacing: 2,
     opacity: 0.4,
     marginTop: -4,
   },
   topRightHub: {
     alignItems: 'flex-end',
-    width: 60,
+    width: 80,
   },
   miniBestTitle: {
     fontSize: 9,
     fontWeight: '900',
-    color: '#4A6040',
+    color: '#E8F0E0',
     letterSpacing: 1,
     opacity: 0.5,
   },
   miniBestValue: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#4A6040',
+    color: '#E8F0E0',
     marginTop: -2,
   },
   newBestBanner: {
@@ -683,11 +750,14 @@ const styles = StyleSheet.create({
     color: '#F5F0E8',
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
     backgroundColor: 'rgba(45,43,61,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    zIndex: 100,
   },
   gameOverCard: {
     width: 280,

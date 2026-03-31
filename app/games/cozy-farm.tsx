@@ -8,6 +8,8 @@ import {
   Animated,
   StatusBar,
   Platform,
+  useWindowDimensions,
+  ScrollView,
 } from 'react-native';
 import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +24,10 @@ import { AwakeSheep } from '@/components/AwakeSheep';
 import { AwakeSheepNoBorder } from '@/components/AwakeSheepNoBorder';
 import { PickaxeIcon, AxeIcon, TrimmerIcon } from '@/components/ToolIcons';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// GRID BASE CONSTANTS
+const GRID_MARGIN = 20;
+const GRID_GAP = 4;
+const MAX_GRID_WIDTH = 400; // Limit grid width on large screens
 
 // COLORS
 const COLORS = {
@@ -158,6 +163,15 @@ const Tree3 = () => (
 
 export default function CozyFarmGame() {
   const router = useRouter();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  // Dynamic Layout Calculations
+  const { actualGridWidth, cellSize, obstacleSize } = useMemo(() => {
+    const width = Math.min(windowWidth - (GRID_MARGIN * 2), MAX_GRID_WIDTH);
+    const cell = Math.floor((width - (4 * GRID_GAP)) / 5);
+    const obstacle = Math.floor(cell * 0.82);
+    return { actualGridWidth: width, cellSize: cell, obstacleSize: obstacle };
+  }, [windowWidth]);
   
   // States
   const [level, setLevel] = useState(1);
@@ -172,11 +186,39 @@ export default function CozyFarmGame() {
   const [highScore, setHighScore] = useState(0);
   const [isNewBest, setIsNewBest] = useState(false);
   const [tapCount, setTapCount] = useState(0);
+  const [playableAreaSize, setPlayableAreaSize] = useState({ width: 0, height: 0 });
+  const [toolsAreaSize, setToolsAreaSize] = useState({ width: 0, height: 0 });
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const feedbackOpacity = useRef(new Animated.Value(0)).current;
+  const feedbackTimeout = useRef<any>(null);
+
+  // Natural Grid Height (5 or 6 rows)
+  const gridRows = level <= 2 ? 5 : 6;
+  const naturalGridHeight = useMemo(() => {
+    return (gridRows * cellSize) + ((gridRows - 1) * GRID_GAP);
+  }, [gridRows, cellSize]);
+
+  // Scaling logic to fit available space
+  const gridScale = useMemo(() => {
+    if (playableAreaSize.height === 0) return 1;
+    const verticalScale = Math.min(1, (playableAreaSize.height - 10) / naturalGridHeight);
+    const horizontalScale = Math.min(1, (playableAreaSize.width - 10) / actualGridWidth);
+    return Math.min(verticalScale, horizontalScale);
+  }, [playableAreaSize, naturalGridHeight, actualGridWidth]);
+
+  const toolsScale = useMemo(() => {
+    if (toolsAreaSize.height === 0) return 1;
+    // Natural height for tools is roughly 100px (60 button + padding + label)
+    const verticalScale = Math.min(1, (toolsAreaSize.height - 10) / 90);
+    const horizontalScale = Math.min(1, (toolsAreaSize.width - 20) / 280);
+    return Math.min(verticalScale, horizontalScale);
+  }, [toolsAreaSize]);
+
+  const toolDynamicSize = Math.max(36, 60 * toolsScale);
 
   // Background Animation Values
   const wanderTopAnim = useRef(new Animated.Value(-100)).current;
-  const wanderBottomAnim = useRef(new Animated.Value(SCREEN_WIDTH + 100)).current;
-  const sparkleAnims = useRef(Array(6).fill(0).map(() => new Animated.Value(0))).current;
+  const wanderBottomAnim = useRef(new Animated.Value(windowWidth + 100)).current;
   const pollenAnims = useRef(Array(5).fill(0).map(() => new Animated.Value(0))).current;
   
   const hintOpacity = useRef(new Animated.Value(0.6)).current;
@@ -297,14 +339,14 @@ export default function CozyFarmGame() {
     const startWanderTop = () => {
       wanderTopAnim.setValue(-100);
       Animated.timing(wanderTopAnim, {
-        toValue: SCREEN_WIDTH + 100,
+        toValue: windowWidth + 100,
         duration: 32000,
         useNativeDriver: true,
       }).start(() => startWanderTop());
     };
 
     const startWanderBottom = () => {
-      wanderBottomAnim.setValue(SCREEN_WIDTH + 100);
+      wanderBottomAnim.setValue(windowWidth + 100);
       Animated.timing(wanderBottomAnim, {
         toValue: -100,
         duration: 28000,
@@ -314,18 +356,8 @@ export default function CozyFarmGame() {
 
     startWanderTop();
     startWanderBottom();
-
-    // Pulses for sparkles
-    sparkleAnims.forEach((anim, i) => {
-      const startPulse = () => {
-        Animated.sequence([
-          Animated.delay(i * 1200),
-          Animated.timing(anim, { toValue: 1, duration: 1000, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration: 2000, useNativeDriver: true }),
-        ]).start(() => startPulse());
-      };
-      startPulse();
-    });
+ 
+    // Pulses for sparkles - REMOVED
 
     pollenAnims.forEach((anim, i) => {
       const startDrift = () => {
@@ -386,7 +418,39 @@ export default function CozyFarmGame() {
         (selectedTool === 'trimmer' && (cell.obstacle === 'grass' || cell.obstacle === 'large_grass' || cell.obstacle === 'very_large_grass')) ||
         (selectedTool === 'axe' && (cell.obstacle === 'tree' || cell.obstacle === 'large_tree' || cell.obstacle === 'very_large_tree'));
 
-    if (!toolMatch) return;
+    if (!toolMatch) {
+        // Haptic feedback for mistake
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        
+        // Determine correct tool for feedback
+        let correctTool = "";
+        if (cell.obstacle?.includes('stone')) correctTool = "PICK";
+        else if (cell.obstacle?.includes('tree')) correctTool = "AXE";
+        else if (cell.obstacle?.includes('grass')) correctTool = "TRIMMER";
+        
+        setFeedbackMessage(correctTool ? `Use ${correctTool} for this!` : "Wrong tool!");
+        
+        // Animation: Swap hint and feedback
+        if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
+        
+        // Parallel animation to fade hint out and feedback in
+        Animated.parallel([
+            Animated.timing(hintOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
+            Animated.timing(feedbackOpacity, { toValue: 1, duration: 200, useNativeDriver: true })
+        ]).start();
+
+        // After a delay, fade feedback out and restore hint
+        feedbackTimeout.current = setTimeout(() => {
+            Animated.parallel([
+                Animated.timing(feedbackOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+                Animated.timing(hintOpacity, { toValue: 0.6, duration: 300, useNativeDriver: true })
+            ]).start(() => {
+                setFeedbackMessage('');
+            });
+        }, 2000);
+
+        return;
+    }
 
     // Haptic
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -488,7 +552,7 @@ export default function CozyFarmGame() {
     };
     
     return (
-      <View key={cell.id} style={styles.cellWrapper}>
+      <View key={cell.id} style={[styles.cellWrapper, { width: cellSize }]}>
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => handleCellTap(index)}
@@ -499,7 +563,7 @@ export default function CozyFarmGame() {
         >
           {cell.obstacle && !cell.isClearing && (
             <View style={styles.obstacleContainer}>
-              <Svg width="44" height="44" viewBox="0 0 48 48">
+              <Svg width={obstacleSize} height={obstacleSize} viewBox="0 0 48 48">
                 {renderObstacle()}
               </Svg>
               {cell.tapsRemaining > 1 && (
@@ -518,162 +582,238 @@ export default function CozyFarmGame() {
     );
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/games');
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* BACKGROUND DECORATIONS */}
       <MeadowBackground 
-        wanderTop={wanderTopAnim} 
-        wanderBottom={wanderBottomAnim} 
+        windowWidth={windowWidth}
         pollenAnims={pollenAnims}
-        sparkleAnims={sparkleAnims}
       />
       
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* HUD */}
-        <View style={styles.hud}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-          >
-            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <Path d="M15 18L9 12L15 6" stroke={COLORS.hudText} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </TouchableOpacity>
+      {/* 🚀 ABSOLUTE HUD OVERLAY (Standardized) */}
+      <SafeAreaView style={styles.hudOverlay} edges={['top']} pointerEvents="box-none">
+        <View style={styles.headerContainer}>
+          <View style={styles.headerItemWrap}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={handleBack}
+              activeOpacity={0.7}
+            >
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <Path d="M15 18L9 12L15 6" stroke={COLORS.hudText} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
           
-          <Text style={styles.title}>COZY FARM</Text>
+          <View style={styles.headerTitleWrapper}>
+            <Text style={styles.title}>COZY FARM</Text>
+          </View>
           
           <View style={styles.topRightHub}>
-            <View style={styles.miniBestContainer}>
-              <Text style={styles.miniBestTitle}>BEST</Text>
-              <Text style={styles.miniBestValue}>{highScore}</Text>
-            </View>
-            <View style={styles.levelContainer}>
-              <Text style={styles.miniBestTitle}>LVL</Text>
-              <Text style={styles.miniBestValue}>{level}</Text>
-            </View>
+            <Text style={styles.miniBestTitle}>BEST LEVEL:</Text>
+            <Text style={styles.miniBestValue}>{highScore}</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+
+      <SafeAreaView style={styles.gameContent} edges={['bottom']}>
+        {/* Container 1: Header Spacer */}
+        <View style={styles.headerSpacer} />
+
+        {/* Container 2: Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.largeStatNumber}>{clearedCount}/{totalObstacles}</Text>
+            <Text style={styles.statSubLabel}>CLEARED</Text>
+          </View>
+          
+          <View style={styles.statItem}>
+            <Text style={styles.largeStatNumber}>{level}</Text>
+            <Text style={styles.statSubLabel}>LEVEL</Text>
           </View>
         </View>
 
-        {/* PROGRESS BAR */}
-        <View style={styles.progressSection}>
-          <Text style={styles.progressLabel}>Cleared: {clearedCount}/{totalObstacles}</Text>
-          <View style={styles.progressBarTrack}>
-            <View 
-              style={[
-                styles.progressBarFill, 
-                { width: `${(clearedCount / totalObstacles) * 100}%` }
-              ]} 
-            />
-          </View>
+        {/* Container 3: Sheep Area (Adaptable) */}
+        <View style={styles.sheepArea}>
+          <SheepField
+            wanderTop={wanderTopAnim}
+            wanderBottom={wanderBottomAnim}
+          />
         </View>
 
-        {/* GRID */}
-        <View style={styles.gridContainer}>
-          <View style={styles.grid}>
-            {grid.map((cell, index) => renderCell(cell, index))}
-          </View>
-        </View>
-
-        {/* TOOLS & HINT (Floating Layout for Stability) */}
-        <View style={styles.toolSelector}>
-          <View style={styles.toolButtonWrapper}>
-            <ToolButton 
-              type="pick" 
-              selected={selectedTool === 'pick'} 
-              onPress={() => setSelectedTool('pick')}
-              Icon={PickaxeIcon}
-            />
-            <Text style={[styles.toolLabel, selectedTool === 'pick' && styles.toolLabelSelected]}>PICK</Text>
-          </View>
-
-          <View style={styles.toolButtonWrapper}>
-            <ToolButton 
-                type="axe" 
-                selected={selectedTool === 'axe'} 
-                onPress={() => setSelectedTool('axe')} 
-                Icon={AxeIcon}
-            />
-            <Text style={[styles.toolLabel, selectedTool === 'axe' && styles.toolLabelSelected]}>AXE</Text>
-          </View>
-
-          <View style={styles.toolButtonWrapper}>
-            <ToolButton 
-                type="trimmer" 
-                selected={selectedTool === 'trimmer'} 
-                onPress={() => setSelectedTool('trimmer')} 
-                Icon={TrimmerIcon}
-            />
-            <Text style={[styles.toolLabel, selectedTool === 'trimmer' && styles.toolLabelSelected]}>TRIMMER</Text>
-          </View>
-        </View>
-
-        <Animated.View style={[styles.hintContainer, { opacity: hintOpacity }]} pointerEvents="none">
-          <Text style={styles.hintText}>Choose the right tool and{"\n"}tap a cell to clear it</Text>
-        </Animated.View>
-
-        {/* MUSIC TOGGLE (Floating Bottom Right) */}
-        <TouchableOpacity 
-            style={styles.floatingMusicToggle} 
-            onPress={() => setIsMuted(!isMuted)}
-            activeOpacity={0.8}
+        {/* Container 4: Playable Area (Adaptable) */}
+        <View 
+          style={styles.playableArea} 
+          onLayout={(e) => setPlayableAreaSize({
+            width: e.nativeEvent.layout.width,
+            height: e.nativeEvent.layout.height
+          })}
         >
-            <MusicIcon muted={isMuted} size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+          <View style={{ transform: [{ scale: gridScale }], alignItems: 'center', justifyContent: 'center' }}>
+            <View style={[styles.grid, { width: actualGridWidth, gap: GRID_GAP }]}>
+              {grid.map((cell, index) => renderCell(cell, index))}
+            </View>
+          </View>
+        </View>
+
+        {/* Container 5: Tools (Adaptable) */}
+        <View 
+          style={styles.toolsArea}
+          onLayout={(e) => setToolsAreaSize(e.nativeEvent.layout)}
+        >
+          <View style={styles.toolSelector}>
+            <View style={styles.toolButtonWrapper}>
+              <ToolButton 
+                type="pick" 
+                selected={selectedTool === 'pick'} 
+                onPress={() => setSelectedTool('pick')}
+                Icon={PickaxeIcon}
+                size={toolDynamicSize}
+              />
+              <Text style={[
+                styles.toolLabel, 
+                { fontSize: Math.max(7, 9 * toolsScale) },
+                selectedTool === 'pick' && styles.toolLabelSelected
+              ]}>PICK</Text>
+            </View>
+
+            <View style={styles.toolButtonWrapper}>
+              <ToolButton 
+                  type="axe" 
+                  selected={selectedTool === 'axe'} 
+                  onPress={() => setSelectedTool('axe')} 
+                  Icon={AxeIcon}
+                  size={toolDynamicSize}
+              />
+              <Text style={[
+                styles.toolLabel, 
+                { fontSize: Math.max(7, 9 * toolsScale) },
+                selectedTool === 'axe' && styles.toolLabelSelected
+              ]}>AXE</Text>
+            </View>
+
+            <View style={styles.toolButtonWrapper}>
+              <ToolButton 
+                  type="trimmer" 
+                  selected={selectedTool === 'trimmer'} 
+                  onPress={() => setSelectedTool('trimmer')} 
+                  Icon={TrimmerIcon}
+                  size={toolDynamicSize}
+              />
+              <Text style={[
+                styles.toolLabel, 
+                { fontSize: Math.max(7, 9 * toolsScale) },
+                selectedTool === 'trimmer' && styles.toolLabelSelected
+              ]}>TRIMMER</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Container 6: Instructions */}
+        <View style={styles.instructionsArea}>
+           {/* Primary Level Hint */}
+           {showHint && (
+              <Animated.View style={{ opacity: hintOpacity, position: 'absolute', alignItems: 'center' }} pointerEvents="none">
+                <Text style={styles.hintText}>Choose the right tool and tap a cell</Text>
+              </Animated.View>
+           )}
+
+           {/* Tool Mismatch Feedback */}
+           <Animated.View style={{ opacity: feedbackOpacity, position: 'absolute', alignItems: 'center' }} pointerEvents="none">
+             <Text style={[styles.hintText, { color: '#FFD700', fontWeight: '900' }]}>{feedbackMessage}</Text>
+           </Animated.View>
+        </View>
+
+        {/* Container 7: Footer */}
+        <View style={styles.footerArea}>
+          {/* Tutorial / Help Button (Left) */}
+          <TouchableOpacity 
+              style={styles.footerButton} 
+              onPress={() => setShowOnboarding(true)}
+              activeOpacity={0.8}
+          >
+              <Text style={styles.helpText}>?</Text>
+          </TouchableOpacity>
+
+          {/* Sound Toggle Button (Right) */}
+          <TouchableOpacity 
+              style={styles.footerButton} 
+              onPress={() => setIsMuted(!isMuted)}
+              activeOpacity={0.8}
+          >
+              <MusicIcon muted={isMuted} size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
 
       {/* ONBOARDING TUTORIAL */}
       {showOnboarding && (
         <View style={styles.overlay}>
-          <Reanimated.View entering={FadeInDown} style={styles.modalCard}>
-            <View style={styles.onboardingIconContainer}>
-              <AwakeSheep size={64} />
-            </View>
-            <Text style={styles.modalTitleSmall}>Welcome to</Text>
-            <Text style={styles.modalTitleProminent}>Cozy Farm!</Text>
-            
-            <View style={{ height: 12 }} />
-            <Text style={styles.modalSubtitle}>How to play:</Text>
-            
-            <View style={styles.tutorialContainer}>
-              <View style={styles.tutorialRow}>
-                <View style={styles.tutorialIcon}>
-                  <Ionicons name="hammer" size={22} color="#5A7A6A" />
-                </View>
-                <Text style={styles.tutorialText}>
-                  <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>AXE:</Text> Clears Trees
-                </Text>
-              </View>
-              
-              <View style={styles.tutorialRow}>
-                <View style={styles.tutorialIcon}>
-                  <Ionicons name="construct" size={22} color="#5A7A6A" />
-                </View>
-                <Text style={styles.tutorialText}>
-                  <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>PICK:</Text> Clears Rocks
-                </Text>
-              </View>
-              
-              <View style={styles.tutorialRow}>
-                <View style={styles.tutorialIcon}>
-                  <Ionicons name="cut" size={22} color="#5A7A6A" />
-                </View>
-                <Text style={styles.tutorialText}>
-                  <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>TRIMMER:</Text> Clears Grass
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ height: 24 }} />
-
-            <TouchableOpacity 
-              style={styles.primaryButton}
-              onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setShowOnboarding(false);
-              }}
+          <Reanimated.View 
+            entering={FadeInDown} 
+            style={[styles.modalCard, { width: Math.min(windowWidth * 0.9, 310) }]}
+          >
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
             >
-              <Text style={styles.primaryButtonText}>START HARVESTING</Text>
-            </TouchableOpacity>
+              <View style={styles.onboardingIconContainer}>
+                <AwakeSheep size={64} />
+              </View>
+              <Text style={styles.modalTitleSmall}>Welcome to</Text>
+              <Text style={styles.modalTitleProminent}>Cozy Farm!</Text>
+              
+              <View style={{ height: 12 }} />
+              <Text style={styles.modalSubtitle}>How to play:</Text>
+              
+              <View style={styles.tutorialContainer}>
+                <View style={[styles.tutorialRow, { width: 232 }]}>
+                  <View style={styles.tutorialIcon}>
+                    <Ionicons name="hammer" size={22} color="#5A7A6A" />
+                  </View>
+                  <Text style={styles.tutorialText}>
+                    <Text style={styles.tutorialLabel}>AXE:</Text>{"\n"}Clears Trees
+                  </Text>
+                </View>
+                
+                <View style={[styles.tutorialRow, { width: 232 }]}>
+                  <View style={styles.tutorialIcon}>
+                    <Ionicons name="construct" size={22} color="#5A7A6A" />
+                  </View>
+                  <Text style={styles.tutorialText}>
+                    <Text style={styles.tutorialLabel}>PICK:</Text>{"\n"}Clears Rocks
+                  </Text>
+                </View>
+                
+                <View style={[styles.tutorialRow, { width: 232 }]}>
+                  <View style={styles.tutorialIcon}>
+                    <Ionicons name="cut" size={22} color="#5A7A6A" />
+                  </View>
+                  <Text style={styles.tutorialText}>
+                    <Text style={styles.tutorialLabel}>TRIMMER:</Text>{"\n"}Clears Grass
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ height: 24 }} />
+
+              <TouchableOpacity 
+                style={styles.primaryButton}
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  setShowOnboarding(false);
+                }}
+              >
+                <Text style={styles.primaryButtonText}>START HARVESTING</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </Reanimated.View>
         </View>
       )}
@@ -682,26 +822,37 @@ export default function CozyFarmGame() {
       {isLevelComplete && (
         <View style={styles.overlay}>
           <View style={styles.modalCard}>
-            {isNewBest && (
-              <View style={styles.newBestBanner}>
-                <Text style={styles.newBestLabel}>NEW BEST!</Text>
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <View style={{ alignItems: 'center' }}>
+                {/* Fixed-height wrapper for the badge to prevent layout jumps */}
+                <View style={{ height: 40, justifyContent: 'center', marginBottom: 12 }}>
+                  {isNewBest && (
+                    <View style={styles.newBestBanner}>
+                      <Text style={styles.newBestLabel}>NEW BEST!</Text>
+                    </View>
+                  )}
+                </View>
+
+                <AwakeSheep size={80} />
+                <View style={{ height: 16 }} />
+                <Text style={styles.modalTitle}>Garden cleared!</Text>
+                <Text style={styles.modalSubtitle}>Level {level} complete</Text>
+                <View style={{ height: 20 }} />
+                
+                <TouchableOpacity style={styles.primaryButton} onPress={nextLevel}>
+                  <Text style={styles.primaryButtonText}>Next level</Text>
+                </TouchableOpacity>
+                
+                <View style={{ height: 10 }} />
+                
+                <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
+                  <Text style={styles.secondaryButtonText}>Back to games</Text>
+                </TouchableOpacity>
               </View>
-            )}
-            <AwakeSheep size={80} />
-            <View style={{ height: 16 }} />
-            <Text style={styles.modalTitle}>Garden cleared!</Text>
-            <Text style={styles.modalSubtitle}>Level {level} complete</Text>
-            <View style={{ height: 20 }} />
-            
-            <TouchableOpacity style={styles.primaryButton} onPress={nextLevel}>
-              <Text style={styles.primaryButtonText}>Next level</Text>
-            </TouchableOpacity>
-            
-            <View style={{ height: 10 }} />
-            
-            <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
-              <Text style={styles.secondaryButtonText}>Back to games</Text>
-            </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       )}
@@ -739,13 +890,17 @@ const MusicIcon = ({ muted, size, color }: any) => (
   </Svg>
 );
 
-const ToolButton = ({ type, selected, onPress, Icon }: any) => (
+const ToolButton = ({ type, selected, onPress, Icon, size = 60 }: any) => (
   <TouchableOpacity 
-    style={[styles.toolButton, selected && styles.toolButtonSelected]} 
+    style={[
+      styles.toolButton, 
+      { width: size, height: size, borderRadius: size / 2 },
+      selected && styles.toolButtonSelected,
+    ]} 
     onPress={onPress}
     activeOpacity={0.8}
   >
-    <Icon size={24} color={selected ? "#FFFFFF" : "rgba(232, 240, 224, 0.6)"} />
+    <Icon size={Math.round(size * 0.42)} color={selected ? "#FFFFFF" : "rgba(232, 240, 224, 0.6)"} />
   </TouchableOpacity>
 );
 
@@ -773,16 +928,11 @@ const Flower = ({ x, y, scale = 0.8, color = "#F0E868" }: any) => (
   </View>
 );
 
-const Sparkle = ({ x, y, anim }: any) => (
-  <Animated.View style={[styles.decorItem, { left: x, top: y, opacity: anim }]}>
-    <View style={styles.sparkleDot} />
-  </Animated.View>
-);
 
-const Pollen = ({ anim, index }: any) => {
+const Pollen = ({ anim, index, windowWidth }: any) => {
   const translateX = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: [SCREEN_WIDTH * (index / 5), SCREEN_WIDTH * ((index + 1) / 5)],
+    outputRange: [windowWidth * (index / 5), windowWidth * ((index + 1) / 5)],
   });
   const translateY = anim.interpolate({
     inputRange: [0, 0.5, 1],
@@ -800,11 +950,8 @@ const Pollen = ({ anim, index }: any) => {
   );
 };
 
-const MeadowBackground = React.memo(({ wanderTop, wanderBottom, pollenAnims, sparkleAnims }: any) => (
+const MeadowBackground = React.memo(({ windowWidth, pollenAnims }: any) => (
   <View style={StyleSheet.absoluteFill} pointerEvents="none">
-    {/* SKY/HORIZON EFFECT */}
-    <View style={styles.skyHorizon} />
-    
     {/* DECORATIONS */}
     <GrassTuft x="5%" y="22%" scale={0.7} />
     <Flower x="12%" y="25%" color="#F5B7B1" />
@@ -815,31 +962,46 @@ const MeadowBackground = React.memo(({ wanderTop, wanderBottom, pollenAnims, spa
     <Flower x="8%" y="78%" color="#AED6F1" />
     <GrassTuft x="82%" y="88%" scale={1.1} />
     <Flower x="90%" y="82%" color="#D2B4DE" />
-
-    {/* SPARKLES */}
-    <Sparkle x="25%" y="20%" anim={sparkleAnims[0]} />
-    <Sparkle x="70%" y="15%" anim={sparkleAnims[1]} />
-    <Sparkle x="15%" y="85%" anim={sparkleAnims[2]} />
-    <Sparkle x="85%" y="75%" anim={sparkleAnims[3]} />
-    <Sparkle x="50%" y="10%" anim={sparkleAnims[4]} />
-    <Sparkle x="45%" y="90%" anim={sparkleAnims[5]} />
-
-    {/* WANDERING SHEEP - TOP (above grid) */}
-    <Animated.View style={{ position: 'absolute', top: 170, transform: [{ translateX: wanderTop }, { scale: 0.6 }] }}>
-      <AwakeSheepNoBorder size={40} />
-    </Animated.View>
-
-    {/* WANDERING SHEEP - BOTTOM (walking below top sheep) */}
-    <Animated.View style={{ position: 'absolute', top: 198, transform: [{ translateX: wanderBottom }, { scale: 0.6 }, { scaleX: -1 }] }}>
-      <AwakeSheepNoBorder size={40} />
-    </Animated.View>
-
+ 
     {/* POLLEN PARTICLES */}
     {pollenAnims.map((anim: any, i: number) => (
-      <Pollen key={i} anim={anim} index={i} />
+      <Pollen key={i} anim={anim} index={i} windowWidth={windowWidth} />
     ))}
   </View>
 ));
+
+const SheepField = ({ wanderTop, wanderBottom }: any) => {
+  const [height, setHeight] = useState(0);
+  
+  // Calculate dynamic scale based on available height.
+  // Base scale is 0.6 for height ~140.
+  const scale = useMemo(() => {
+    if (height === 0) return 0.6;
+    return Math.max(0.3, Math.min(0.6, height / 200));
+  }, [height]);
+
+  const onLayout = (event: any) => {
+    const layoutHeight = event.nativeEvent.layout.height;
+    if (layoutHeight > 0) setHeight(layoutHeight);
+  };
+
+  return (
+    <View style={styles.sheepField} onLayout={onLayout}>
+      {height > 0 && (
+        <>
+          <Animated.View style={{ position: 'absolute', top: '15%', transform: [{ translateX: wanderTop }, { scale }], zIndex: 1 }}>
+            <AwakeSheepNoBorder size={40} />
+          </Animated.View>
+          <Animated.View style={{ position: 'absolute', top: '45%', transform: [{ translateX: wanderBottom }, { scale }, { scaleX: -1 }], zIndex: 1 }}>
+            <AwakeSheepNoBorder size={40} />
+          </Animated.View>
+        </>
+      )}
+    </View>
+  );
+};
+
+
 
 const ClearingAnimation = () => {
     const fade = useRef(new Animated.Value(1)).current;
@@ -904,246 +1066,134 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  safeArea: {
-    flex: 1,
+  hudOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    zIndex: 1000,
   },
-  hud: {
-    paddingHorizontal: 20,
-    paddingVertical: 4,
+  gameContent: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  headerSpacer: {
+    height: 80,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    height: 70, 
+  },
+  headerItemWrap: {
+    width: 80, // Increased width for longer label
+    alignItems: 'flex-start',
+  },
+  topRightHub: {
+    width: 80, // Increased width for longer label
+    alignItems: 'flex-end',
+  },
+  miniBestTitle: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: COLORS.hudText,
+    letterSpacing: 1,
+    opacity: 0.5,
+  },
+  miniBestValue: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: COLORS.hudText,
+    marginTop: -2,
   },
   backButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.hudButtonBg,
+    backgroundColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backButtonWrap: {
-    width: 90, // Match the width of topRightHub for perfect title centering
-    alignItems: 'flex-start',
-  },
-  titleContainer: {
+  headerTitleWrapper: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   title: {
-    fontFamily: 'Nunito_800ExtraBold',
     fontSize: 13,
     fontWeight: '800',
     color: COLORS.hudText,
     letterSpacing: 0.65,
   },
-  topRightHub: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    width: 90,
-  },
-  miniBestContainer: {
-    alignItems: 'flex-end',
-    opacity: 0.6,
-  },
-  levelContainer: {
-    alignItems: 'flex-end',
-  },
-  miniBestTitle: {
-    fontSize: 8,
-    fontWeight: '900',
-    color: COLORS.hudText,
-    letterSpacing: 1,
-  },
-  miniBestValue: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: COLORS.hudText,
-    marginTop: -2,
-  },
-  onboardingIconContainer: {
-    marginBottom: 16,
-    backgroundColor: 'rgba(138, 109, 174, 0.12)', // Soft version of primary purple
-    padding: 18,
-    borderRadius: 50,
-    borderWidth: 1.5,
-    borderColor: 'rgba(138, 109, 174, 0.25)',
-  },
-  tutorialContainer: {
-    width: '100%',
-    gap: 12,
-    marginTop: 24, // More spaced from title
-  },
-  tutorialRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: 'rgba(138, 170, 128, 0.08)',
-    paddingHorizontal: 14,
+  statsContainer: {
     paddingVertical: 12,
-    borderRadius: 16,
-  },
-  tutorialIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#E8F0E0',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#D8E0D0',
+    gap: 60,
+    height: 100, // Slightly more height for air
   },
-  tutorialText: {
-    flex: 1, // Allow text to wrap within the row
-    fontSize: 12,
-    color: '#4A4754',
-    fontWeight: '600',
-  },
-  newBestBanner: {
-    backgroundColor: COLORS.primaryBtn,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  newBestLabel: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-  },
-  progressSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    flexDirection: 'row',
+  statItem: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 4, // Added gap for deliberate padding
   },
-  progressLabel: {
-    fontSize: 12,
-    fontWeight: '700',
+  largeStatNumber: {
+    fontSize: 32,
+    fontWeight: '900',
     color: COLORS.hudText,
     opacity: 0.8,
   },
-  progressBarTrack: {
-    width: 120,
-    height: 4,
-    backgroundColor: COLORS.hudButtonBg,
-    borderRadius: 2,
-    overflow: 'hidden',
+  statSubLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.hudText,
+    letterSpacing: 2,
+    opacity: 0.4,
+    marginTop: 2, // Positive margin to add air
   },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: COLORS.progressFill,
-  },
-  gridContainer: {
-    flex: 1,
-    alignItems: 'center',
+  sheepArea: {
+    flex: 0.4, // Significantly less space for sheep to reduce the center gap
+    minHeight: 40,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 30, // Push grid down to give score/progress breathing room
-    paddingBottom: 220, // Make room for floating controls
+    marginVertical: 2,
+  },
+  sheepField: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playableArea: {
+    flex: 4, // More space for the grid
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 2,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
     justifyContent: 'center',
   },
-  cellWrapper: {
-    width: (SCREEN_WIDTH - 48 - 16) / 5, // 5 columns minus gaps
-    aspectRatio: 1,
-  },
-  cell: {
-    flex: 1,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
+  toolsArea: {
+    flex: 1.5, // More space for tools to avoid clipping
     justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  obstacleContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  skyHorizon: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-    backgroundColor: 'rgba(168, 200, 160, 0.15)', // Very soft glow at top
-  },
-  decorItem: {
-    position: 'absolute',
-  },
-  pollen: {
-    position: 'absolute',
-    width: 4,
-    height: 4,
-  },
-  pollenDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: '#F0E868',
-    opacity: 0.4,
-  },
-  sparkleDot: {
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#FFF',
-    shadowColor: '#FFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-  },
-  tapBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tapBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  hintContainer: {
-    position: 'absolute',
-    bottom: 64, // Matches Sheep Jumper hint position
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
+    paddingVertical: 8, // Added padding for circles and labels
   },
   toolSelector: {
-    position: 'absolute',
-    bottom: 125, // Adjusted slightly higher for more comfortable thumb access
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 32,
-    zIndex: 10,
+    gap: 24, // Tighter gap for better fit
   },
   toolButtonWrapper: {
     alignItems: 'center',
     gap: 6,
   },
   toolButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56, // Slightly smaller buttons
+    height: 56,
+    borderRadius: 28,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1163,33 +1213,113 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     color: '#E8F0E0',
-    opacity: 0.5,
+    opacity: 0.6,
     letterSpacing: 1,
   },
   toolLabelSelected: {
     opacity: 1,
     color: '#E8F0E0',
   },
-  floatingMusicToggle: {
-    position: 'absolute',
-    bottom: 34,
-    right: 24,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  instructionsArea: {
+    paddingVertical: 8,
     alignItems: 'center',
+    height: 40,
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   hintText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#F5F0E8',
     textAlign: 'center',
     maxWidth: 240,
-    lineHeight: 20,
+    lineHeight: 18,
+    opacity: 0.8,
+  },
+  footerArea: {
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 70,
+  },
+  footerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  helpText: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: COLORS.hudText,
+    opacity: 0.8,
+  },
+
+  cellWrapper: {
+    aspectRatio: 1,
+  },
+  cell: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  obstacleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  decorItem: {
+    position: 'absolute',
+  },
+  pollen: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+  },
+  pollenDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#F0E868',
+    opacity: 0.4,
+  },
+  particle: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.particle,
+    marginLeft: -2,
+    marginTop: -2,
+  },
+  tapBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tapBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFF',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1199,16 +1329,20 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   modalCard: {
-    width: 300,
-    backgroundColor: '#FDFBF7', // Warmer ivory, less blinding white
-    borderRadius: 24,
-    padding: 28,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: 'rgba(45,43,61,0.15)',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 1,
     shadowRadius: 40,
     elevation: 10,
+    maxHeight: '90%',
+  },
+  modalScrollContent: {
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
   },
   modalTitleSmall: {
     fontSize: 16,
@@ -1232,6 +1366,49 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#7A7589',
     marginTop: 4,
+  },
+  onboardingIconContainer: {
+    marginBottom: 16,
+    backgroundColor: 'rgba(138, 109, 174, 0.12)', // Soft version of primary purple
+    padding: 18,
+    borderRadius: 50,
+    borderWidth: 1.5,
+    borderColor: 'rgba(138, 109, 174, 0.25)',
+  },
+  tutorialContainer: {
+    width: '100%',
+    gap: 12,
+    marginTop: 24, // More spaced from title
+  },
+  tutorialRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: 'rgba(138, 170, 128, 0.08)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+  },
+  tutorialIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#E8F0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D8E0D0',
+  },
+  tutorialText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#4A4754',
+  },
+  tutorialLabel: {
+    fontWeight: '900',
+    color: '#5A7A6A',
   },
   primaryButton: {
     width: '100%',
@@ -1259,15 +1436,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.btnText,
   },
-  particle: {
-    position: 'absolute',
-    left: '50%',
-    top: '50%',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.particle,
-    marginLeft: -2,
-    marginTop: -2,
-  }
+  newBestBanner: {
+    backgroundColor: COLORS.primaryBtn,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  newBestLabel: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
 });

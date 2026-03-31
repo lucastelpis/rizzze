@@ -9,7 +9,7 @@ import { useColors } from '@/hooks/useColors';
 import { BottomNav } from '@/components/BottomNav';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { CATEGORIES, STORIES, Story } from '@/constants/stories';
-import { SleepingSheep } from '@/components/SleepingSheep';
+import { AwakeSheep } from '@/components/AwakeSheep';
 import { MiniPlayer } from '@/components/MiniPlayer';
 
 // Chevron Left (Back)
@@ -56,12 +56,6 @@ export default function StoryListScreen() {
               <Text style={[styles.originTag, { color: C.textSecondary }]}>{item.origin}</Text>
               <Text style={[styles.dot, { color: '#E8E2D8' }]}>·</Text>
               <Text style={[styles.readTimeTag, { color: C.accent }]}>{item.readTime}</Text>
-              {/* Studio badge hidden for now - will be restored later */}
-              {false && item.audioFile && (
-                <View style={[styles.studioBadge, { backgroundColor: C.accent }]}>
-                  <Text style={[styles.studioBadgeText, { color: C.white }]}>Studio</Text>
-                </View>
-              )}
             </View>
           </View>
           <ChevronRight color="#A9A3B5" />
@@ -89,13 +83,14 @@ export default function StoryListScreen() {
             <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>{category.subtitle}</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#EDE5F5', borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+            style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#EDE5F5' }]}
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >
-            <SleepingSheep size={24} />
+            <AwakeSheep size={34} />
           </TouchableOpacity>
         </View>
+        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
         <ScrollView 
           style={styles.scroll} 
@@ -119,12 +114,6 @@ export default function StoryListScreen() {
                 <View style={[styles.pill, { backgroundColor: 'rgba(245,240,232,0.12)' }]}>
                   <Text style={[styles.pillTextTime, { color: '#C4AED8' }]}>{featuredStory.readTime}</Text>
                 </View>
-                {/* Studio badge hidden for now - will be restored later */}
-                {false && featuredStory.audioFile && (
-                  <View style={[styles.pill, { backgroundColor: C.accent }]}>
-                    <Text style={[styles.pillTextFeatured, { fontSize: 9, textTransform: 'none' }]}>Studio</Text>
-                  </View>
-                )}
               </View>
               <Text style={styles.featuredStoryTitle}>{featuredStory.title}</Text>
               <Text style={[styles.featuredStorySubtitle, { color: '#C4AED8' }]}>
@@ -158,18 +147,21 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   safeArea: { flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24 },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24 },
 
   topBar: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, paddingHorizontal: 24, marginTop: 12 },
   backButton: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   topBarText: { flex: 1, marginLeft: 16 },
   sheepBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+  },
+  headerDivider: {
+    height: 1,
+    width: '100%',
   },
   categoryTitle: { fontFamily: tokens.fonts.heading, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
   categorySubtitle: { fontFamily: 'Nunito_600SemiBold', fontSize: 13, fontWeight: '600', marginTop: -2 },
@@ -201,19 +193,7 @@ const styles = StyleSheet.create({
   storyTitle: { fontFamily: 'Nunito_700Bold', fontSize: 15, fontWeight: '700' },
   metaLine: { flexDirection: 'row', alignItems: 'center', marginTop: 3 },
   originTag: { fontFamily: 'Nunito_600SemiBold', fontSize: 11, fontWeight: '600' },
-  dot: { marginHorizontal: 4, fontWeight: '900' },
   readTimeTag: { fontFamily: 'Nunito_600SemiBold', fontSize: 11, fontWeight: '600' },
-  studioBadge: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-    marginLeft: 6,
-  },
-  studioBadgeText: {
-    fontFamily: 'Nunito_800ExtraBold',
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
+  dot: { marginHorizontal: 4, fontWeight: '900' },
   divider: { height: 1, width: '100%' },
 });
