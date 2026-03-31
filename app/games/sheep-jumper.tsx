@@ -56,6 +56,15 @@ interface Cloud {
   speed: number;
 }
 
+interface Star {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  opacity: number;
+  speed: number;
+}
+
 export default function SheepJumper() {
   const router = useRouter();
   
@@ -80,6 +89,7 @@ export default function SheepJumper() {
     { id: 2, x: SCREEN_WIDTH * 0.6, y: SCREEN_HEIGHT * 0.25, radius: 18, opacity: 0.15, speed: 2.5 / 60 },
     { id: 3, x: SCREEN_WIDTH * 0.8, y: SCREEN_HEIGHT * 0.1, radius: 20, opacity: 0.25, speed: 3.5 / 60 },
   ]);
+  const stars = useRef<Star[]>([]);
   const grassTufts = useRef<GrassTuft[]>([]);
   const gameSpeed = useRef(180 / 60); // 180px per second initially (scaled up)
   const fenceCounter = useRef(0);
@@ -113,6 +123,21 @@ export default function SheepJumper() {
       });
     }
     grassTufts.current = initialTufts;
+
+    // Initialize Stars
+    const initialStars: Star[] = [];
+    for (let i = 0; i < 40; i++) {
+      initialStars.push({
+        id: i,
+        x: Math.random() * SCREEN_WIDTH,
+        y: Math.random() * (SCREEN_HEIGHT * 0.7),
+        size: 1 + Math.random() * 2,
+        opacity: 0.2 + Math.random() * 0.5,
+        speed: (0.1 + Math.random() * 0.3) / 60 * 60, // Slow drift
+      });
+    }
+    stars.current = initialStars;
+
     fences.current = [
       { id: Date.now(), x: SCREEN_WIDTH + 800, passed: false }
     ];
@@ -212,6 +237,15 @@ export default function SheepJumper() {
         cloud.x -= cloud.speed;
         if (cloud.x + cloud.radius < 0) {
           cloud.x = SCREEN_WIDTH + cloud.radius;
+        }
+      });
+
+      // Update stars (parallax)
+      stars.current.forEach(star => {
+        star.x -= star.speed;
+        if (star.x < -star.size) {
+          star.x = SCREEN_WIDTH + star.size;
+          star.y = Math.random() * (SCREEN_HEIGHT * 0.7); // Variety while recycling
         }
       });
 
@@ -325,20 +359,22 @@ export default function SheepJumper() {
   return (
     <View style={styles.container}>
       {/* 2. SKY */}
-      <View style={[styles.sky, { backgroundColor: '#D8E8D0' }]}>
-        <View style={styles.sun} />
-        {clouds.current.map(cloud => (
+      <View style={[styles.sky, { backgroundColor: '#1A2338' }]}>
+        {/* Moon */}
+        <View style={styles.moon} />
+        
+        {/* Animated Stars */}
+        {stars.current.map(star => (
           <View
-            key={cloud.id}
+            key={`star-${star.id}`}
             style={[
-              styles.cloud,
+              styles.star,
               {
-                left: cloud.x,
-                top: cloud.y,
-                width: cloud.radius * 2,
-                height: cloud.radius * 2,
-                borderRadius: cloud.radius,
-                opacity: cloud.opacity,
+                left: star.x,
+                top: star.y,
+                width: star.size,
+                height: star.size,
+                opacity: star.opacity,
               },
             ]}
           />
@@ -351,18 +387,18 @@ export default function SheepJumper() {
         <Svg width="100%" height="100%" viewBox={`0 0 ${SCREEN_WIDTH} ${SCREEN_HEIGHT * 0.25}`} style={styles.hills}>
           <Path
             d={`M0 ${SCREEN_HEIGHT * 0.1} Q${SCREEN_WIDTH * 0.25} ${SCREEN_HEIGHT * 0.05} ${SCREEN_WIDTH * 0.5} ${SCREEN_HEIGHT * 0.1} T${SCREEN_WIDTH} ${SCREEN_HEIGHT * 0.1} V${SCREEN_HEIGHT * 0.25} H0 Z`}
-            fill="#90B888"
+            fill="#1E2B1E"
           />
         </Svg>
         
         {/* Front ground */}
-        <View style={[styles.frontGround, { backgroundColor: '#A8C5A0' }]}>
+        <View style={[styles.frontGround, { backgroundColor: '#2D3D2D' }]}>
           {/* Ground line */}
           <Svg width="100%" height="20" style={styles.groundLine}>
             <Path
               d={`M0 10 Q${SCREEN_WIDTH * 0.25} 5 ${SCREEN_WIDTH * 0.5} 10 T${SCREEN_WIDTH} 10`}
               fill="none"
-              stroke="#98C090"
+              stroke="#243324"
               strokeWidth={3}
             />
           </Svg>
@@ -416,7 +452,7 @@ export default function SheepJumper() {
             activeOpacity={0.7}
           >
             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <Path d="M15 18L9 12L15 6" stroke="#4A6040" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <Path d="M15 18L9 12L15 6" stroke="#E8F0E0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </TouchableOpacity>
         </View>
@@ -426,7 +462,7 @@ export default function SheepJumper() {
         </View>
 
         <View style={styles.topRightHub}>
-          <Text style={styles.miniBestTitle}>BEST</Text>
+          <Text style={styles.miniBestTitle}>BEST:</Text>
           <Text style={styles.miniBestValue}>{highScore}</Text>
         </View>
       </SafeAreaView>
@@ -451,23 +487,23 @@ export default function SheepJumper() {
         <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <Path 
             d="M9 18V5L21 3V16" 
-            stroke={isMuted ? "#B0B0B0" : "#4A6040"} 
+            stroke={isMuted ? "#7A7589" : "#E8F0E0"} 
             strokeWidth="2" 
             strokeLinecap="round" 
             strokeLinejoin="round" 
           />
           <Circle 
             cx="6" cy="18" r="3" 
-            stroke={isMuted ? "#B0B0B0" : "#4A6040"} 
+            stroke={isMuted ? "#7A7589" : "#E8F0E0"} 
             strokeWidth="2" 
           />
           <Circle 
             cx="18" cy="16" r="3" 
-            stroke={isMuted ? "#B0B0B0" : "#4A6040"} 
+            stroke={isMuted ? "#7A7589" : "#E8F0E0"} 
             strokeWidth="2" 
           />
           {isMuted && (
-            <Path d="M3 21L21 3" stroke="#B0B0B0" strokeWidth="2.5" strokeLinecap="round" />
+            <Path d="M3 21L21 3" stroke="#7A7589" strokeWidth="2.5" strokeLinecap="round" />
           )}
         </Svg>
       </TouchableOpacity>
@@ -511,19 +547,25 @@ const styles = StyleSheet.create({
   sky: {
     ...StyleSheet.absoluteFillObject,
   },
-  sun: {
+  moon: {
     position: 'absolute',
-    top: 60,
+    top: 150, // Moved down to avoid header
     right: 40,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40, // Smaller moon
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#F5F0E8',
-    opacity: 0.3,
+    opacity: 0.9,
+    shadowColor: '#F5F0E8',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 5,
   },
-  cloud: {
+  star: {
     position: 'absolute',
     backgroundColor: '#FFFFFF',
+    borderRadius: 1,
   },
   groundContainer: {
     position: 'absolute',
@@ -590,7 +632,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#4A6040',
+    color: '#E8F0E0',
     letterSpacing: 0.65, // 0.05em
   },
   musicToggleButton: {
@@ -629,13 +671,13 @@ const styles = StyleSheet.create({
   largeScoreText: {
     fontSize: 48,
     fontWeight: '900',
-    color: '#4A6040',
+    color: '#E8F0E0',
     opacity: 0.8,
   },
   fencesLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#4A6040',
+    color: '#E8F0E0',
     letterSpacing: 2,
     opacity: 0.4,
     marginTop: -4,
@@ -647,14 +689,14 @@ const styles = StyleSheet.create({
   miniBestTitle: {
     fontSize: 9,
     fontWeight: '900',
-    color: '#4A6040',
+    color: '#E8F0E0',
     letterSpacing: 1,
     opacity: 0.5,
   },
   miniBestValue: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#4A6040',
+    color: '#E8F0E0',
     marginTop: -2,
   },
   newBestBanner: {

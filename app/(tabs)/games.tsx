@@ -27,25 +27,32 @@ const SheepJumperBG = () => (
   <View style={StyleSheet.absoluteFill}>
     <Svg width="100%" height="100%" viewBox="0 0 327 220" preserveAspectRatio="xMidYMid slice">
       {/* Sky */}
-      <Rect width="327" height="220" fill="#D8E8D0" />
+      <Rect width="327" height="220" fill="#1A2338" />
       
-      {/* Sun */}
-      <Circle cx="280" cy="40" r="20" fill="#F5F0E8" opacity={0.3} />
+      {/* Stars */}
+      {[...Array(20)].map((_, i) => (
+        <Circle 
+          key={i} 
+          cx={(i * 79) % 327} 
+          cy={(i * 131) % 150} // Extended further down towards the ground
+          r={0.8 + (i % 3) * 0.4} 
+          fill="#FFFFFF" 
+          opacity={0.2 + (i % 6) * 0.12} 
+        />
+      ))}
       
-      {/* Clouds */}
-      <Circle cx="60" cy="50" r="15" fill="#FFFFFF" opacity={0.2} />
-      <Circle cx="85" cy="55" r="12" fill="#FFFFFF" opacity={0.15} />
-      <Circle cx="200" cy="45" r="18" fill="#FFFFFF" opacity={0.25} />
+      {/* Moon */}
+      <Circle cx="280" cy="80" r="14" fill="#F5F0E8" opacity={0.9} />
       
       {/* Ground (bottom 30% is roughly 66px) */}
       <Path 
         d="M0 154 Q80 145 160 154 T327 154 V220 H0 Z" 
-        fill="#A8C5A0" 
+        fill="#2D3D2D" 
       />
       <Path 
         d="M0 154 Q80 145 160 154 T327 154" 
         fill="none" 
-        stroke="#90B888" 
+        stroke="#243324" 
         strokeWidth={3} 
       />
       
@@ -57,7 +64,7 @@ const SheepJumperBG = () => (
           y={170 + (i % 4) * 8} 
           width={2} 
           height={6} 
-          fill="#7A9A50" 
+          fill="#243324" 
           opacity={0.3} 
         />
       ))}
@@ -210,7 +217,7 @@ export default function GamesScreen() {
           >
             <SheepJumperBG />
             <LinearGradient
-              colors={['transparent', 'rgba(80,120,70,0.92)']}
+              colors={['transparent', 'rgba(26,35,56,0.92)']}
               style={styles.cardOverlay}
               start={{ x: 0, y: 0.5 }}
               end={{ x: 0, y: 1 }}

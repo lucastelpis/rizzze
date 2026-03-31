@@ -185,6 +185,21 @@ export default function CozyFarmGame() {
   const [highScore, setHighScore] = useState(0);
   const [isNewBest, setIsNewBest] = useState(false);
   const [tapCount, setTapCount] = useState(0);
+  const [playableAreaSize, setPlayableAreaSize] = useState({ width: 0, height: 0 });
+
+  // Natural Grid Height (5 or 6 rows)
+  const gridRows = level <= 2 ? 5 : 6;
+  const naturalGridHeight = useMemo(() => {
+    return (gridRows * cellSize) + ((gridRows - 1) * GRID_GAP);
+  }, [gridRows, cellSize]);
+
+  // Scaling logic to fit available space
+  const gridScale = useMemo(() => {
+    if (playableAreaSize.height === 0) return 1;
+    const verticalScale = Math.min(1, (playableAreaSize.height - 10) / naturalGridHeight);
+    const horizontalScale = Math.min(1, (playableAreaSize.width - 10) / actualGridWidth);
+    return Math.min(verticalScale, horizontalScale);
+  }, [playableAreaSize, naturalGridHeight, actualGridWidth]);
 
   // Background Animation Values
   const wanderTopAnim = useRef(new Animated.Value(-100)).current;
@@ -527,102 +542,129 @@ export default function CozyFarmGame() {
         pollenAnims={pollenAnims}
       />
       
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* HUD */}
-        <View style={styles.hud}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-          >
-            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <Path d="M15 18L9 12L15 6" stroke={COLORS.hudText} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </TouchableOpacity>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        {/* Container 1: Header */}
+        <View style={styles.headerContainer}>
+          <View style={styles.headerItemWrap}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <Path d="M15 18L9 12L15 6" stroke={COLORS.hudText} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
           
-          <Text style={styles.title}>COZY FARM</Text>
+          <View style={styles.headerTitleWrapper}>
+            <Text style={styles.title}>COZY FARM</Text>
+          </View>
           
           <View style={styles.topRightHub}>
-            <View style={styles.miniBestContainer}>
-              <Text style={styles.miniBestTitle}>BEST</Text>
-              <Text style={styles.miniBestValue}>{highScore}</Text>
-            </View>
-            <View style={styles.levelContainer}>
-              <Text style={styles.miniBestTitle}>LVL</Text>
-              <Text style={styles.miniBestValue}>{level}</Text>
-            </View>
+            <Text style={styles.miniBestTitle}>BEST LEVEL:</Text>
+            <Text style={styles.miniBestValue}>{highScore}</Text>
           </View>
         </View>
 
-        {/* PROGRESS BAR */}
-        <View style={styles.progressSection}>
-          <Text style={styles.progressLabel}>Cleared: {clearedCount}/{totalObstacles}</Text>
-          <View style={styles.progressBarTrack}>
-            <View 
-              style={[
-                styles.progressBarFill, 
-                { width: `${(clearedCount / totalObstacles) * 100}%` }
-              ]} 
-            />
+        {/* Container 2: Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.largeStatNumber}>{clearedCount}/{totalObstacles}</Text>
+            <Text style={styles.statSubLabel}>CLEARED</Text>
+          </View>
+          
+          <View style={styles.statItem}>
+            <Text style={styles.largeStatNumber}>{level}</Text>
+            <Text style={styles.statSubLabel}>LEVEL</Text>
           </View>
         </View>
 
-        {/* GRID SECTION */}
-        <View style={styles.gridContainer}>
+        {/* Container 3: Sheep Area (Adaptable) */}
+        <View style={styles.sheepArea}>
           <SheepField
             wanderTop={wanderTopAnim}
             wanderBottom={wanderBottomAnim}
           />
-          <View style={[styles.grid, { width: actualGridWidth, gap: GRID_GAP }]}>
-            {grid.map((cell, index) => renderCell(cell, index))}
-          </View>
-          <View style={styles.bottomSpacer} />
         </View>
 
-        {/* TOOLS & HINT (Floating Layout for Stability) */}
-        <View style={styles.toolSelector}>
-          <View style={styles.toolButtonWrapper}>
-            <ToolButton 
-              type="pick" 
-              selected={selectedTool === 'pick'} 
-              onPress={() => setSelectedTool('pick')}
-              Icon={PickaxeIcon}
-            />
-            <Text style={[styles.toolLabel, selectedTool === 'pick' && styles.toolLabelSelected]}>PICK</Text>
-          </View>
-
-          <View style={styles.toolButtonWrapper}>
-            <ToolButton 
-                type="axe" 
-                selected={selectedTool === 'axe'} 
-                onPress={() => setSelectedTool('axe')} 
-                Icon={AxeIcon}
-            />
-            <Text style={[styles.toolLabel, selectedTool === 'axe' && styles.toolLabelSelected]}>AXE</Text>
-          </View>
-
-          <View style={styles.toolButtonWrapper}>
-            <ToolButton 
-                type="trimmer" 
-                selected={selectedTool === 'trimmer'} 
-                onPress={() => setSelectedTool('trimmer')} 
-                Icon={TrimmerIcon}
-            />
-            <Text style={[styles.toolLabel, selectedTool === 'trimmer' && styles.toolLabelSelected]}>TRIMMER</Text>
-          </View>
-        </View>
-
-        <Animated.View style={[styles.hintContainer, { opacity: hintOpacity }]} pointerEvents="none">
-          <Text style={styles.hintText}>Choose the right tool and{"\n"}tap a cell to clear it</Text>
-        </Animated.View>
-
-        {/* MUSIC TOGGLE (Floating Bottom Right) */}
-        <TouchableOpacity 
-            style={styles.floatingMusicToggle} 
-            onPress={() => setIsMuted(!isMuted)}
-            activeOpacity={0.8}
+        {/* Container 4: Playable Area (Adaptable) */}
+        <View 
+          style={styles.playableArea} 
+          onLayout={(e) => setPlayableAreaSize({
+            width: e.nativeEvent.layout.width,
+            height: e.nativeEvent.layout.height
+          })}
         >
-            <MusicIcon muted={isMuted} size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+          <View style={{ transform: [{ scale: gridScale }], alignItems: 'center', justifyContent: 'center' }}>
+            <View style={[styles.grid, { width: actualGridWidth, gap: GRID_GAP }]}>
+              {grid.map((cell, index) => renderCell(cell, index))}
+            </View>
+          </View>
+        </View>
+
+        {/* Container 5: Tools (Adaptable) */}
+        <View style={styles.toolsArea}>
+          <View style={styles.toolSelector}>
+            <View style={styles.toolButtonWrapper}>
+              <ToolButton 
+                type="pick" 
+                selected={selectedTool === 'pick'} 
+                onPress={() => setSelectedTool('pick')}
+                Icon={PickaxeIcon}
+              />
+              <Text style={[styles.toolLabel, selectedTool === 'pick' && styles.toolLabelSelected]}>PICK</Text>
+            </View>
+
+            <View style={styles.toolButtonWrapper}>
+              <ToolButton 
+                  type="axe" 
+                  selected={selectedTool === 'axe'} 
+                  onPress={() => setSelectedTool('axe')} 
+                  Icon={AxeIcon}
+              />
+              <Text style={[styles.toolLabel, selectedTool === 'axe' && styles.toolLabelSelected]}>AXE</Text>
+            </View>
+
+            <View style={styles.toolButtonWrapper}>
+              <ToolButton 
+                  type="trimmer" 
+                  selected={selectedTool === 'trimmer'} 
+                  onPress={() => setSelectedTool('trimmer')} 
+                  Icon={TrimmerIcon}
+              />
+              <Text style={[styles.toolLabel, selectedTool === 'trimmer' && styles.toolLabelSelected]}>TRIMMER</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Container 6: Instructions */}
+        <View style={styles.instructionsArea}>
+           <Animated.View style={{ opacity: hintOpacity, alignItems: 'center' }} pointerEvents="none">
+             <Text style={styles.hintText}>Choose the right tool and tap a cell</Text>
+          </Animated.View>
+        </View>
+
+        {/* Container 7: Footer */}
+        <View style={styles.footerArea}>
+          {/* Tutorial / Help Button (Left) */}
+          <TouchableOpacity 
+              style={styles.footerButton} 
+              onPress={() => setShowOnboarding(true)}
+              activeOpacity={0.8}
+          >
+              <Text style={styles.helpText}>?</Text>
+          </TouchableOpacity>
+
+          {/* Sound Toggle Button (Right) */}
+          <TouchableOpacity 
+              style={styles.footerButton} 
+              onPress={() => setIsMuted(!isMuted)}
+              activeOpacity={0.8}
+          >
+              <MusicIcon muted={isMuted} size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
 
       {/* ONBOARDING TUTORIAL */}
@@ -850,6 +892,8 @@ const SheepField = ({ wanderTop, wanderBottom }: any) => {
   );
 };
 
+
+
 const ClearingAnimation = () => {
     const fade = useRef(new Animated.Value(1)).current;
     const flash = useRef(new Animated.Value(0)).current;
@@ -915,162 +959,195 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    paddingHorizontal: 16,
   },
-  hud: {
-    paddingHorizontal: 20,
-    paddingVertical: 4,
+  headerContainer: {
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    height: 70, // Slightly more space for header
+  },
+  headerItemWrap: {
+    width: 80, // Increased width for longer label
+    alignItems: 'flex-start',
+  },
+  topRightHub: {
+    width: 80, // Increased width for longer label
+    alignItems: 'flex-end',
+  },
+  miniBestTitle: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: COLORS.hudText,
+    letterSpacing: 1,
+    opacity: 0.5,
+  },
+  miniBestValue: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: COLORS.hudText,
+    marginTop: -2,
   },
   backButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.hudButtonBg,
+    backgroundColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backButtonWrap: {
-    width: 90, // Match the width of topRightHub for perfect title centering
-    alignItems: 'flex-start',
-  },
-  titleContainer: {
+  headerTitleWrapper: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   title: {
-    fontFamily: 'Nunito_800ExtraBold',
     fontSize: 13,
     fontWeight: '800',
     color: COLORS.hudText,
     letterSpacing: 0.65,
   },
-  topRightHub: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    width: 90,
-  },
-  miniBestContainer: {
-    alignItems: 'flex-end',
-    opacity: 0.6,
-  },
-  levelContainer: {
-    alignItems: 'flex-end',
-  },
-  miniBestTitle: {
-    fontSize: 8,
-    fontWeight: '900',
-    color: COLORS.hudText,
-    letterSpacing: 1,
-  },
-  miniBestValue: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: COLORS.hudText,
-    marginTop: -2,
-  },
-  onboardingIconContainer: {
-    marginBottom: 16,
-    backgroundColor: 'rgba(138, 109, 174, 0.12)', // Soft version of primary purple
-    padding: 18,
-    borderRadius: 50,
-    borderWidth: 1.5,
-    borderColor: 'rgba(138, 109, 174, 0.25)',
-  },
-  tutorialContainer: {
-    width: '100%',
-    gap: 12,
-    marginTop: 24, // More spaced from title
-  },
-  tutorialRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: 'rgba(138, 170, 128, 0.08)',
-    paddingHorizontal: 14,
+  statsContainer: {
     paddingVertical: 12,
-    borderRadius: 16,
-  },
-  tutorialIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#E8F0E0',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#D8E0D0',
+    gap: 60,
+    height: 80,
   },
-  tutorialText: {
-    flex: 1, // Allow text to wrap within the row
-    fontSize: 12,
-    color: '#4A4754',
-    fontWeight: '600',
-  },
-  newBestBanner: {
-    backgroundColor: COLORS.primaryBtn,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  newBestLabel: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-  },
-  progressSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    flexDirection: 'row',
+  statItem: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 4, // Added gap for deliberate padding
   },
-  progressLabel: {
-    fontSize: 12,
-    fontWeight: '700',
+  largeStatNumber: {
+    fontSize: 32,
+    fontWeight: '900',
     color: COLORS.hudText,
     opacity: 0.8,
   },
-  progressBarTrack: {
-    width: 120,
-    height: 4,
-    backgroundColor: COLORS.hudButtonBg,
-    borderRadius: 2,
+  statSubLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.hudText,
+    letterSpacing: 2,
+    opacity: 0.4,
+    marginTop: 2, // Positive margin to add air
+  },
+  sheepArea: {
+    flex: 0.8, // Slightly less space for sheep to give more to the grid
+    minHeight: 50,
+    justifyContent: 'center',
+    marginVertical: 4,
     overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: COLORS.progressFill,
-  },
-  gridContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 0,
-    paddingTop: 0,
-    paddingBottom: 0,
   },
   sheepField: {
     flex: 1,
     width: '100%',
-    maxHeight: 90,
-    minHeight: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bottomSpacer: {
-    height: 220, // Leave room for controls
+  playableArea: {
+    flex: 3.5, // More space for the grid
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 4,
+    overflow: 'hidden',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
   },
+  toolsArea: {
+    flex: 1.2, // Slightly less space for tools
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 4,
+    overflow: 'hidden',
+  },
+  toolSelector: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24, // Tighter gap for better fit
+  },
+  toolButtonWrapper: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  toolButton: {
+    width: 56, // Slightly smaller buttons
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  toolButtonSelected: {
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  toolLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#E8F0E0',
+    opacity: 0.6,
+    letterSpacing: 1,
+  },
+  toolLabelSelected: {
+    opacity: 1,
+    color: '#E8F0E0',
+  },
+  instructionsArea: {
+    paddingVertical: 8,
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+  },
+  hintText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#F5F0E8',
+    textAlign: 'center',
+    maxWidth: 240,
+    lineHeight: 18,
+    opacity: 0.8,
+  },
+  footerArea: {
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 70,
+  },
+  footerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  helpText: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: COLORS.hudText,
+    opacity: 0.8,
+  },
+
   cellWrapper: {
     aspectRatio: 1,
   },
@@ -1128,79 +1205,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFF',
   },
-  hintContainer: {
-    position: 'absolute',
-    bottom: 64, // Matches Sheep Jumper hint position
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  toolSelector: {
-    position: 'absolute',
-    bottom: 125, // Adjusted slightly higher for more comfortable thumb access
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 32,
-    zIndex: 10,
-  },
-  toolButtonWrapper: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  toolButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  toolButtonSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  toolLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#E8F0E0',
-    opacity: 0.5,
-    letterSpacing: 1,
-  },
-  toolLabelSelected: {
-    opacity: 1,
-    color: '#E8F0E0',
-  },
-  floatingMusicToggle: {
-    position: 'absolute',
-    bottom: 34,
-    right: 24,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  hintText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#F5F0E8',
-    textAlign: 'center',
-    maxWidth: 240,
-    lineHeight: 20,
-  },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: COLORS.overlay,
@@ -1209,14 +1213,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   modalCard: {
-    width: 300,
-    backgroundColor: '#FDFBF7', // Warmer ivory, less blinding white
-    borderRadius: 24,
+    width: 280,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
     padding: 28,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: 'rgba(45,43,61,0.15)',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 1,
     shadowRadius: 40,
     elevation: 10,
   },
@@ -1243,6 +1247,44 @@ const styles = StyleSheet.create({
     color: '#7A7589',
     marginTop: 4,
   },
+  onboardingIconContainer: {
+    marginBottom: 16,
+    backgroundColor: 'rgba(138, 109, 174, 0.12)', // Soft version of primary purple
+    padding: 18,
+    borderRadius: 50,
+    borderWidth: 1.5,
+    borderColor: 'rgba(138, 109, 174, 0.25)',
+  },
+  tutorialContainer: {
+    width: '100%',
+    gap: 12,
+    marginTop: 24, // More spaced from title
+  },
+  tutorialRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: 'rgba(138, 170, 128, 0.08)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+  tutorialIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#E8F0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D8E0D0',
+  },
+  tutorialText: {
+    flex: 1, // Allow text to wrap within the row
+    fontSize: 12,
+    color: '#4A4754',
+    fontWeight: '600',
+  },
   primaryButton: {
     width: '100%',
     height: 44,
@@ -1268,5 +1310,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.btnText,
-  }
+  },
+  newBestBanner: {
+    backgroundColor: COLORS.primaryBtn,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  newBestLabel: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
 });
