@@ -9,6 +9,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { useStreak } from '@/context/StreakContext';
 import { SleepingSheep } from '@/components/SleepingSheep';
+import { AwakeSheep } from '@/components/AwakeSheep';
 
 const SettingsIcon = ({ size = 20 }: { size?: number }) => {
   const C = useColors();
@@ -91,7 +92,7 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           <View style={[styles.avatarCircle, { backgroundColor: C.accentLight }]}>
-            <SleepingSheep size={80} />
+            {isDark ? <SleepingSheep size={80} /> : <AwakeSheep size={80} />}
           </View>
           <TouchableOpacity style={[styles.editBadge, { backgroundColor: C.white, borderColor: C.bgPrimary }]}>
             <SettingsIcon size={12} />

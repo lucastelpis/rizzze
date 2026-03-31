@@ -16,7 +16,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useStreak } from '@/context/StreakContext';
 import { useTheme } from '@/context/ThemeContext';
 import { tokens } from '@/constants/theme';
-import { SleepingSheep } from '@/components/SleepingSheep';
+import { AwakeSheep } from '@/components/AwakeSheep';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── CONSTANT QUALITY COLORS ──────────────────────────────────────────────────
@@ -236,14 +236,19 @@ export default function SleepScreen() {
             <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Track, plan, and improve</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: C.accentLight }]} 
+            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]} 
             onPress={() => router.push('/profile')}
+            activeOpacity={0.8}
           >
-            <SleepingSheep size={34} />
+            <AwakeSheep size={34} />
           </TouchableOpacity>
         </View>
+        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
+          showsVerticalScrollIndicator={false}
+        >
           {/* RATING */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -392,11 +397,23 @@ export default function SleepScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  header: { 
+    paddingHorizontal: 24, 
+    marginTop: 12, 
+    marginBottom: 8, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center' 
+  },
   headerTitle: { fontFamily: tokens.fonts.heading, fontSize: 28 },
   headerSubtitle: { fontFamily: 'Nunito_600SemiBold', fontSize: 15, marginTop: -2 },
   sheepButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  section: { paddingHorizontal: 20, marginTop: 24, gap: 12 },
+  headerDivider: {
+    height: 1,
+    width: '100%',
+  },
+  section: { marginTop: 0, gap: 12 },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24, gap: 24 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   overline: { fontFamily: tokens.fonts.caption, fontSize: 11, letterSpacing: 1.1 },
   accentLabel: { fontFamily: tokens.fonts.caption, fontSize: 12 },
@@ -416,7 +433,7 @@ const styles = StyleSheet.create({
   calCell: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   calCellEmpty: { width: 40, height: 40 },
   calCellText: { fontFamily: tokens.fonts.caption, fontSize: 12 },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 8 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendSwatch: { width: 10, height: 10, borderRadius: 3 },
   legendLabel: { fontFamily: tokens.fonts.caption, fontSize: 10 },

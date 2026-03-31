@@ -18,7 +18,6 @@ import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
 import { BottomNav } from '@/components/BottomNav';
 import { AwakeSheep } from '@/components/AwakeSheep';
-import { SleepingSheep } from '@/components/SleepingSheep';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -196,13 +195,14 @@ export default function GamesScreen() {
             <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Wind down with gentle play</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >
-            <SleepingSheep size={34} />
+            <AwakeSheep size={34} />
           </TouchableOpacity>
         </View>
+        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
         <ScrollView 
           style={styles.scroll}
@@ -305,15 +305,19 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,
+    paddingTop: 12,
     paddingBottom: 20,
-    gap: 16,
+    gap: 24,
+  },
+  headerDivider: {
+    height: 1,
+    width: '100%',
   },
   gameCard: {
     height: 220,

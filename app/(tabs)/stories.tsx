@@ -6,8 +6,9 @@ import Svg, { Path } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
+import { useAudio } from '@/context/AudioContext';
 import { BottomNav } from '@/components/BottomNav';
-import { SleepingSheep } from '@/components/SleepingSheep';
+import { AwakeSheep } from '@/components/AwakeSheep';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { CATEGORIES, STORIES } from '@/constants/stories';
 import { getDailyPick } from '@/utils/dailyPicks';
@@ -23,6 +24,7 @@ export default function StoriesScreen() {
   const { isDark } = useTheme();
   const C = useColors();
   const router = useRouter();
+  const { activeSound } = useAudio();
 
   // Use deterministic daily pick for stories
   const featuredStory = React.useMemo(() => getDailyPick(STORIES), []);
@@ -39,17 +41,18 @@ export default function StoriesScreen() {
             <Text style={[styles.subtitle, { color: C.textSecondary }]}>Short reads to quiet your mind</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >
-            <SleepingSheep size={34} />
+            <AwakeSheep size={34} />
           </TouchableOpacity>
         </View>
+        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
         <ScrollView 
           style={styles.scroll} 
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
           showsVerticalScrollIndicator={false}
         >
           
@@ -60,7 +63,7 @@ export default function StoriesScreen() {
           >
             <View style={styles.featuredContent}>
               <View style={[styles.thumbWrap, { backgroundColor: 'rgba(240, 216, 208, 0.15)' }]}>
-                {StoryThumb ? <StoryThumb size={52} /> : <SleepingSheep size={42} />}
+                {StoryThumb ? <StoryThumb size={52} /> : <AwakeSheep size={42} />}
               </View>
               
               <View style={styles.featuredText}>
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   safeArea: { flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24 },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24, gap: 24 },
   
   header: {
     paddingHorizontal: 24,
@@ -150,7 +153,10 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+  },
+  headerDivider: {
+    height: 1,
+    width: '100%',
   },
 
   sectionHeader: { marginBottom: 12 },

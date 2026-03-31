@@ -756,7 +756,10 @@ export default function CozyFarmGame() {
       {/* ONBOARDING TUTORIAL */}
       {showOnboarding && (
         <View style={styles.overlay}>
-          <Reanimated.View entering={FadeInDown} style={styles.modalCard}>
+          <Reanimated.View 
+            entering={FadeInDown} 
+            style={[styles.modalCard, { width: Math.min(windowWidth * 0.9, 310) }]}
+          >
             <ScrollView 
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalScrollContent}
@@ -771,30 +774,30 @@ export default function CozyFarmGame() {
               <Text style={styles.modalSubtitle}>How to play:</Text>
               
               <View style={styles.tutorialContainer}>
-                <View style={styles.tutorialRow}>
+                <View style={[styles.tutorialRow, { width: 232 }]}>
                   <View style={styles.tutorialIcon}>
                     <Ionicons name="hammer" size={22} color="#5A7A6A" />
                   </View>
                   <Text style={styles.tutorialText}>
-                    <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>AXE:</Text>{"\n"}Clears Trees
+                    <Text style={styles.tutorialLabel}>AXE:</Text>{"\n"}Clears Trees
                   </Text>
                 </View>
                 
-                <View style={styles.tutorialRow}>
+                <View style={[styles.tutorialRow, { width: 232 }]}>
                   <View style={styles.tutorialIcon}>
                     <Ionicons name="construct" size={22} color="#5A7A6A" />
                   </View>
                   <Text style={styles.tutorialText}>
-                    <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>PICK:</Text>{"\n"}Clears Rocks
+                    <Text style={styles.tutorialLabel}>PICK:</Text>{"\n"}Clears Rocks
                   </Text>
                 </View>
                 
-                <View style={styles.tutorialRow}>
+                <View style={[styles.tutorialRow, { width: 232 }]}>
                   <View style={styles.tutorialIcon}>
                     <Ionicons name="cut" size={22} color="#5A7A6A" />
                   </View>
                   <Text style={styles.tutorialText}>
-                    <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>TRIMMER:</Text>{"\n"}Clears Grass
+                    <Text style={styles.tutorialLabel}>TRIMMER:</Text>{"\n"}Clears Grass
                   </Text>
                 </View>
               </View>
@@ -1069,14 +1072,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 24,
-    zIndex: 20,
+    zIndex: 1000,
   },
   gameContent: {
     flex: 1,
     paddingHorizontal: 24,
   },
   headerSpacer: {
-    height: 60,
+    height: 80,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -1326,7 +1329,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   modalCard: {
-    width: 280,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     alignItems: 'center',
@@ -1338,7 +1340,8 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
   },
   modalScrollContent: {
-    padding: 28,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
     alignItems: 'center',
   },
   modalTitleSmall: {
@@ -1378,12 +1381,13 @@ const styles = StyleSheet.create({
     marginTop: 24, // More spaced from title
   },
   tutorialRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     backgroundColor: 'rgba(138, 170, 128, 0.08)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderRadius: 16,
   },
   tutorialIcon: {
@@ -1397,10 +1401,14 @@ const styles = StyleSheet.create({
     borderColor: '#D8E0D0',
   },
   tutorialText: {
-    flex: 1, // Allow text to wrap within the row
+    flex: 1,
     fontSize: 12,
+    lineHeight: 16,
     color: '#4A4754',
-    fontWeight: '600',
+  },
+  tutorialLabel: {
+    fontWeight: '900',
+    color: '#5A7A6A',
   },
   primaryButton: {
     width: '100%',

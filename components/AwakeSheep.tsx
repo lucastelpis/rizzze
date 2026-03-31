@@ -33,7 +33,6 @@ export const AwakeSheep = ({ size = 64 }: { size?: number }) => (
     {/* Eyes (open) */}
     <Rect x="30" y="32" width="2" height="4" fill="#2D2B3D"/>
     <Rect x="38" y="32" width="2" height="4" fill="#2D2B3D"/>
-    <Rect x="30" y="32" width="2" height="2" fill="#FFFFFF"/>
 
     {/* Cheeks */}
     <Rect x="26" y="36" width="4" height="2" fill="#E8A8A0" opacity={0.7}/>

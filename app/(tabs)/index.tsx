@@ -17,7 +17,7 @@ import { useStreak } from '@/context/StreakContext';
 import * as SoundGraphics from '@/components/SoundGraphics';
 import { BottomNav } from '@/components/BottomNav';
 import { useTheme } from '@/context/ThemeContext';
-import { SleepingSheep } from '@/components/SleepingSheep';
+import { AwakeSheep } from '@/components/AwakeSheep';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { STORIES } from '@/constants/stories';
 import { SCENES_DATA } from '@/constants/sounds';
@@ -197,17 +197,18 @@ export default function HomeScreen() {
               <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>{subtitle}</Text>
             </View>
             <TouchableOpacity 
-              style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+              style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
               onPress={() => router.push('/profile')}
               activeOpacity={0.8}
             >
-              <SleepingSheep size={34} />
+              <AwakeSheep size={34} />
             </TouchableOpacity>
           </View>
+          <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 92 }]}
+          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
           showsVerticalScrollIndicator={false}
         >
 
@@ -227,7 +228,7 @@ export default function HomeScreen() {
               })}
             >
               <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
-                {PickGraphic ? <PickGraphic w={52} h={52} /> : <SleepingSheep size={42} />}
+                {PickGraphic ? <PickGraphic w={52} h={52} /> : <AwakeSheep size={42} />}
               </View>
               <View style={styles.pickContent}>
                 <Text style={[styles.pickOverline, { color: C.accent }]}>TONIGHT'S SOUND</Text>
@@ -246,7 +247,7 @@ export default function HomeScreen() {
               onPress={() => router.push(`/reader/${randomStory.id}`)}
             >
               <View style={[styles.pickThumb, { backgroundColor: 'rgba(240, 216, 208, 0.15)' }]}>
-                {StoryThumb ? <StoryThumb size={52} /> : <SleepingSheep size={42} />}
+                {StoryThumb ? <StoryThumb size={52} /> : <AwakeSheep size={42} />}
               </View>
               <View style={styles.pickContent}>
                 <Text style={[styles.pickOverline, { color: '#8B4A40' }]}>TONIGHT'S READ</Text>
@@ -324,9 +325,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 12,
-    paddingBottom: 16,
+    paddingBottom: 24,
     gap: 24,
   },
 
@@ -356,7 +357,10 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+  },
+  headerDivider: {
+    height: 1,
+    width: '100%',
   },
 
   // Tonight's Pick Card
@@ -450,7 +454,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.caption,
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1.5,
+    letterSpacing: 1.1,
   },
 
   // Category Grid

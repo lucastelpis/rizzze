@@ -21,7 +21,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
 import { tokens } from '@/constants/theme';
-import { SleepingSheep } from '@/components/SleepingSheep';
+import { AwakeSheep } from '@/components/AwakeSheep';
 import { SCENES_DATA } from '@/constants/sounds';
 import { getDailyPick } from '@/utils/dailyPicks';
 
@@ -110,13 +110,14 @@ export default function SoundsScreen() {
             <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Immerse yourself</Text>
           </View>
           <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
+            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
             activeOpacity={0.8}
             onPress={() => router.push('/profile')}
           >
-            <SleepingSheep size={34} />
+            <AwakeSheep size={34} />
           </TouchableOpacity>
         </View>
+        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
         <ScrollView 
           style={styles.scroll} 
@@ -124,7 +125,7 @@ export default function SoundsScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* TONIGHT'S SOUND */}
-          <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <View style={{ marginBottom: 24 }}>
             <TouchableOpacity 
               style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
               activeOpacity={0.85}
@@ -139,7 +140,7 @@ export default function SoundsScreen() {
               })}
             >
               <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
-                {PickGraphic ? <PickGraphic w={52} h={52} /> : <SleepingSheep size={42} />}
+                {PickGraphic ? <PickGraphic w={52} h={52} /> : <AwakeSheep size={42} />}
               </View>
               <View style={styles.pickContent}>
                 <Text style={[styles.pickOverline, { color: C.accent }]}>TONIGHT'S SOUND</Text>
@@ -273,16 +274,22 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
     paddingBottom: 24,
+    gap: 24,
+  },
+  headerDivider: {
+    height: 1,
+    width: '100%',
   },
   section: {
-    paddingHorizontal: 24,
+    // paddingHorizontal handles this
   },
   // Tonight's Pick Card
   pickCard: {
@@ -333,7 +340,6 @@ const styles = StyleSheet.create({
   },
   sectionSimpleSounds: {
     paddingTop: 24,
-    paddingHorizontal: 24,
   },
   sectionLabel: {
     fontFamily: tokens.fonts.caption,
@@ -341,7 +347,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   sceneGrid: {
     flexDirection: 'row',
