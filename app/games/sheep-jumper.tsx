@@ -21,7 +21,8 @@ import { SleepingSheep } from '@/components/SleepingSheep';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // GAME CONSTANTS
-const GROUND_Y = SCREEN_HEIGHT * 0.75;
+const GROUND_HEIGHT = 180;
+const GROUND_Y = SCREEN_HEIGHT - GROUND_HEIGHT;
 const SHEEP_X = 80;
 const SHEEP_SIZE = 80;
 const SHEEP_FEET_OFFSET = (54 / 64) * SHEEP_SIZE; // Sheep feet are at y=54 in a 64x64 grid
@@ -443,12 +444,18 @@ export default function SheepJumper() {
         pointerEvents="auto"
       />
 
-      {/* HUD */}
-      <SafeAreaView style={styles.hud} pointerEvents="box-none">
+      {/* 🚀 ABSOLUTE HUD OVERLAY (Standardized) */}
+      <SafeAreaView style={styles.hud} edges={['top']} pointerEvents="box-none">
         <View style={styles.backButtonWrap}>
           <TouchableOpacity 
             style={styles.backButton} 
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/games');
+              }
+            }}
             activeOpacity={0.7}
           >
             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -555,11 +562,11 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: '#F5F0E8',
-    opacity: 0.9,
+    opacity: 0.7, // Muted opacity for a calmer feel
     shadowColor: '#F5F0E8',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
+    shadowOpacity: 0.3, // Softened glow
+    shadowRadius: 10,
     elevation: 5,
   },
   star: {
@@ -571,11 +578,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    height: SCREEN_HEIGHT * 0.25,
+    height: GROUND_HEIGHT,
   },
   hills: {
     position: 'absolute',
-    top: -SCREEN_HEIGHT * 0.05,
+    top: -40, // Consistent hill height
     width: '100%',
   },
   frontGround: {
@@ -611,6 +618,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    height: 70,
+    zIndex: 10,
   },
   backButton: {
     width: 32, // Keeping the inner circular button size
@@ -621,7 +630,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backButtonWrap: {
-    width: 60, // Match the width of topRightHub for perfect title centering
+    width: 80, // Standardized 80px for perfect title centering
     alignItems: 'flex-start',
   },
   titleContainer: {
@@ -684,7 +693,7 @@ const styles = StyleSheet.create({
   },
   topRightHub: {
     alignItems: 'flex-end',
-    width: 60,
+    width: 80,
   },
   miniBestTitle: {
     fontSize: 9,

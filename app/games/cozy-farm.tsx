@@ -9,6 +9,7 @@ import {
   StatusBar,
   Platform,
   useWindowDimensions,
+  ScrollView,
 } from 'react-native';
 import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -186,6 +187,10 @@ export default function CozyFarmGame() {
   const [isNewBest, setIsNewBest] = useState(false);
   const [tapCount, setTapCount] = useState(0);
   const [playableAreaSize, setPlayableAreaSize] = useState({ width: 0, height: 0 });
+  const [toolsAreaSize, setToolsAreaSize] = useState({ width: 0, height: 0 });
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const feedbackOpacity = useRef(new Animated.Value(0)).current;
+  const feedbackTimeout = useRef<any>(null);
 
   // Natural Grid Height (5 or 6 rows)
   const gridRows = level <= 2 ? 5 : 6;
@@ -200,6 +205,16 @@ export default function CozyFarmGame() {
     const horizontalScale = Math.min(1, (playableAreaSize.width - 10) / actualGridWidth);
     return Math.min(verticalScale, horizontalScale);
   }, [playableAreaSize, naturalGridHeight, actualGridWidth]);
+
+  const toolsScale = useMemo(() => {
+    if (toolsAreaSize.height === 0) return 1;
+    // Natural height for tools is roughly 100px (60 button + padding + label)
+    const verticalScale = Math.min(1, (toolsAreaSize.height - 10) / 90);
+    const horizontalScale = Math.min(1, (toolsAreaSize.width - 20) / 280);
+    return Math.min(verticalScale, horizontalScale);
+  }, [toolsAreaSize]);
+
+  const toolDynamicSize = Math.max(36, 60 * toolsScale);
 
   // Background Animation Values
   const wanderTopAnim = useRef(new Animated.Value(-100)).current;
@@ -403,7 +418,39 @@ export default function CozyFarmGame() {
         (selectedTool === 'trimmer' && (cell.obstacle === 'grass' || cell.obstacle === 'large_grass' || cell.obstacle === 'very_large_grass')) ||
         (selectedTool === 'axe' && (cell.obstacle === 'tree' || cell.obstacle === 'large_tree' || cell.obstacle === 'very_large_tree'));
 
-    if (!toolMatch) return;
+    if (!toolMatch) {
+        // Haptic feedback for mistake
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        
+        // Determine correct tool for feedback
+        let correctTool = "";
+        if (cell.obstacle?.includes('stone')) correctTool = "PICK";
+        else if (cell.obstacle?.includes('tree')) correctTool = "AXE";
+        else if (cell.obstacle?.includes('grass')) correctTool = "TRIMMER";
+        
+        setFeedbackMessage(correctTool ? `Use ${correctTool} for this!` : "Wrong tool!");
+        
+        // Animation: Swap hint and feedback
+        if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
+        
+        // Parallel animation to fade hint out and feedback in
+        Animated.parallel([
+            Animated.timing(hintOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
+            Animated.timing(feedbackOpacity, { toValue: 1, duration: 200, useNativeDriver: true })
+        ]).start();
+
+        // After a delay, fade feedback out and restore hint
+        feedbackTimeout.current = setTimeout(() => {
+            Animated.parallel([
+                Animated.timing(feedbackOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+                Animated.timing(hintOpacity, { toValue: 0.6, duration: 300, useNativeDriver: true })
+            ]).start(() => {
+                setFeedbackMessage('');
+            });
+        }, 2000);
+
+        return;
+    }
 
     // Haptic
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -535,6 +582,14 @@ export default function CozyFarmGame() {
     );
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/games');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <MeadowBackground 
@@ -542,13 +597,13 @@ export default function CozyFarmGame() {
         pollenAnims={pollenAnims}
       />
       
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        {/* Container 1: Header */}
+      {/* 🚀 ABSOLUTE HUD OVERLAY (Standardized) */}
+      <SafeAreaView style={styles.hudOverlay} edges={['top']} pointerEvents="box-none">
         <View style={styles.headerContainer}>
           <View style={styles.headerItemWrap}>
             <TouchableOpacity 
               style={styles.backButton} 
-              onPress={() => router.back()}
+              onPress={handleBack}
               activeOpacity={0.7}
             >
               <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -566,6 +621,11 @@ export default function CozyFarmGame() {
             <Text style={styles.miniBestValue}>{highScore}</Text>
           </View>
         </View>
+      </SafeAreaView>
+
+      <SafeAreaView style={styles.gameContent} edges={['bottom']}>
+        {/* Container 1: Header Spacer */}
+        <View style={styles.headerSpacer} />
 
         {/* Container 2: Stats */}
         <View style={styles.statsContainer}>
@@ -604,7 +664,10 @@ export default function CozyFarmGame() {
         </View>
 
         {/* Container 5: Tools (Adaptable) */}
-        <View style={styles.toolsArea}>
+        <View 
+          style={styles.toolsArea}
+          onLayout={(e) => setToolsAreaSize(e.nativeEvent.layout)}
+        >
           <View style={styles.toolSelector}>
             <View style={styles.toolButtonWrapper}>
               <ToolButton 
@@ -612,8 +675,13 @@ export default function CozyFarmGame() {
                 selected={selectedTool === 'pick'} 
                 onPress={() => setSelectedTool('pick')}
                 Icon={PickaxeIcon}
+                size={toolDynamicSize}
               />
-              <Text style={[styles.toolLabel, selectedTool === 'pick' && styles.toolLabelSelected]}>PICK</Text>
+              <Text style={[
+                styles.toolLabel, 
+                { fontSize: Math.max(7, 9 * toolsScale) },
+                selectedTool === 'pick' && styles.toolLabelSelected
+              ]}>PICK</Text>
             </View>
 
             <View style={styles.toolButtonWrapper}>
@@ -622,8 +690,13 @@ export default function CozyFarmGame() {
                   selected={selectedTool === 'axe'} 
                   onPress={() => setSelectedTool('axe')} 
                   Icon={AxeIcon}
+                  size={toolDynamicSize}
               />
-              <Text style={[styles.toolLabel, selectedTool === 'axe' && styles.toolLabelSelected]}>AXE</Text>
+              <Text style={[
+                styles.toolLabel, 
+                { fontSize: Math.max(7, 9 * toolsScale) },
+                selectedTool === 'axe' && styles.toolLabelSelected
+              ]}>AXE</Text>
             </View>
 
             <View style={styles.toolButtonWrapper}>
@@ -632,17 +705,30 @@ export default function CozyFarmGame() {
                   selected={selectedTool === 'trimmer'} 
                   onPress={() => setSelectedTool('trimmer')} 
                   Icon={TrimmerIcon}
+                  size={toolDynamicSize}
               />
-              <Text style={[styles.toolLabel, selectedTool === 'trimmer' && styles.toolLabelSelected]}>TRIMMER</Text>
+              <Text style={[
+                styles.toolLabel, 
+                { fontSize: Math.max(7, 9 * toolsScale) },
+                selectedTool === 'trimmer' && styles.toolLabelSelected
+              ]}>TRIMMER</Text>
             </View>
           </View>
         </View>
 
         {/* Container 6: Instructions */}
         <View style={styles.instructionsArea}>
-           <Animated.View style={{ opacity: hintOpacity, alignItems: 'center' }} pointerEvents="none">
-             <Text style={styles.hintText}>Choose the right tool and tap a cell</Text>
-          </Animated.View>
+           {/* Primary Level Hint */}
+           {showHint && (
+              <Animated.View style={{ opacity: hintOpacity, position: 'absolute', alignItems: 'center' }} pointerEvents="none">
+                <Text style={styles.hintText}>Choose the right tool and tap a cell</Text>
+              </Animated.View>
+           )}
+
+           {/* Tool Mismatch Feedback */}
+           <Animated.View style={{ opacity: feedbackOpacity, position: 'absolute', alignItems: 'center' }} pointerEvents="none">
+             <Text style={[styles.hintText, { color: '#FFD700', fontWeight: '900' }]}>{feedbackMessage}</Text>
+           </Animated.View>
         </View>
 
         {/* Container 7: Footer */}
@@ -671,55 +757,60 @@ export default function CozyFarmGame() {
       {showOnboarding && (
         <View style={styles.overlay}>
           <Reanimated.View entering={FadeInDown} style={styles.modalCard}>
-            <View style={styles.onboardingIconContainer}>
-              <AwakeSheep size={64} />
-            </View>
-            <Text style={styles.modalTitleSmall}>Welcome to</Text>
-            <Text style={styles.modalTitleProminent}>Cozy Farm!</Text>
-            
-            <View style={{ height: 12 }} />
-            <Text style={styles.modalSubtitle}>How to play:</Text>
-            
-            <View style={styles.tutorialContainer}>
-              <View style={styles.tutorialRow}>
-                <View style={styles.tutorialIcon}>
-                  <Ionicons name="hammer" size={22} color="#5A7A6A" />
-                </View>
-                <Text style={styles.tutorialText}>
-                  <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>AXE:</Text> Clears Trees
-                </Text>
-              </View>
-              
-              <View style={styles.tutorialRow}>
-                <View style={styles.tutorialIcon}>
-                  <Ionicons name="construct" size={22} color="#5A7A6A" />
-                </View>
-                <Text style={styles.tutorialText}>
-                  <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>PICK:</Text> Clears Rocks
-                </Text>
-              </View>
-              
-              <View style={styles.tutorialRow}>
-                <View style={styles.tutorialIcon}>
-                  <Ionicons name="cut" size={22} color="#5A7A6A" />
-                </View>
-                <Text style={styles.tutorialText}>
-                  <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>TRIMMER:</Text> Clears Grass
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ height: 24 }} />
-
-            <TouchableOpacity 
-              style={styles.primaryButton}
-              onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setShowOnboarding(false);
-              }}
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
             >
-              <Text style={styles.primaryButtonText}>START HARVESTING</Text>
-            </TouchableOpacity>
+              <View style={styles.onboardingIconContainer}>
+                <AwakeSheep size={64} />
+              </View>
+              <Text style={styles.modalTitleSmall}>Welcome to</Text>
+              <Text style={styles.modalTitleProminent}>Cozy Farm!</Text>
+              
+              <View style={{ height: 12 }} />
+              <Text style={styles.modalSubtitle}>How to play:</Text>
+              
+              <View style={styles.tutorialContainer}>
+                <View style={styles.tutorialRow}>
+                  <View style={styles.tutorialIcon}>
+                    <Ionicons name="hammer" size={22} color="#5A7A6A" />
+                  </View>
+                  <Text style={styles.tutorialText}>
+                    <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>AXE:</Text>{"\n"}Clears Trees
+                  </Text>
+                </View>
+                
+                <View style={styles.tutorialRow}>
+                  <View style={styles.tutorialIcon}>
+                    <Ionicons name="construct" size={22} color="#5A7A6A" />
+                  </View>
+                  <Text style={styles.tutorialText}>
+                    <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>PICK:</Text>{"\n"}Clears Rocks
+                  </Text>
+                </View>
+                
+                <View style={styles.tutorialRow}>
+                  <View style={styles.tutorialIcon}>
+                    <Ionicons name="cut" size={22} color="#5A7A6A" />
+                  </View>
+                  <Text style={styles.tutorialText}>
+                    <Text style={{ fontWeight: '900', color: '#5A7A6A' }}>TRIMMER:</Text>{"\n"}Clears Grass
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ height: 24 }} />
+
+              <TouchableOpacity 
+                style={styles.primaryButton}
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  setShowOnboarding(false);
+                }}
+              >
+                <Text style={styles.primaryButtonText}>START HARVESTING</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </Reanimated.View>
         </View>
       )}
@@ -728,26 +819,37 @@ export default function CozyFarmGame() {
       {isLevelComplete && (
         <View style={styles.overlay}>
           <View style={styles.modalCard}>
-            {isNewBest && (
-              <View style={styles.newBestBanner}>
-                <Text style={styles.newBestLabel}>NEW BEST!</Text>
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <View style={{ alignItems: 'center' }}>
+                {/* Fixed-height wrapper for the badge to prevent layout jumps */}
+                <View style={{ height: 40, justifyContent: 'center', marginBottom: 12 }}>
+                  {isNewBest && (
+                    <View style={styles.newBestBanner}>
+                      <Text style={styles.newBestLabel}>NEW BEST!</Text>
+                    </View>
+                  )}
+                </View>
+
+                <AwakeSheep size={80} />
+                <View style={{ height: 16 }} />
+                <Text style={styles.modalTitle}>Garden cleared!</Text>
+                <Text style={styles.modalSubtitle}>Level {level} complete</Text>
+                <View style={{ height: 20 }} />
+                
+                <TouchableOpacity style={styles.primaryButton} onPress={nextLevel}>
+                  <Text style={styles.primaryButtonText}>Next level</Text>
+                </TouchableOpacity>
+                
+                <View style={{ height: 10 }} />
+                
+                <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
+                  <Text style={styles.secondaryButtonText}>Back to games</Text>
+                </TouchableOpacity>
               </View>
-            )}
-            <AwakeSheep size={80} />
-            <View style={{ height: 16 }} />
-            <Text style={styles.modalTitle}>Garden cleared!</Text>
-            <Text style={styles.modalSubtitle}>Level {level} complete</Text>
-            <View style={{ height: 20 }} />
-            
-            <TouchableOpacity style={styles.primaryButton} onPress={nextLevel}>
-              <Text style={styles.primaryButtonText}>Next level</Text>
-            </TouchableOpacity>
-            
-            <View style={{ height: 10 }} />
-            
-            <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
-              <Text style={styles.secondaryButtonText}>Back to games</Text>
-            </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       )}
@@ -785,13 +887,17 @@ const MusicIcon = ({ muted, size, color }: any) => (
   </Svg>
 );
 
-const ToolButton = ({ type, selected, onPress, Icon }: any) => (
+const ToolButton = ({ type, selected, onPress, Icon, size = 60 }: any) => (
   <TouchableOpacity 
-    style={[styles.toolButton, selected && styles.toolButtonSelected]} 
+    style={[
+      styles.toolButton, 
+      { width: size, height: size, borderRadius: size / 2 },
+      selected && styles.toolButtonSelected,
+    ]} 
     onPress={onPress}
     activeOpacity={0.8}
   >
-    <Icon size={24} color={selected ? "#FFFFFF" : "rgba(232, 240, 224, 0.6)"} />
+    <Icon size={Math.round(size * 0.42)} color={selected ? "#FFFFFF" : "rgba(232, 240, 224, 0.6)"} />
   </TouchableOpacity>
 );
 
@@ -957,16 +1063,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
-  safeArea: {
+  hudOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    zIndex: 20,
+  },
+  gameContent: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
+  },
+  headerSpacer: {
+    height: 60,
   },
   headerContainer: {
-    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 70, // Slightly more space for header
+    height: 70, 
   },
   headerItemWrap: {
     width: 80, // Increased width for longer label
@@ -1013,7 +1129,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 60,
-    height: 80,
+    height: 100, // Slightly more height for air
   },
   statItem: {
     alignItems: 'center',
@@ -1034,11 +1150,10 @@ const styles = StyleSheet.create({
     marginTop: 2, // Positive margin to add air
   },
   sheepArea: {
-    flex: 0.8, // Slightly less space for sheep to give more to the grid
-    minHeight: 50,
+    flex: 0.4, // Significantly less space for sheep to reduce the center gap
+    minHeight: 40,
     justifyContent: 'center',
-    marginVertical: 4,
-    overflow: 'hidden',
+    marginVertical: 2,
   },
   sheepField: {
     flex: 1,
@@ -1047,11 +1162,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   playableArea: {
-    flex: 3.5, // More space for the grid
+    flex: 4, // More space for the grid
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 4,
-    overflow: 'hidden',
+    marginVertical: 2,
   },
   grid: {
     flexDirection: 'row',
@@ -1059,11 +1173,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toolsArea: {
-    flex: 1.2, // Slightly less space for tools
+    flex: 1.5, // More space for tools to avoid clipping
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 4,
-    overflow: 'hidden',
+    paddingVertical: 8, // Added padding for circles and labels
   },
   toolSelector: {
     flexDirection: 'row',
@@ -1216,13 +1329,17 @@ const styles = StyleSheet.create({
     width: 280,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 28,
     alignItems: 'center',
     shadowColor: 'rgba(45,43,61,0.15)',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 1,
     shadowRadius: 40,
     elevation: 10,
+    maxHeight: '90%',
+  },
+  modalScrollContent: {
+    padding: 28,
+    alignItems: 'center',
   },
   modalTitleSmall: {
     fontSize: 16,
@@ -1313,10 +1430,15 @@ const styles = StyleSheet.create({
   },
   newBestBanner: {
     backgroundColor: COLORS.primaryBtn,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   newBestLabel: {
     fontSize: 11,
