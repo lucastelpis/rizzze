@@ -1,17 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Dimensions, Animated, Modal, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import Svg, { Path, Rect, Circle } from 'react-native-svg';
-import * as Speech from 'expo-speech';
+import { MiniPlayer } from '@/components/MiniPlayer';
+import { SleepingSheep } from '@/components/SleepingSheep';
+import { CATEGORIES, STORIES } from '@/constants/stories';
 import { tokens } from '@/constants/theme';
+import { SOUND_ASSETS, useAudio } from '@/context/AudioContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
-import { CATEGORIES, STORIES, Story } from '@/constants/stories';
-import { useAudio, SOUND_ASSETS } from '@/context/AudioContext';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { SleepingSheep } from '@/components/SleepingSheep';
-import { MiniPlayer } from '@/components/MiniPlayer';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Speech from 'expo-speech';
+import React, { useEffect, useRef, useState } from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
@@ -64,10 +64,10 @@ export default function ReaderScreen() {
   const C = useColors();
   const router = useRouter();
   const { stopSound } = useAudio();
-  
+
   // Dedicated local player for fireplace ambiance
   const localFireplacePlayer = useAudioPlayer(SOUND_ASSETS['fireplace.m4a']);
-  
+
   // High-fidelity neural narration player (Pro Mode)
   const story = STORIES.find(s => s.id === storyId) || STORIES[0];
   const proNarrationPlayer = useAudioPlayer(story.audioFile ? SOUND_ASSETS[story.audioFile] : null);
@@ -76,7 +76,7 @@ export default function ReaderScreen() {
   useEffect(() => {
     if (localFireplacePlayer) {
       localFireplacePlayer.loop = true;
-      localFireplacePlayer.volume = 0.05; // Extremely subtle backdrop (5%) for maximum voice clarity
+      localFireplacePlayer.volume = 0.1; // Disabled for testing backdrop clarity
     }
   }, [localFireplacePlayer]);
 
@@ -99,7 +99,7 @@ export default function ReaderScreen() {
       const progress = proStatus.currentTime / proStatus.duration;
       const totalParas = story.content.length;
       const estimatedPara = Math.min(Math.floor(progress * totalParas), totalParas - 1);
-      
+
       if (estimatedPara !== currentPara) {
         setCurrentPara(estimatedPara);
       }
@@ -155,7 +155,7 @@ export default function ReaderScreen() {
 
     if (isNarrating) {
       narratorActive.current = true;
-      
+
       // 1. Start fireplace ambiance immediately
       try {
         localFireplacePlayer.play();
@@ -164,13 +164,13 @@ export default function ReaderScreen() {
       } catch (e) {
         console.warn('Fireplace play error', e);
       }
-      
+
       const hasProAudio = Boolean(story.audioFile);
 
       if (hasProAudio && proNarrationPlayer) {
         // 2a. Pro Audio starts INSTANTLY for maximum responsiveness
         console.log('[NAR] Starting Pro Narration audio...');
-        proNarrationPlayer.volume = 1.0; 
+        proNarrationPlayer.volume = 1.0;
         proNarrationPlayer.play();
       } else {
         // 2b. TTS Fallback starts with a small delay for session safety
@@ -199,7 +199,7 @@ export default function ReaderScreen() {
       Speech.stop();
       try {
         if (proNarrationPlayer) proNarrationPlayer.pause();
-      } catch (e) {}
+      } catch (e) { }
     };
   }, [isNarrating, story.audioFile, proNarrationPlayer]);
 
@@ -223,7 +223,7 @@ export default function ReaderScreen() {
         // Robust check for intentional cancellations on Web
         const errorStr = String(e).toLowerCase();
         if (errorStr.includes('canceled') || errorStr.includes('interrupted')) return;
-        
+
         // Also check if the error is an object with an 'error' property equal to 'canceled'
         if (typeof e === 'object' && e !== null && 'error' in e && (e as any).error === 'canceled') return;
 
@@ -238,7 +238,7 @@ export default function ReaderScreen() {
     scrollY.current = contentOffset.y;
     contentHeight.current = contentSize.height;
     layoutHeight.current = layoutMeasurement.height;
-    
+
     const currentProgress = Math.min(
       Math.max(0, contentOffset.y / (contentSize.height - layoutMeasurement.height)),
       1
@@ -258,7 +258,7 @@ export default function ReaderScreen() {
     try {
       localFireplacePlayer.pause();
       if (proNarrationPlayer) proNarrationPlayer.pause();
-    } catch (e) {}
+    } catch (e) { }
     router.back();
   };
 
@@ -270,7 +270,7 @@ export default function ReaderScreen() {
     try {
       localFireplacePlayer.pause();
       if (proNarrationPlayer) proNarrationPlayer.pause();
-    } catch (e) {}
+    } catch (e) { }
     router.push('/profile');
   };
 
@@ -283,20 +283,20 @@ export default function ReaderScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         {/* TOP BAR */}
         <View style={styles.topBar}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.circleButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
             onPress={handleBack}
           >
             <BackChevron color={isDark ? C.white : '#7A7589'} />
           </TouchableOpacity>
-          
+
           <View style={styles.topBarCenter}>
             <Text style={[styles.headerCategory, { color: C.textSecondary }]}>
               {category.title.toUpperCase()}
             </Text>
           </View>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight, borderColor: 'rgba(139, 107, 174, 0.15)' }]}
             onPress={handleProfile}
             activeOpacity={0.8}
@@ -305,9 +305,9 @@ export default function ReaderScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
+        <ScrollView
           ref={scrollRef}
-          style={styles.scroll} 
+          style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
@@ -332,11 +332,11 @@ export default function ReaderScreen() {
               const isActive = isNarrating && idx === currentPara && !story.audioFile;
 
               return (
-                <Text 
-                  key={idx} 
+                <Text
+                  key={idx}
                   style={[
-                    styles.paragraph, 
-                    { 
+                    styles.paragraph,
+                    {
                       color: isActive ? C.accent : (isItalic ? C.textSecondary : C.textPrimary),
                       fontSize: fontSize,
                       lineHeight: fontSize * 1.9,
@@ -355,24 +355,24 @@ export default function ReaderScreen() {
         {/* FONT SETTINGS OVERLAY */}
         {showFontSettings && (
           <View style={[styles.fontOverlay, { backgroundColor: C.bgCard, shadowColor: '#000' }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.closeOverlayBtn}
               onPress={() => setShowFontSettings(false)}
             >
               <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 20, color: C.textMuted }}>×</Text>
             </TouchableOpacity>
-            
+
             <Text style={[styles.overlayLabel, { color: C.textSecondary }]}>Line Height: 1.9x</Text>
             <View style={styles.controlRow}>
-              <TouchableOpacity 
-                style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]} 
+              <TouchableOpacity
+                style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
                 onPress={() => changeFontSize(-1)}
               >
                 <MinusIcon color={C.textPrimary} />
               </TouchableOpacity>
               <Text style={[styles.fontSizeLabel, { color: C.textPrimary }]}>{fontSize}px</Text>
-              <TouchableOpacity 
-                style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]} 
+              <TouchableOpacity
+                style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
                 onPress={() => changeFontSize(1)}
               >
                 <PlusIcon color={C.textPrimary} />
@@ -393,9 +393,9 @@ export default function ReaderScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actionsRow}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.actionBtn, 
+                styles.actionBtn,
                 { backgroundColor: isAutoScroll ? '#EDE5F5' : '#F0EBE3' }
               ]}
               onPress={() => setIsAutoScroll(!isAutoScroll)}
@@ -403,14 +403,14 @@ export default function ReaderScreen() {
             >
               <ArrowDownIcon color={isAutoScroll ? C.accent : '#6B5A8E'} />
               <Text style={[
-                styles.actionLabel, 
+                styles.actionLabel,
                 { color: isAutoScroll ? C.accent : '#6B5A8E' }
               ]}>{isAutoScroll ? 'Scrolling' : 'Auto-scroll'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.actionBtn, 
+                styles.actionBtn,
                 { backgroundColor: isNarrating ? '#EDE5F5' : '#F0EBE3' }
               ]}
               activeOpacity={0.8}
@@ -428,9 +428,9 @@ export default function ReaderScreen() {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.fontBtn, 
+                styles.fontBtn,
                 { backgroundColor: showFontSettings ? '#EDE5F5' : '#F0EBE3' }
               ]}
               activeOpacity={0.8}
@@ -440,7 +440,7 @@ export default function ReaderScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        
+
         {/* Render MiniPlayer if a background sound is still playing (before pressing Listen) */}
         {!isNarrating && <MiniPlayer bottomOffset={122} />}
       </SafeAreaView>

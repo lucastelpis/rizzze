@@ -8,6 +8,7 @@ import {
   Animated,
   StatusBar,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +23,10 @@ import { AwakeSheep } from '@/components/AwakeSheep';
 import { AwakeSheepNoBorder } from '@/components/AwakeSheepNoBorder';
 import { PickaxeIcon, AxeIcon, TrimmerIcon } from '@/components/ToolIcons';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// GRID BASE CONSTANTS
+const GRID_MARGIN = 20;
+const GRID_GAP = 4;
+const MAX_GRID_WIDTH = 400; // Limit grid width on large screens
 
 // COLORS
 const COLORS = {
@@ -158,6 +162,15 @@ const Tree3 = () => (
 
 export default function CozyFarmGame() {
   const router = useRouter();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  // Dynamic Layout Calculations
+  const { actualGridWidth, cellSize, obstacleSize } = useMemo(() => {
+    const width = Math.min(windowWidth - (GRID_MARGIN * 2), MAX_GRID_WIDTH);
+    const cell = Math.floor((width - (4 * GRID_GAP)) / 5);
+    const obstacle = Math.floor(cell * 0.82);
+    return { actualGridWidth: width, cellSize: cell, obstacleSize: obstacle };
+  }, [windowWidth]);
   
   // States
   const [level, setLevel] = useState(1);
@@ -175,8 +188,7 @@ export default function CozyFarmGame() {
 
   // Background Animation Values
   const wanderTopAnim = useRef(new Animated.Value(-100)).current;
-  const wanderBottomAnim = useRef(new Animated.Value(SCREEN_WIDTH + 100)).current;
-  const sparkleAnims = useRef(Array(6).fill(0).map(() => new Animated.Value(0))).current;
+  const wanderBottomAnim = useRef(new Animated.Value(windowWidth + 100)).current;
   const pollenAnims = useRef(Array(5).fill(0).map(() => new Animated.Value(0))).current;
   
   const hintOpacity = useRef(new Animated.Value(0.6)).current;
@@ -297,14 +309,14 @@ export default function CozyFarmGame() {
     const startWanderTop = () => {
       wanderTopAnim.setValue(-100);
       Animated.timing(wanderTopAnim, {
-        toValue: SCREEN_WIDTH + 100,
+        toValue: windowWidth + 100,
         duration: 32000,
         useNativeDriver: true,
       }).start(() => startWanderTop());
     };
 
     const startWanderBottom = () => {
-      wanderBottomAnim.setValue(SCREEN_WIDTH + 100);
+      wanderBottomAnim.setValue(windowWidth + 100);
       Animated.timing(wanderBottomAnim, {
         toValue: -100,
         duration: 28000,
@@ -314,18 +326,8 @@ export default function CozyFarmGame() {
 
     startWanderTop();
     startWanderBottom();
-
-    // Pulses for sparkles
-    sparkleAnims.forEach((anim, i) => {
-      const startPulse = () => {
-        Animated.sequence([
-          Animated.delay(i * 1200),
-          Animated.timing(anim, { toValue: 1, duration: 1000, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration: 2000, useNativeDriver: true }),
-        ]).start(() => startPulse());
-      };
-      startPulse();
-    });
+ 
+    // Pulses for sparkles - REMOVED
 
     pollenAnims.forEach((anim, i) => {
       const startDrift = () => {
@@ -488,7 +490,7 @@ export default function CozyFarmGame() {
     };
     
     return (
-      <View key={cell.id} style={styles.cellWrapper}>
+      <View key={cell.id} style={[styles.cellWrapper, { width: cellSize }]}>
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => handleCellTap(index)}
@@ -499,7 +501,7 @@ export default function CozyFarmGame() {
         >
           {cell.obstacle && !cell.isClearing && (
             <View style={styles.obstacleContainer}>
-              <Svg width="44" height="44" viewBox="0 0 48 48">
+              <Svg width={obstacleSize} height={obstacleSize} viewBox="0 0 48 48">
                 {renderObstacle()}
               </Svg>
               {cell.tapsRemaining > 1 && (
@@ -520,12 +522,9 @@ export default function CozyFarmGame() {
 
   return (
     <View style={styles.container}>
-      {/* BACKGROUND DECORATIONS */}
       <MeadowBackground 
-        wanderTop={wanderTopAnim} 
-        wanderBottom={wanderBottomAnim} 
+        windowWidth={windowWidth}
         pollenAnims={pollenAnims}
-        sparkleAnims={sparkleAnims}
       />
       
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -567,11 +566,16 @@ export default function CozyFarmGame() {
           </View>
         </View>
 
-        {/* GRID */}
+        {/* GRID SECTION */}
         <View style={styles.gridContainer}>
-          <View style={styles.grid}>
+          <SheepField
+            wanderTop={wanderTopAnim}
+            wanderBottom={wanderBottomAnim}
+          />
+          <View style={[styles.grid, { width: actualGridWidth, gap: GRID_GAP }]}>
             {grid.map((cell, index) => renderCell(cell, index))}
           </View>
+          <View style={styles.bottomSpacer} />
         </View>
 
         {/* TOOLS & HINT (Floating Layout for Stability) */}
@@ -773,16 +777,11 @@ const Flower = ({ x, y, scale = 0.8, color = "#F0E868" }: any) => (
   </View>
 );
 
-const Sparkle = ({ x, y, anim }: any) => (
-  <Animated.View style={[styles.decorItem, { left: x, top: y, opacity: anim }]}>
-    <View style={styles.sparkleDot} />
-  </Animated.View>
-);
 
-const Pollen = ({ anim, index }: any) => {
+const Pollen = ({ anim, index, windowWidth }: any) => {
   const translateX = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: [SCREEN_WIDTH * (index / 5), SCREEN_WIDTH * ((index + 1) / 5)],
+    outputRange: [windowWidth * (index / 5), windowWidth * ((index + 1) / 5)],
   });
   const translateY = anim.interpolate({
     inputRange: [0, 0.5, 1],
@@ -800,11 +799,8 @@ const Pollen = ({ anim, index }: any) => {
   );
 };
 
-const MeadowBackground = React.memo(({ wanderTop, wanderBottom, pollenAnims, sparkleAnims }: any) => (
+const MeadowBackground = React.memo(({ windowWidth, pollenAnims }: any) => (
   <View style={StyleSheet.absoluteFill} pointerEvents="none">
-    {/* SKY/HORIZON EFFECT */}
-    <View style={styles.skyHorizon} />
-    
     {/* DECORATIONS */}
     <GrassTuft x="5%" y="22%" scale={0.7} />
     <Flower x="12%" y="25%" color="#F5B7B1" />
@@ -815,31 +811,44 @@ const MeadowBackground = React.memo(({ wanderTop, wanderBottom, pollenAnims, spa
     <Flower x="8%" y="78%" color="#AED6F1" />
     <GrassTuft x="82%" y="88%" scale={1.1} />
     <Flower x="90%" y="82%" color="#D2B4DE" />
-
-    {/* SPARKLES */}
-    <Sparkle x="25%" y="20%" anim={sparkleAnims[0]} />
-    <Sparkle x="70%" y="15%" anim={sparkleAnims[1]} />
-    <Sparkle x="15%" y="85%" anim={sparkleAnims[2]} />
-    <Sparkle x="85%" y="75%" anim={sparkleAnims[3]} />
-    <Sparkle x="50%" y="10%" anim={sparkleAnims[4]} />
-    <Sparkle x="45%" y="90%" anim={sparkleAnims[5]} />
-
-    {/* WANDERING SHEEP - TOP (above grid) */}
-    <Animated.View style={{ position: 'absolute', top: 170, transform: [{ translateX: wanderTop }, { scale: 0.6 }] }}>
-      <AwakeSheepNoBorder size={40} />
-    </Animated.View>
-
-    {/* WANDERING SHEEP - BOTTOM (walking below top sheep) */}
-    <Animated.View style={{ position: 'absolute', top: 198, transform: [{ translateX: wanderBottom }, { scale: 0.6 }, { scaleX: -1 }] }}>
-      <AwakeSheepNoBorder size={40} />
-    </Animated.View>
-
+ 
     {/* POLLEN PARTICLES */}
     {pollenAnims.map((anim: any, i: number) => (
-      <Pollen key={i} anim={anim} index={i} />
+      <Pollen key={i} anim={anim} index={i} windowWidth={windowWidth} />
     ))}
   </View>
 ));
+
+const SheepField = ({ wanderTop, wanderBottom }: any) => {
+  const [height, setHeight] = useState(0);
+  
+  // Calculate dynamic scale based on available height.
+  // Base scale is 0.6 for height ~140.
+  const scale = useMemo(() => {
+    if (height === 0) return 0.6;
+    return Math.max(0.3, Math.min(0.6, height / 200));
+  }, [height]);
+
+  const onLayout = (event: any) => {
+    const layoutHeight = event.nativeEvent.layout.height;
+    if (layoutHeight > 0) setHeight(layoutHeight);
+  };
+
+  return (
+    <View style={styles.sheepField} onLayout={onLayout}>
+      {height > 0 && (
+        <>
+          <Animated.View style={{ position: 'absolute', top: '15%', transform: [{ translateX: wanderTop }, { scale }], zIndex: 1 }}>
+            <AwakeSheepNoBorder size={40} />
+          </Animated.View>
+          <Animated.View style={{ position: 'absolute', top: '45%', transform: [{ translateX: wanderBottom }, { scale }, { scaleX: -1 }], zIndex: 1 }}>
+            <AwakeSheepNoBorder size={40} />
+          </Animated.View>
+        </>
+      )}
+    </View>
+  );
+};
 
 const ClearingAnimation = () => {
     const fade = useRef(new Animated.Value(1)).current;
@@ -1042,19 +1051,27 @@ const styles = StyleSheet.create({
   gridContainer: {
     flex: 1,
     alignItems: 'center',
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  sheepField: {
+    flex: 1,
+    width: '100%',
+    maxHeight: 90,
+    minHeight: 60,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 30, // Push grid down to give score/progress breathing room
-    paddingBottom: 220, // Make room for floating controls
+    alignItems: 'center',
+  },
+  bottomSpacer: {
+    height: 220, // Leave room for controls
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
     justifyContent: 'center',
   },
   cellWrapper: {
-    width: (SCREEN_WIDTH - 48 - 16) / 5, // 5 columns minus gaps
     aspectRatio: 1,
   },
   cell: {
@@ -1068,14 +1085,6 @@ const styles = StyleSheet.create({
   obstacleContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  skyHorizon: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-    backgroundColor: 'rgba(168, 200, 160, 0.15)', // Very soft glow at top
   },
   decorItem: {
     position: 'absolute',
@@ -1092,15 +1101,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0E868',
     opacity: 0.4,
   },
-  sparkleDot: {
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#FFF',
-    shadowColor: '#FFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
+  particle: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.particle,
+    marginLeft: -2,
+    marginTop: -2,
   },
   tapBadge: {
     position: 'absolute',
@@ -1258,16 +1268,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.btnText,
-  },
-  particle: {
-    position: 'absolute',
-    left: '50%',
-    top: '50%',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.particle,
-    marginLeft: -2,
-    marginTop: -2,
   }
 });
