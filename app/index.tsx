@@ -19,7 +19,8 @@ import Animated, {
   withSequence,
   Easing,
   FadeInRight,
-  FadeOutLeft
+  FadeOutLeft,
+  interpolateColor
 } from 'react-native-reanimated';
 import { tokens } from '../constants/theme';
 import { Sparkle } from '../components/SheepMascot';
@@ -27,11 +28,15 @@ import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
 import { CloudIcon, StoriesIcon, GamesIcon } from '../components/BedtimeIcons';
 import { useNotifications } from '@/context/NotificationContext';
+import { SleepingSheep } from '../components/SleepingSheep';
+import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
+import Svg, { Path, Circle } from 'react-native-svg';
 
 // ─── COMPONENTS ───
 
-const Mascot = ({ variant, size = 200 }: { variant: 'welcome' | 'features' | 'teaching' | 'reading' | 'age' | 'goal', size?: number }) => {
+const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welcome' | 'features' | 'teaching' | 'reading' | 'age' | 'goal', size?: number, hideSparkles?: boolean }) => {
   const C = useColors();
+  const { isDark } = useTheme();
   const bob = useSharedValue(0);
 
   useEffect(() => {
@@ -51,7 +56,7 @@ const Mascot = ({ variant, size = 200 }: { variant: 'welcome' | 'features' | 'te
     transform: [{ translateY: bob.value }],
   }));
 
-  const images = {
+  const images: Record<string, any> = {
     welcome: require('../assets/images/mascot_welcome.png'),
     features: require('../assets/images/mascot_features.png'),
     teaching: require('../assets/images/mascot_teaching.png'),
@@ -62,16 +67,20 @@ const Mascot = ({ variant, size = 200 }: { variant: 'welcome' | 'features' | 'te
 
   return (
     <View style={styles.mascotContainer}>
-      <View style={[styles.mascotBgBox, { backgroundColor: C.sleepBg }]}>
+      <View style={[styles.mascotBgBox, { backgroundColor: isDark ? 'rgba(139, 107, 174, 0.15)' : 'rgba(139, 107, 174, 0.1)' }, variant === 'goal' && { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(45, 43, 61, 0.03)' }]}>
         <Animated.View style={animatedStyle}>
-          <Image
-            source={images[variant]}
-            style={styles.mascotImage}
-            resizeMode="contain"
-          />
+          {variant === 'goal' ? (
+            <SleepingSheep size={80} />
+          ) : (
+            <Image
+              source={images[variant]}
+              style={styles.mascotImage}
+              resizeMode="contain"
+            />
+          )}
         </Animated.View>
       </View>
-      {variant === 'welcome' && (
+      {variant === 'welcome' && !hideSparkles && (
         <>
           <View style={styles.sparkle1}><Sparkle size={24} color={C.accentSoft} /></View>
           <View style={styles.sparkle2}><Sparkle size={32} color={C.accentSoft} /></View>
@@ -87,7 +96,7 @@ const FeatureItem = ({ title, description, color, Icon, isLast }: any) => {
     <View>
       <View style={styles.featureContent}>
         <View style={[styles.iconCircle, { backgroundColor: color }]}>
-          <Icon size={24} color={C.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.4)'} />
+          <Icon size={24} color="rgba(255, 255, 255, 0.95)" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.featureTitle, { color: C.textPrimary }]}>{title}</Text>
@@ -138,7 +147,7 @@ const Page1 = () => {
         <Text style={[styles.heroTitle, { color: C.textPrimary }]}>
           Welcome to <Text style={{ color: C.accent }}>Rizzze</Text>!
         </Text>
-        <Text style={[styles.heroSubtitle, { color: C.textSecondary }]}>
+        <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
           Settle in for a cozy night with sleep-inducing sounds, soft-read stories, and peaceful puzzles
         </Text>
       </View>
@@ -152,28 +161,47 @@ const Page2 = () => {
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <Mascot variant="teaching" />
       <View style={styles.pageContent}>
-        <Text style={[styles.sectionLabel, { color: C.accent }]}>HOW WE HELP</Text>
-        <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Designed for deep rest</Text>
+        <Text style={[styles.overtitle, { color: C.overtitle }]}>HOW WE HELP</Text>
+        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Designed for deep rest</Text>
         <View style={styles.featureList}>
           <FeatureItem
             title="White noise"
             description="High-fidelity environment sounds"
-            color={C.soundsBg}
+            color={C.soundsVibrant}
             Icon={CloudIcon}
           />
           <FeatureItem
             title="Bedtime stories"
             description="Gentle stories and guided sessions"
-            color={C.sleepBg}
+            color={C.sleepVibrant}
             Icon={StoriesIcon}
           />
           <FeatureItem
             title="Relaxing games"
             description="Mini-games to lower heart rate"
-            color={C.storiesBg}
+            color={C.storiesVibrant}
             Icon={GamesIcon}
             isLast
           />
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
+
+const PageGender = ({ gender, setGender }: any) => {
+  const genders = ['Female', 'Male', 'Others', 'Prefer not to say'];
+  const C = useColors();
+  return (
+    <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
+      <Mascot variant="reading" />
+      <View style={styles.pageContent}>
+        <Text style={[styles.overtitle, { color: C.overtitle }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
+        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How do you identify?</Text>
+        <View style={styles.selectionGrid}>
+          {genders.map(g => (
+            <GoalCard key={g} title={g} selected={gender === g} onPress={() => setGender(g)} />
+          ))}
         </View>
       </View>
     </Animated.View>
@@ -187,8 +215,8 @@ const Page3 = ({ age, setAge }: any) => {
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <Mascot variant="reading" />
       <View style={styles.pageContent}>
-        <Text style={[styles.sectionLabel, { color: C.accent }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
-        <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>How old are you?</Text>
+        <Text style={[styles.overtitle, { color: C.overtitle }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
+        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
         <View style={styles.selectionGrid}>
           {ages.map(a => (
             <GoalCard key={a} title={a} selected={age === a} onPress={() => setAge(a)} />
@@ -211,8 +239,8 @@ const Page4 = ({ goal, setGoal }: any) => {
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <Mascot variant="reading" />
       <View style={styles.pageContent}>
-        <Text style={[styles.sectionLabel, { color: C.accent }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
-        <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>What is your goal?</Text>
+        <Text style={[styles.overtitle, { color: C.overtitle }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
+        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What is your goal?</Text>
         <View style={styles.selectionGrid}>
           {goals.map(g => (
             <GoalCard key={g} title={g} selected={goal === g} onPress={() => setGoal(g)} />
@@ -225,99 +253,217 @@ const Page4 = ({ goal, setGoal }: any) => {
 
 const Page5 = () => {
   const C = useColors();
-  const adjustTime = (type: 'hour' | 'minute', amount: number) => {
+  const { 
+    bedtime, setBedtime, 
+    wakeUpTime, setWakeUpTime,
+    isNotificationsEnabled, toggleNotifications,
+    isDailyCheckInEnabled, toggleDailyCheckIn
+  } = useNotifications();
+
+  const [localBedtime, setLocalBedtime] = useState(bedtime);
+  const [localWakeUp, setLocalWakeUp] = useState(wakeUpTime);
+
+  const adjustBedtime = (type: 'hour' | 'minute', amount: number) => {
+    let h = localBedtime.hour;
+    let m = localBedtime.minute;
     if (type === 'hour') {
-      let next = localHour + amount;
-      if (next > 23) next = 0;
-      if (next < 0) next = 23;
-      setLocalHour(next);
+      h = (h + amount + 24) % 24;
     } else {
-      let next = localMinute + amount;
-      if (next > 59) {
-        next = 0;
-        adjustTime('hour', 1);
-      }
-      if (next < 0) {
-        next = 55;
-        adjustTime('hour', -1);
-      }
-      setLocalMinute(next);
+      m = (m + amount + 60) % 60;
     }
+    const newTime = { hour: h, minute: m };
+    setLocalBedtime(newTime);
+    setBedtime(h, m);
   };
 
-  const { bedtime, setBedtime, isNotificationsEnabled, toggleNotifications } = useNotifications();
-  const [localHour, setLocalHour] = useState(bedtime.hour);
-  const [localMinute, setLocalMinute] = useState(bedtime.minute);
-  
-  const switchAnim = useSharedValue(isNotificationsEnabled ? 1 : 0);
+  const adjustWakeUp = (type: 'hour' | 'minute', amount: number) => {
+    let h = localWakeUp.hour;
+    let m = localWakeUp.minute;
+    if (type === 'hour') {
+      h = (h + amount + 24) % 24;
+    } else {
+      m = (m + amount + 60) % 60;
+    }
+    const newTime = { hour: h, minute: m };
+    setLocalWakeUp(newTime);
+    setWakeUpTime(h, m);
+  };
 
-  useEffect(() => {
-    switchAnim.value = withTiming(isNotificationsEnabled ? 1 : 0, { duration: 250, easing: Easing.bezier(0.4, 0, 0.2, 1) });
-  }, [isNotificationsEnabled]);
-
-  const displayHour = localHour % 12 || 12;
-  const ampm = localHour >= 12 ? 'PM' : 'AM';
-
-  const trackStyle = useAnimatedStyle(() => ({
-    backgroundColor: switchAnim.value > 0.5 
-      ? C.accent 
-      : (C.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E8E2D8')
-  }));
-
-  const thumbStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: switchAnim.value * 22 + 2 }]
-  }));
-
-  useEffect(() => {
-    setBedtime(localHour, localMinute);
-  }, [localHour, localMinute]);
+  const duration = calculateSleepDuration(localBedtime, localWakeUp);
+  const isDark = C.mode === 'dark';
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <Mascot variant="teaching" />
+      <Mascot variant="welcome" hideSparkles />
       <View style={styles.pageContent}>
-        <Text style={[styles.sectionLabel, { color: C.accent, marginBottom: 4 }]}>CONSISTENCY IS KEY TO A QUALITY SLEEP</Text>
-        <Text style={[styles.sectionTitle, { color: C.textPrimary, marginBottom: 16 }]}>Set a bedtime reminder</Text>
-
-        <View style={[styles.timeSelector, { backgroundColor: C.bgCard, paddingVertical: 14, marginBottom: 16 }]}>
-          <View style={styles.timeColumn}>
-            <TouchableOpacity onPress={() => adjustTime('hour', 1)} style={styles.timeArrow}><Text style={{ color: C.accent }}>▲</Text></TouchableOpacity>
-            <Text style={[styles.timeValue, { color: C.textPrimary }]}>{displayHour < 10 ? `0${displayHour}` : displayHour}</Text>
-            <TouchableOpacity onPress={() => adjustTime('hour', -1)} style={styles.timeArrow}><Text style={{ color: C.accent }}>▼</Text></TouchableOpacity>
-          </View>
-          <Text style={[styles.timeSeparator, { color: C.textPrimary }]}>:</Text>
-          <View style={styles.timeColumn}>
-            <TouchableOpacity onPress={() => adjustTime('minute', 5)} style={styles.timeArrow}><Text style={{ color: C.accent }}>▲</Text></TouchableOpacity>
-            <Text style={[styles.timeValue, { color: C.textPrimary }]}>{localMinute < 10 ? `0${localMinute}` : localMinute}</Text>
-            <TouchableOpacity onPress={() => adjustTime('minute', -5)} style={styles.timeArrow}><Text style={{ color: C.accent }}>▼</Text></TouchableOpacity>
-          </View>
-          <View style={[styles.ampmBadge, { backgroundColor: C.mode === 'dark' ? 'rgba(255,255,255,0.08)' : C.accentLight }]}>
-            <Text style={[styles.ampmText, { color: C.accent, fontWeight: '800' }]}>{ampm}</Text>
-          </View>
-        </View>
-
-        <Text style={[styles.heroSubtitle, { color: C.textSecondary, paddingHorizontal: 20, marginBottom: 16, marginTop: 0, fontSize: 16, opacity: 1, fontWeight: '500' }]}>
-          We'll send a gentle nudge when it's time to wind down.
+        <Text style={[styles.overtitle, { color: C.overtitle }]}>CONSISTENCY IS KEY</Text>
+        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Set your sleep schedule</Text>
+        <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+          Wind down at night. Rise with a boost.
         </Text>
 
-        <View style={[styles.notifRow, { borderTopWidth: 1, borderTopColor: C.mode === 'dark' ? 'rgba(255,255,255,0.05)' : C.border, paddingTop: 20, marginTop: 4, alignItems: 'center' }]}>
-          <View style={{ flex: 1, paddingRight: 16 }}>
-            <Text style={[styles.notifRowTitle, { color: C.textPrimary }]}>Bedtime Notifications</Text>
-            <Text style={[styles.notifRowSubtitle, { color: C.textSecondary, opacity: 1, fontWeight: '600' }]}>
-              {isNotificationsEnabled ? "We'll nudge you at " + (displayHour < 10 ? `0${displayHour}` : displayHour) + ":" + (localMinute < 10 ? `0${localMinute}` : localMinute) + " " + ampm : "Stay on track with a gentle reminder"}
-            </Text>
-          </View>
-          <TouchableOpacity 
-            onPress={() => toggleNotifications(!isNotificationsEnabled)}
-            activeOpacity={1}
-          >
-            <Animated.View style={[styles.switchTrack, trackStyle]}>
-              <Animated.View style={[styles.switchThumb, { backgroundColor: '#FFF' }, thumbStyle]} />
-            </Animated.View>
-          </TouchableOpacity>
+        <View style={styles.pickerRow}>
+          <TimePickerCard
+            label="BEDTIME"
+            hour={localBedtime.hour}
+            minute={localBedtime.minute}
+            onAdjust={adjustBedtime}
+            themeColor="#C4AED8"
+            Icon={() => (
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="#C4AED8">
+                <Path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+              </Svg>
+            )}
+          />
+          <View style={{ width: 12 }} />
+          <TimePickerCard
+            label="WAKE UP"
+            hour={localWakeUp.hour}
+            minute={localWakeUp.minute}
+            onAdjust={adjustWakeUp}
+            themeColor="#E8C88A"
+            Icon={() => (
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="#E8C88A">
+                <Circle cx="12" cy="12" r="5" />
+                <Path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#E8C88A" strokeWidth="2" strokeLinecap="round" />
+              </Svg>
+            )}
+          />
+        </View>
+
+        <View style={styles.durationBox}>
+          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.textSecondary} strokeWidth="1.5">
+            <Circle cx="12" cy="12" r="10" />
+            <Path d="M12 6v6l4 2" />
+          </Svg>
+          <Text style={[styles.durationText, { color: C.textSecondary }]}>
+            {formatDuration(duration.hours, duration.minutes)} of sleep
+          </Text>
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: C.border }]} />
+
+        <View style={styles.togglesContainer}>
+          <ToggleRow
+            title="Bedtime nudge"
+            description="Soft wind-down reminders"
+            isEnabled={isNotificationsEnabled}
+            onToggle={toggleNotifications}
+          />
+          <ToggleRow
+            title="Morning check-in"
+            description="Rate your sleep & rise with a cozy nudge"
+            isEnabled={isDailyCheckInEnabled}
+            onToggle={toggleDailyCheckIn}
+          />
         </View>
       </View>
     </Animated.View>
+  );
+};
+
+const formatTime = (h: number, m: number) => {
+  const hours = h % 12 || 12;
+  const minutes = m < 10 ? `0${m}` : m;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${hours}:${minutes} ${ampm}`;
+};
+
+const TimePickerCard = ({ label, hour, minute, onAdjust, themeColor, Icon }: any) => {
+  const displayHour = hour % 12 || 12;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const C = useColors();
+  const isDark = C.mode === 'dark';
+  
+  // Use a slightly darker version for arrows in light mode for contrast
+  const arrowColor = !isDark ? (label === 'BEDTIME' ? C.accent : '#B89241') : themeColor;
+
+  return (
+    <View style={[
+      styles.tpCard, 
+      { backgroundColor: C.bgCard },
+      !isDark && { ...tokens.shadows.card, elevation: 4 }
+    ]}>
+      <View style={styles.tpHeader}>
+        <Icon />
+        <Text style={[styles.tpLabel, { color: themeColor }]}>{label}</Text>
+      </View>
+      
+      <View style={styles.tpControls}>
+        <View style={styles.tpCol}>
+          <TouchableOpacity onPress={() => onAdjust('hour', 1)} style={styles.tpArrow}>
+            <Svg width={10} height={6} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
+              <Path d="M5 0L10 6H0L5 0Z" />
+            </Svg>
+          </TouchableOpacity>
+          <Text style={[styles.tpValue, { color: C.textPrimary }]}>{displayHour < 10 ? `0${displayHour}` : displayHour}</Text>
+          <TouchableOpacity onPress={() => onAdjust('hour', -1)} style={styles.tpArrow}>
+            <Svg width={10} height={6} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
+              <Path d="M5 6L0 0H10L5 6Z" />
+            </Svg>
+          </TouchableOpacity>
+        </View>
+        
+        <Text style={[styles.tpSeparator, { color: C.textSecondary }]}>:</Text>
+        
+        <View style={styles.tpCol}>
+          <TouchableOpacity onPress={() => onAdjust('minute', 5)} style={styles.tpArrow}>
+            <Svg width={10} height={6} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
+              <Path d="M5 0L10 6H0L5 0Z" />
+            </Svg>
+          </TouchableOpacity>
+          <Text style={[styles.tpValue, { color: C.textPrimary }]}>{minute < 10 ? `0${minute}` : minute}</Text>
+          <TouchableOpacity onPress={() => onAdjust('minute', -5)} style={styles.tpArrow}>
+            <Svg width={10} height={6} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
+              <Path d="M5 6L0 0H10L5 6Z" />
+            </Svg>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.tpAmPm, { color: C.textSecondary }]}>{ampm}</Text>
+      </View>
+    </View>
+  );
+};
+
+const ToggleRow = ({ title, description, isEnabled, onToggle }: any) => {
+  const switchAnim = useSharedValue(isEnabled ? 1 : 0);
+  const C = useColors();
+  const { isDark } = useTheme();
+
+  useEffect(() => {
+    switchAnim.value = withTiming(isEnabled ? 1 : 0, { duration: 250, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+  }, [isEnabled]);
+
+  const trackStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      switchAnim.value,
+      [0, 1],
+      [isDark ? 'rgba(255,255,255,0.1)' : '#E8E2D8', C.accent]
+    ),
+  }));
+
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: switchAnim.value * 18 }]
+  }));
+
+  return (
+    <View style={styles.toggleRow}>
+      <View style={{ flex: 1, paddingRight: 16 }}>
+        <Text style={[styles.toggleTitle, { color: C.textPrimary }]}>{title}</Text>
+        <Text style={[styles.toggleDescription, { color: C.textSecondary }]}>{description}</Text>
+      </View>
+      <TouchableOpacity activeOpacity={1} onPress={() => onToggle(!isEnabled)}>
+        <Animated.View style={[styles.toggleTrack, trackStyle]}>
+          <Animated.View style={[
+            styles.toggleThumb, 
+            { backgroundColor: '#FFF' },
+            !isDark && tokens.shadows.card,
+            thumbStyle
+          ]} />
+        </Animated.View>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -326,16 +472,22 @@ const Page5 = () => {
 export default function Onboarding() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(0);
+  const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [goal, setGoal] = useState('');
   const { height } = useWindowDimensions();
   const C = useColors();
   const { isDark } = useTheme();
+  const { isNotificationsEnabled, requestPermission } = useNotifications();
 
-  const next = () => {
-    if (currentPage < 4) {
+  const next = async () => {
+    if (currentPage < 5) {
       setCurrentPage(currentPage + 1);
     } else {
+      // If notifications are enabled, make sure we have permission
+      if (isNotificationsEnabled) {
+        await requestPermission();
+      }
       router.replace('/(tabs)');
     }
   };
@@ -351,7 +503,7 @@ export default function Onboarding() {
       <SafeAreaView style={styles.safeArea}>
         {/* Progress Dots */}
         <View style={styles.progressContainer}>
-          {[0, 1, 2, 3, 4].map(i => (
+          {[0, 1, 2, 3, 4, 5].map(i => (
             <View
               key={i}
               style={[
@@ -368,9 +520,10 @@ export default function Onboarding() {
         <View style={styles.viewPager}>
           {currentPage === 0 && <Page1 key="p1" />}
           {currentPage === 1 && <Page2 key="p2" />}
-          {currentPage === 2 && <Page3 key="p3" age={age} setAge={setAge} />}
-          {currentPage === 3 && <Page4 key="p4" goal={goal} setGoal={setGoal} />}
-          {currentPage === 4 && <Page5 key="p5" />}
+          {currentPage === 2 && <PageGender key="pg" gender={gender} setGender={setGender} />}
+          {currentPage === 3 && <Page3 key="p3" age={age} setAge={setAge} />}
+          {currentPage === 4 && <Page4 key="p4" goal={goal} setGoal={setGoal} />}
+          {currentPage === 5 && <Page5 key="p5" />}
         </View>
 
         {/* Navigation */}
@@ -386,14 +539,14 @@ export default function Onboarding() {
               styles.nextButton,
               { backgroundColor: C.accent },
               currentPage === 0 && { width: '100%' },
-              (currentPage === 2 && !age || currentPage === 3 && !goal) && [styles.nextButtonDisabled, { backgroundColor: C.accentSoft }]
+              (currentPage === 2 && !gender || currentPage === 3 && !age || currentPage === 4 && !goal) && [styles.nextButtonDisabled, { backgroundColor: C.accentSoft }]
             ]}
-            disabled={(currentPage === 2 && !age) || (currentPage === 3 && !goal)}
+            disabled={(currentPage === 2 && !gender) || (currentPage === 3 && !age) || (currentPage === 4 && !goal)}
           >
             <Text style={styles.nextButtonText}>
-              {(currentPage === 2 && !age) || (currentPage === 3 && !goal)
+              {(currentPage === 2 && !gender) || (currentPage === 3 && !age) || (currentPage === 4 && !goal)
                 ? "Pick an option"
-                : currentPage === 4 ? "Let's Start" : "Next"}
+                : currentPage === 5 ? "Let's Start" : "Next"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -467,22 +620,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 2,
     marginBottom: 8,
+    textTransform: 'uppercase',
   },
   heroTitle: {
     fontFamily: tokens.fonts.heading,
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: '900',
     textAlign: 'center',
-    letterSpacing: -0.64,
+    letterSpacing: -0.44,
+    marginBottom: 6,
   },
   heroSubtitle: {
     fontFamily: tokens.fonts.body,
-    fontSize: 18,
+    fontSize: 13,
+    fontWeight: '500',
     textAlign: 'center',
-    paddingHorizontal: 50,
-    marginTop: 16,
-    lineHeight: 24,
-    opacity: 0.8,
+    paddingHorizontal: 20,
+    marginTop: 0,
+    lineHeight: 19.5,
   },
   sectionLabel: {
     fontFamily: tokens.fonts.caption,
@@ -494,12 +649,15 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: tokens.fonts.heading,
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
-    marginBottom: tokens.spacing.lg,
+    textAlign: 'center',
+    marginBottom: 6,
+    letterSpacing: -0.44,
   },
   featureList: {
     width: '100%',
+    marginTop: 20,
   },
   featureContent: {
     flexDirection: 'row',
@@ -530,6 +688,7 @@ const styles = StyleSheet.create({
   selectionGrid: {
     width: '100%',
     gap: 16,
+    marginTop: 24,
   },
   goalCard: {
     borderRadius: 16,
@@ -616,7 +775,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   timeArrow: {
-    padding: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   timeSeparator: {
     fontSize: 42,
@@ -667,5 +830,120 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+  },
+  pageDescription: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 12.5,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 20,
+    marginBottom: 28,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    width: '100%',
+    marginBottom: 24,
+    marginTop: 8,
+  },
+  durationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
+  durationText: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    width: '100%',
+    marginBottom: 16,
+  },
+  togglesContainer: {
+    width: '100%',
+    gap: 14,
+  },
+  tpCard: {
+    flex: 1,
+    backgroundColor: '#3D3A52',
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  tpHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  tpLabel: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  tpControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tpCol: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  tpArrow: {
+    padding: 2,
+  },
+  tpValue: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  tpSeparator: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: -2,
+  },
+  tpAmPm: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 6,
+    marginTop: 4,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  toggleTitle: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  toggleDescription: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  toggleTrack: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFF',
   },
 });

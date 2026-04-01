@@ -100,6 +100,7 @@ export const STORIES: Story[] = [
     "title": "The Keeper of Lost Things",
     "subtitle": "Honoring memories that remain",
     "category": "folklore",
+    "origin": "Modern Fable",
     "readTime": "4 min read",
     "audioFile": "03-the-keeper-of-lost-things",
     "content": [
@@ -124,6 +125,7 @@ export const STORIES: Story[] = [
     "title": "The Birds' Council",
     "subtitle": "Finding harmony in the collective",
     "category": "folklore",
+    "origin": "Persian Legend",
     "readTime": "3 min read",
     "audioFile": "04-the-birds-council",
     "content": [
@@ -146,6 +148,7 @@ export const STORIES: Story[] = [
     "title": "The House of Echoes",
     "subtitle": "Love that lingers in the walls",
     "category": "folklore",
+    "origin": "English Fable",
     "readTime": "4 min read",
     "audioFile": "05-the-house-of-echoes",
     "content": [
@@ -168,6 +171,7 @@ export const STORIES: Story[] = [
     "title": "The Mapmaker's Last Map",
     "subtitle": "The beauty of getting lost",
     "category": "folklore",
+    "origin": "Modern Fable",
     "readTime": "3 min read",
     "audioFile": "06-the-mapmakers-last-map",
     "content": [
@@ -188,6 +192,7 @@ export const STORIES: Story[] = [
     "title": "The Gardener's Patience",
     "subtitle": "Planting seeds for a future we won't see",
     "category": "folklore",
+    "origin": "Zen Parable",
     "readTime": "3 min read",
     "audioFile": "07-the-gardeners-patience",
     "content": [
@@ -208,6 +213,7 @@ export const STORIES: Story[] = [
     "title": "The Library That Only Opens at Night",
     "subtitle": "Finding shelter in the silence",
     "category": "folklore",
+    "origin": "Urban Legend",
     "readTime": "4 min read",
     "audioFile": "08-the-library-that-only-opens-at-night",
     "content": [
@@ -229,6 +235,7 @@ export const STORIES: Story[] = [
     "title": "The Weaver of Invisible Thread",
     "subtitle": "Care woven into the air",
     "category": "folklore",
+    "origin": "Highland Lore",
     "readTime": "3 min read",
     "audioFile": "09-the-weaver-of-invisible-thread",
     "content": [
@@ -249,6 +256,7 @@ export const STORIES: Story[] = [
     "title": "The River That Flowed Uphill",
     "subtitle": "The courage of returning home",
     "category": "folklore",
+    "origin": "Scottish Lore",
     "readTime": "3 min read",
     "audioFile": "10-the-river-that-flowed-uphill",
     "content": [

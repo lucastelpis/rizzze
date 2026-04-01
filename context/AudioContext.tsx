@@ -32,22 +32,26 @@ export type SoundMeta = {
   graphicId?: string;
 };
 
-type AudioContextType = {
-  activeSound: SoundMeta | null;
-  isPlaying: boolean;
-  isLooping: boolean;
-  toggleLoop: () => void;
-  visualProgress: number;
-  visualDuration: number;
-  displayPosition: number;
+type AudioPlaybackContextType = {
   playSelectedSound: (sound: SoundMeta) => void;
   togglePlayPause: () => void;
   stopSound: () => void;
   scrubTo: (position: number) => void;
   setIsScrubbing: (scrubbing: boolean) => void;
+  toggleLoop: () => void;
 };
 
-const AudioContext = createContext<AudioContextType | null>(null);
+type AudioStatusContextType = {
+  activeSound: SoundMeta | null;
+  isPlaying: boolean;
+  isLooping: boolean;
+  visualProgress: number;
+  visualDuration: number;
+  displayPosition: number;
+};
+
+const AudioPlaybackContext = createContext<AudioPlaybackContextType | null>(null);
+const AudioStatusContext = createContext<AudioStatusContextType | null>(null);
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [activeSound, setActiveSound] = useState<SoundMeta | null>(null);
@@ -64,9 +68,9 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   // When activeSound changes, we need to update the asset.
   const asset = activeSound ? SOUND_ASSETS[activeSound.soundFile] : null;
 
-  // Dual Player Setup
-  const player1 = useAudioPlayer(asset, { updateInterval: 30 });
-  const player2 = useAudioPlayer(asset, { updateInterval: 30 });
+  // Dual Player Setup - Increased update interval to 100ms for performance
+  const player1 = useAudioPlayer(asset, { updateInterval: 100 });
+  const player2 = useAudioPlayer(asset, { updateInterval: 100 });
   const status1 = useAudioPlayerStatus(player1);
   const status2 = useAudioPlayerStatus(player2);
 
@@ -138,7 +142,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const isSimpleSound = activeSound?.subtitle?.includes('Simple') ?? false;
   const visualDuration = isSimpleSound ? 60 * 1000 : 5 * 60 * 1000; 
 
-  // Custom UI Timer
+  // Custom UI Timer - Reduced frequency to 250ms for performance
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isPlaying && !isScrubbing && activeSound) {
@@ -161,7 +165,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
           }
           return next;
         });
-      }, 50);
+      }, 250); 
     } else {
       lastTimeRef.current = Date.now(); 
     }
@@ -170,106 +174,114 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   const displayPosition = isScrubbing ? scrubPosition : visualProgress;
 
-  const playSelectedSound = (sound: SoundMeta) => {
-    if (activeSound?.soundFile === sound.soundFile) {
-      if (!isPlaying) togglePlayPause();
-      return;
-    }
-    
-    // New sound: pause existing first safely
-    try {
-      player1.pause();
-      player2.pause();
-    } catch (err) {
-      // Ignore if players aren't ready to pause
-    }
-    
-    setActiveSound(sound);
-    markActivity();
-  };
-
-  const togglePlayPause = () => {
-    if (!activeSound) return;
-    try {
-      if (isPlaying) {
+  const playbackHandlers = React.useMemo(() => ({
+    playSelectedSound: (sound: SoundMeta) => {
+      if (activeSound?.soundFile === sound.soundFile) {
+        if (!isPlaying) {
+          try {
+            const activePlayer = activePlayerIdx === 0 ? player1 : player2;
+            activePlayer.play();
+          } catch (e) {}
+        }
+        return;
+      }
+      
+      try {
+        player1.pause();
+        player2.pause();
+      } catch (err) {}
+      
+      setActiveSound(sound);
+      markActivity();
+    },
+    togglePlayPause: () => {
+      if (!activeSound) return;
+      try {
+        if (isPlaying) {
+          player1.pause();
+          player2.pause();
+        } else {
+          const activePlayer = activePlayerIdx === 0 ? player1 : player2;
+          if (visualProgress >= visualDuration && !isLooping) {
+            setVisualProgress(0);
+            activePlayer.seekTo(0);
+          }
+          activePlayer.play();
+        }
+      } catch (err) {
+        console.warn('Audio toggle failed:', err);
+      }
+    },
+    stopSound: () => {
+      try {
+        player1.pause();
+        player2.pause();
+      } catch (err) {}
+      setActiveSound(null);
+    },
+    scrubTo: (newPosition: number) => {
+      scrubPositionRef.current = newPosition;
+      setScrubPosition(newPosition);
+      setVisualProgress(newPosition);
+    },
+    setIsScrubbing: (scrubbing: boolean) => {
+      setIsScrubbing(scrubbing);
+      if (scrubbing) {
+        wasPlayingRef.current = isPlaying;
         player1.pause();
         player2.pause();
       } else {
+        const inactivePlayer = activePlayerIdx === 0 ? player2 : player1;
+        inactivePlayer.pause();
+        inactivePlayer.seekTo(0);
+
         const activePlayer = activePlayerIdx === 0 ? player1 : player2;
-        if (visualProgress >= visualDuration && !isLooping) {
-          setVisualProgress(0);
-          activePlayer.seekTo(0);
+        if (activeStatus.duration) {
+          const nativeSeek = (scrubPositionRef.current / 1000) % activeStatus.duration;
+          activePlayer.seekTo(nativeSeek);
         }
-        activePlayer.play();
+        
+        if (wasPlayingRef.current) {
+          activePlayer.play();
+        }
       }
-    } catch (err) {
-      console.warn('Audio toggle failed:', err);
-    }
-  };
+    },
+    toggleLoop: () => setIsLooping(l => !l),
+  }), [activeSound, isPlaying, player1, player2, activePlayerIdx, visualProgress, visualDuration, isLooping, activeStatus.duration]);
 
-  const stopSound = () => {
-    try {
-      player1.pause();
-      player2.pause();
-    } catch (err) {
-      // Safe to ignore if already stopped or not ready
-    }
-    setActiveSound(null);
-  };
-
-  const scrubTo = (newPosition: number) => {
-    scrubPositionRef.current = newPosition;
-    setScrubPosition(newPosition);
-    setVisualProgress(newPosition);
-  };
-
-  const handleSetIsScrubbing = (scrubbing: boolean) => {
-    setIsScrubbing(scrubbing);
-    if (scrubbing) {
-      wasPlayingRef.current = isPlaying;
-      player1.pause();
-      player2.pause();
-    } else {
-      const inactivePlayer = activePlayerIdx === 0 ? player2 : player1;
-      inactivePlayer.pause();
-      inactivePlayer.seekTo(0);
-
-      const activePlayer = activePlayerIdx === 0 ? player1 : player2;
-      if (activeStatus.duration) {
-        const nativeSeek = (scrubPositionRef.current / 1000) % activeStatus.duration;
-        activePlayer.seekTo(nativeSeek);
-      }
-      
-      if (wasPlayingRef.current) {
-        activePlayer.play();
-      }
-    }
-  };
+  const statusValue = React.useMemo(() => ({
+    activeSound,
+    isPlaying,
+    isLooping,
+    visualProgress,
+    visualDuration,
+    displayPosition,
+  }), [activeSound, isPlaying, isLooping, visualProgress, visualDuration, displayPosition]);
 
   return (
-    <AudioContext.Provider
-      value={{
-        activeSound,
-        isPlaying,
-        isLooping,
-        toggleLoop: () => setIsLooping(l => !l),
-        visualProgress,
-        visualDuration,
-        displayPosition,
-        playSelectedSound,
-        togglePlayPause,
-        stopSound,
-        scrubTo,
-        setIsScrubbing: handleSetIsScrubbing,
-      }}
-    >
-      {children}
-    </AudioContext.Provider>
+    <AudioPlaybackContext.Provider value={playbackHandlers}>
+      <AudioStatusContext.Provider value={statusValue}>
+        {children}
+      </AudioStatusContext.Provider>
+    </AudioPlaybackContext.Provider>
   );
 }
 
-export const useAudio = () => {
-  const ctx = useContext(AudioContext);
-  if (!ctx) throw new Error('useAudio must be used within AudioProvider');
+export const useAudioPlayback = () => {
+  const ctx = useContext(AudioPlaybackContext);
+  if (!ctx) throw new Error('useAudioPlayback must be used within AudioProvider');
   return ctx;
+};
+
+export const useAudioStatus = () => {
+  const ctx = useContext(AudioStatusContext);
+  if (!ctx) throw new Error('useAudioStatus must be used within AudioProvider');
+  return ctx;
+};
+
+// Legacy compatibility shim to avoid breaking other files immediately
+export const useAudio = () => {
+  const p = useAudioPlayback();
+  const s = useAudioStatus();
+  return { ...p, ...s };
 };

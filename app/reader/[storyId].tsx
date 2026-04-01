@@ -2,7 +2,7 @@ import { AwakeSheep } from '@/components/AwakeSheep';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { CATEGORIES, STORIES } from '@/constants/stories';
 import { tokens } from '@/constants/theme';
-import { SOUND_ASSETS, useAudio } from '@/context/AudioContext';
+import { SOUND_ASSETS, useAudioPlayback } from '@/context/AudioContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -89,7 +89,7 @@ export default function ReaderScreen() {
   const { isDark } = useTheme();
   const C = useColors();
   const router = useRouter();
-  const { stopSound } = useAudio();
+  const { stopSound } = useAudioPlayback();
 
   // Dedicated local player for fireplace ambiance
   const localFireplacePlayer = useAudioPlayer(SOUND_ASSETS['fireplace.m4a']);
@@ -197,8 +197,10 @@ export default function ReaderScreen() {
         // Handle Pausing
         Speech.stop();
         if (proNarrationPlayer) proNarrationPlayer.pause();
+        try { localFireplacePlayer.pause(); } catch (e) { }
       } else {
         // Handle Playing
+        try { localFireplacePlayer.play(); } catch (e) { }
         const hasProAudio = Boolean(story.audioFile);
         if (hasProAudio && proNarrationPlayer) {
           proNarrationPlayer.volume = 1.0;
@@ -378,7 +380,7 @@ export default function ReaderScreen() {
 
           {/* STORY BODY */}
           <View style={styles.bodyContainer}>
-            {story.content.map((para, idx) => {
+            {React.useMemo(() => story.content.map((para, idx) => {
               const isItalic = story.italicParagraphs?.includes(idx);
               // Disable paragraph tracking for Studio Narration tracks as the timing estimation can be unreliable
               const isActive = isNarrating && idx === currentPara && !story.audioFile;
@@ -402,7 +404,7 @@ export default function ReaderScreen() {
                   {para}
                 </Text>
               );
-            })}
+            }), [story.content, isNarrating, currentPara, story.audioFile, story.italicParagraphs, C, fontSize])}
           </View>
         </ScrollView>
 

@@ -12,11 +12,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Line, G } from 'react-native-svg';
-import { 
-  ForestNightBg, OceanShoreBg, CityRainBg, FireplaceBg, BirdsongFieldsBg, CozyCafeBg,
+import { ForestNightBg, OceanShoreBg, CityRainBg, FireplaceBg, BirdsongFieldsBg, CozyCafeBg,
   RainBg, FanBg, StaticBg, AcBg
 } from '@/components/SoundGraphics';
-import { useAudio } from '@/context/AudioContext';
+import { useAudio, useAudioPlayback } from '@/context/AudioContext';
 import { BottomNav } from '@/components/BottomNav';
 import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
@@ -40,15 +39,20 @@ const SceneCard = ({ title, subtitle, tag, bgColor, BgGraphic, gradientOverlay, 
   const cardW = Math.floor((screenW - 48 - 12) / 2); // 24px padding each side + 12px gap
   const cardH = 120;
   const router = useRouter();
+  const { playSelectedSound } = useAudioPlayback();
   
   return (
   <TouchableOpacity 
     style={styles.sceneCard} 
     activeOpacity={0.85}
-    onPress={() => router.push({
-      pathname: '/player',
-      params: { title, subtitle: 'Scenes collection', soundFile, graphicId }
-    })}
+    onPress={() => {
+      // Trigger sound immediately for better perceived performance
+      playSelectedSound({ title, subtitle: 'Scenes collection', soundFile, graphicId });
+      router.push({
+        pathname: '/player',
+        params: { title, subtitle: 'Scenes collection', soundFile, graphicId }
+      });
+    }}
   >
     <View style={[styles.sceneCardBg, { backgroundColor: bgColor }]}>
       <BgGraphic w={cardW} h={cardH} />
@@ -70,15 +74,20 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
   const cardW = Math.floor((screenW - 48 - 10) / 2); // 24px padding each side + 10px gap
   const cardH = 60;
   const router = useRouter();
+  const { playSelectedSound } = useAudioPlayback();
   
   return (
   <TouchableOpacity 
     style={styles.simpleSoundCard} 
     activeOpacity={0.85}
-    onPress={() => router.push({
-      pathname: '/player',
-      params: { title, subtitle: 'Simple sounds collection', soundFile, graphicId }
-    })}
+    onPress={() => {
+      // Trigger sound immediately for better perceived performance
+      playSelectedSound({ title, subtitle: 'Simple sounds collection', soundFile, graphicId });
+      router.push({
+        pathname: '/player',
+        params: { title, subtitle: 'Simple sounds collection', soundFile, graphicId }
+      });
+    }}
   >
     <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
       <BgGraphic w={cardW} h={cardH} />
@@ -93,6 +102,7 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
 export default function SoundsScreen() {
   const { isDark } = useTheme();
   const { activeSound } = useAudio();
+  const { playSelectedSound } = useAudioPlayback();
   const router = useRouter();
   const C = useColors();
 
@@ -129,15 +139,19 @@ export default function SoundsScreen() {
             <TouchableOpacity 
               style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
               activeOpacity={0.85}
-              onPress={() => router.push({
-                pathname: '/player',
-                params: {
+              onPress={() => {
+                const pickParams = {
                   title: randomScene.title,
                   subtitle: 'Scenes collection',
                   soundFile: randomScene.soundFile,
                   graphicId: randomScene.graphicId
-                }
-              })}
+                };
+                playSelectedSound(pickParams);
+                router.push({
+                  pathname: '/player',
+                  params: pickParams
+                });
+              }}
             >
               <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
                 {PickGraphic ? <PickGraphic w={52} h={52} /> : <AwakeSheep size={42} />}

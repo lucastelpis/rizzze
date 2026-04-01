@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Pressable, Alert } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  Easing, 
+  interpolateColor 
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -13,6 +19,7 @@ import { SleepingSheep } from '@/components/SleepingSheep';
 import { AwakeSheep } from '@/components/AwakeSheep';
 import { useNotifications } from '@/context/NotificationContext';
 import { Modal } from 'react-native';
+import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
 
 const SettingsIcon = ({ size = 20 }: { size?: number }) => {
   const C = useColors();
@@ -24,6 +31,39 @@ const SettingsIcon = ({ size = 20 }: { size?: number }) => {
   );
 };
 
+const HeaderEditIcon = ({ size = 12 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 5V19M5 12H19" stroke="#7A7589" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const DreamCoinIcon = ({ size = 16 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" fill="#E8C88A" />
+    <Circle cx="12" cy="12" r="8" fill="#F0D880" />
+    <Path 
+      d="M12 7.5L13.1 10.3H16.1L13.7 12.1L14.6 15L12 13.2L9.4 15L10.3 12.1L7.9 10.3H10.9L12 7.5Z" 
+      fill="#E8C88A" 
+    />
+  </Svg>
+);
+
+const MoonIcon = ({ color = "#B5A9DF" }: { color?: string }) => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" 
+      fill={color}
+    />
+  </Svg>
+);
+
+const SunIcon = ({ color = "#F0D880" }: { color?: string }) => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="5" fill={color} />
+    <Path d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke={color} strokeWidth={2} strokeLinecap="round" />
+  </Svg>
+);
+
 const ChevronRight = () => {
   const C = useColors();
   return (
@@ -33,31 +73,101 @@ const ChevronRight = () => {
   );
 };
 
-const StatCard = ({ label, value, color }: { label: string; value: string; color: string }) => {
+const StatCard = ({ label, value, color, icon }: { label: string; value: string; color: string; icon?: React.ReactNode }) => {
   const C = useColors();
   return (
     <View style={[styles.statCard, { backgroundColor: color }]}>
-      <Text style={[styles.statValue, { color: C.textPrimary }]}>{value}</Text>
+       <View style={styles.statMainContainer}>
+        {icon && <View style={styles.statIconWrapper}>{icon}</View>}
+        <Text style={[styles.statValue, { color: C.textPrimary }]}>{value}</Text>
+      </View>
       <Text style={[styles.statLabel, { color: C.textSecondary }]}>{label}</Text>
     </View>
   );
 };
 
-const SettingsItem = ({ label, value, last, onPress }: { label: string; value?: string; last?: boolean; onPress?: () => void }) => {
+const SettingsItem = ({ 
+  label, 
+  value, 
+  icon, 
+  valueColor,
+  last, 
+  showChevron = true,
+  onPress 
+}: { 
+  label: string; 
+  value?: string; 
+  icon?: React.ReactNode;
+  valueColor?: string;
+  last?: boolean; 
+  showChevron?: boolean;
+  onPress?: () => void 
+}) => {
   const C = useColors();
   return (
     <TouchableOpacity 
-      style={[styles.settingsItem, last && { borderBottomWidth: 0 }, { borderBottomColor: C.border }]} 
+      style={[styles.settingsItem, { borderBottomColor: C.border }]} 
       activeOpacity={0.6}
       onPress={onPress}
       disabled={!onPress}
     >
-      <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>{label}</Text>
+      <View style={styles.settingsLabelContainer}>
+        {icon && <View style={styles.settingsIconWrapper}>{icon}</View>}
+        <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>{label}</Text>
+      </View>
       <View style={styles.settingsRight}>
-        {value && <Text style={[styles.settingsValue, { color: C.accent }]}>{value}</Text>}
-        <ChevronRight />
+        {value && <Text style={[styles.settingsValue, { color: valueColor || C.accent }]}>{value}</Text>}
+        {showChevron && <ChevronRight />}
       </View>
     </TouchableOpacity>
+  );
+};
+
+const ToggleSettingsItem = ({ label, sublabel, isEnabled, onToggle }: { 
+  label: string; 
+  sublabel?: string;
+  isEnabled: boolean; 
+  onToggle: (val: boolean) => void;
+}) => {
+  const C = useColors();
+  const { isDark } = useTheme();
+  const switchAnim = useSharedValue(isEnabled ? 1 : 0);
+
+  useEffect(() => {
+    switchAnim.value = withTiming(isEnabled ? 1 : 0, { 
+      duration: 250, 
+      easing: Easing.bezier(0.4, 0, 0.2, 1) 
+    });
+  }, [isEnabled]);
+
+  const trackStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      switchAnim.value,
+      [0, 1],
+      [isDark ? 'rgba(255,255,255,0.1)' : '#E8E2D8', C.accent]
+    ),
+  }));
+
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: switchAnim.value * 18 }]
+  }));
+
+  return (
+    <View style={[styles.settingsItem, { borderBottomColor: 'transparent' }]}>
+      <View>
+        <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>{label}</Text>
+        {sublabel && <Text style={[styles.settingsSublabel, { color: C.textSecondary }]}>{sublabel}</Text>}
+      </View>
+      <TouchableOpacity activeOpacity={1} onPress={() => onToggle(!isEnabled)}>
+        <Animated.View style={[styles.toggleTrack, trackStyle]}>
+          <Animated.View style={[
+            styles.toggleThumb, 
+            { backgroundColor: '#FFF' },
+            thumbStyle
+          ]} />
+        </Animated.View>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -65,11 +175,18 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   const { activeSound } = useAudio();
   const { themeMode, setThemeMode, isDark } = useTheme();
   const { streakCount } = useStreak();
-  const { bedtime, setBedtime, isNotificationsEnabled, toggleNotifications, sendTestNotification } = useNotifications();
+  const { 
+    bedtime, setBedtime, 
+    wakeUpTime, setWakeUpTime,
+    isNotificationsEnabled, toggleNotifications, 
+    isDailyCheckInEnabled, toggleDailyCheckIn,
+    sendTestNotification 
+  } = useNotifications();
   const C = useColors();
   const router = useRouter();
 
   const [showTimePicker, setShowTimePicker] = React.useState(false);
+  const [pickerType, setPickerType] = React.useState<'bedtime' | 'wakeup'>('bedtime');
 
   const formatTime = (h: number, m: number) => {
     const hh = h % 12 || 12;
@@ -113,14 +230,25 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
             {isDark ? <SleepingSheep size={80} /> : <AwakeSheep size={80} />}
           </View>
           <TouchableOpacity style={[styles.editBadge, { backgroundColor: C.white, borderColor: C.bgPrimary }]}>
-            <SettingsIcon size={12} />
+            <HeaderEditIcon size={12} />
           </TouchableOpacity>
         </View>
         <Text style={[styles.userName, { color: C.textPrimary }]}>Lucas Telpis</Text>
         <Text style={[styles.userJoined, { color: C.textSecondary }]}>Zen sleeper since March 2026</Text>
       </View>
 
-      {/* Theme Selector */}
+      {/* Stats */}
+      <View style={styles.statsGrid}>
+        <StatCard label="night streak" value={streakCount.toString()} color={isDark ? 'rgba(255,255,255,0.05)' : C.bgMuted} />
+        <StatCard 
+          label="dream coins" 
+          value="342" 
+          icon={<DreamCoinIcon />}
+          color={isDark ? 'rgba(255,255,255,0.05)' : C.bgMuted} 
+        />
+      </View>
+
+      {/* Theme Selector Section */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: C.textMuted }]}>APPEARANCE</Text>
         <View style={[styles.themeSelector, { backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : C.bgMuted }]}>
@@ -149,52 +277,83 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         </View>
       </View>
 
-      {/* Stats */}
-      <View style={styles.statsGrid}>
-        <StatCard label="Current streak" value={streakCount.toString()} color={C.sleepBg} />
-        <StatCard label="Hours slept" value="28.5" color={C.soundsBg} />
-      </View>
-
       {/* Settings Section */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: C.textMuted }]}>MY SLEEP</Text>
-        <View style={[styles.settingsCard, { backgroundColor: C.bgCard }]}>
-          <SettingsItem 
-            label="Bedtime goal" 
-            value={formatTime(bedtime.hour, bedtime.minute)} 
-            onPress={() => setShowTimePicker(true)}
-          />
-          <SettingsItem label="Wake up goal" value="7:30 AM" />
-          <SettingsItem 
-            label="Daily reminders" 
-            value={isNotificationsEnabled ? "On" : "Off"} 
-            onPress={() => toggleNotifications(!isNotificationsEnabled)}
-            last 
-          />
+        <SettingsItem 
+          label="Bedtime goal" 
+          value={formatTime(bedtime.hour, bedtime.minute)} 
+          icon={<MoonIcon />}
+          onPress={() => { setPickerType('bedtime'); setShowTimePicker(true); }}
+        />
+        <SettingsItem 
+          label="Wake-up goal" 
+          value={formatTime(wakeUpTime.hour, wakeUpTime.minute)} 
+          icon={<SunIcon />}
+          onPress={() => { setPickerType('wakeup'); setShowTimePicker(true); }}
+        />
+        
+        <View style={styles.durationRow}>
+          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <Circle cx="12" cy="12" r="10" />
+            <Path d="M12 6v6l4 2" />
+          </Svg>
+          <Text style={[styles.durationText, { color: C.textSecondary }]}>
+            {formatDuration(calculateSleepDuration(bedtime, wakeUpTime).hours, calculateSleepDuration(bedtime, wakeUpTime).minutes)} of sleep
+          </Text>
         </View>
+
+        <ToggleSettingsItem 
+          label="Bedtime reminder" 
+          sublabel={`Nudge at ${formatTime(bedtime.hour, bedtime.minute)}`}
+          isEnabled={isNotificationsEnabled} 
+          onToggle={toggleNotifications}
+        />
+        <ToggleSettingsItem 
+          label="Daily check-in" 
+          sublabel="Rate your sleep each morning"
+          isEnabled={isDailyCheckInEnabled} 
+          onToggle={toggleDailyCheckIn}
+        />
       </View>
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: C.textMuted }]}>ACCOUNT</Text>
-        <View style={[styles.settingsCard, { backgroundColor: C.bgCard }]}>
-          <SettingsItem label="Subscription" value="Rizzze Pro" />
-          <SettingsItem label="Test Notification" onPress={() => sendTestNotification()} />
-          <SettingsItem label="Support & Feedback" last />
+        <View style={[styles.settingsFlatItem, { borderBottomColor: C.border }]}>
+          <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Subscription</Text>
+          <TouchableOpacity style={styles.badgeWrapper}>
+            <View style={[styles.proBadge, { backgroundColor: isDark ? 'rgba(139, 109, 174, 0.2)' : '#EDE5F5' }]}>
+              <Text style={[styles.proBadgeText, { color: '#8B6DAE' }]}>Rizzze Pro</Text>
+            </View>
+            <ChevronRight />
+          </TouchableOpacity>
         </View>
+        <SettingsItem label="Test notification" onPress={() => sendTestNotification()} />
+        <SettingsItem label="Support & feedback" />
       </View>
+
+      <TouchableOpacity style={styles.logoutBtn}>
+        <Text style={[styles.logoutText, { color: '#D4928A' }]}>Log out</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.logoutBtn, { marginTop: 0, opacity: 0.6 }]} onPress={handleReset}>
+        <Text style={[styles.logoutText, { color: C.textSecondary, fontSize: 13 }]}>Reset app data</Text>
+      </TouchableOpacity>
 
       {/* Time Picker Modal */}
       <Modal visible={showTimePicker} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={() => setShowTimePicker(false)} />
           <Animated.View style={[styles.modalContent, { backgroundColor: C.bgCard }]}>
-            <Text style={[styles.modalTitle, { color: C.textPrimary }]}>Set Bedtime</Text>
+            <Text style={[styles.modalTitle, { color: C.textPrimary }]}>
+              {pickerType === 'bedtime' ? 'Set Bedtime' : 'Set Wake Up'}
+            </Text>
             
             <View style={styles.pickerContainer}>
                <TimePicker 
-                 hour={bedtime.hour} 
-                 minute={bedtime.minute} 
-                 onChange={(h, m) => setBedtime(h, m)} 
+                 hour={pickerType === 'bedtime' ? bedtime.hour : wakeUpTime.hour} 
+                 minute={pickerType === 'bedtime' ? bedtime.minute : wakeUpTime.minute} 
+                 onChange={(h, m) => pickerType === 'bedtime' ? setBedtime(h, m) : setWakeUpTime(h, m)} 
                />
             </View>
 
@@ -207,14 +366,6 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
           </Animated.View>
         </View>
       </Modal>
-
-      <TouchableOpacity style={styles.logoutBtn}>
-        <Text style={styles.logoutText}>Log out</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={[styles.logoutBtn, { marginTop: 0 }]} onPress={handleReset}>
-        <Text style={[styles.logoutText, { color: C.textMuted, fontSize: 13 }]}>Reset app data</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -271,18 +422,41 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  statCard: { flex: 1, padding: 16, borderRadius: 20, alignItems: 'center' },
-  statValue: { fontFamily: tokens.fonts.heading, fontSize: 22 },
-  statLabel: { fontFamily: tokens.fonts.caption, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontFamily: tokens.fonts.caption, fontSize: 11, letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 },
+  statCard: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  statMainContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  statIconWrapper: { marginBottom: 2 },
+  statValue: { fontFamily: tokens.fonts.heading, fontSize: 28 },
+  statLabel: { fontFamily: tokens.fonts.body, fontSize: 13, textTransform: 'lowercase', marginTop: 0 },
+  section: { marginBottom: 32 },
+  sectionTitle: { fontFamily: tokens.fonts.caption, fontSize: 11, letterSpacing: 1.2, marginBottom: 12, marginLeft: 4 },
   settingsCard: { borderRadius: 20, overflow: 'hidden', paddingHorizontal: 16 },
-  settingsItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1 },
-  settingsLabel: { fontFamily: tokens.fonts.body, fontSize: 15 },
+  settingsItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1 },
+  settingsLabelContainer: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  settingsIconWrapper: { width: 24, alignItems: 'center' },
+  settingsLabel: { fontFamily: tokens.fonts.body, fontSize: 16 },
+  settingsSublabel: { fontFamily: tokens.fonts.body, fontSize: 13, marginTop: 2 },
   settingsRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  settingsValue: { fontFamily: tokens.fonts.body, fontSize: 14 },
-  logoutBtn: { paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  logoutText: { fontFamily: tokens.fonts.body, fontSize: 15, color: '#D47575' },
+  settingsValue: { fontFamily: tokens.fonts.body, fontSize: 16 },
+  durationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
+  durationText: { fontFamily: tokens.fonts.body, fontSize: 13 },
+  settingsFlatItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1 },
+  badgeWrapper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  proBadge: { paddingVertical: 4, paddingHorizontal: 12, borderRadius: 9999 },
+  proBadgeText: { fontFamily: tokens.fonts.caption, fontSize: 11 },
+  logoutBtn: { paddingVertical: 12, alignItems: 'center', marginTop: 12 },
+  logoutText: { fontFamily: tokens.fonts.body, fontSize: 15 },
+  toggleTrack: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -330,7 +504,7 @@ const styles = StyleSheet.create({
   tpRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 20,
   },
   tpCol: {
     alignItems: 'center',
@@ -338,30 +512,44 @@ const styles = StyleSheet.create({
   },
   tpVal: {
     fontFamily: tokens.fonts.heading,
-    fontSize: 32,
+    fontSize: 48,
+    fontWeight: '900',
   },
   tpArrow: {
-    padding: 8,
+    width: 44,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tpSep: {
-    fontSize: 32,
+    fontFamily: tokens.fonts.heading,
+    fontSize: 40,
+    fontWeight: '800',
     marginTop: -4,
   },
+  tpBadgeWrapper: {
+    marginLeft: 4,
+  },
   tpBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
   tpBadgeText: {
     fontFamily: tokens.fonts.caption,
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '900',
   }
 });
 
 const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; onChange: (h: number, m: number) => void }) => {
+  const { isDark } = useTheme();
   const C = useColors();
   const displayHour = hour % 12 || 12;
   const ampm = hour >= 12 ? 'PM' : 'AM';
+  
+  // Align with onboarding colors
+  const arrowColor = !isDark ? C.accent : '#C4AED8';
 
   const adjust = (type: 'h' | 'm', delta: number) => {
     if (type === 'h') {
@@ -380,18 +568,40 @@ const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; 
   return (
     <View style={styles.tpRow}>
       <View style={styles.tpCol}>
-        <TouchableOpacity onPress={() => adjust('h', 1)} style={styles.tpArrow}><Text style={{ color: C.accent }}>▲</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => adjust('h', 1)} style={styles.tpArrow}>
+          <Svg width={14} height={10} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
+            <Path d="M5 0L10 6H0L5 0Z" />
+          </Svg>
+        </TouchableOpacity>
         <Text style={[styles.tpVal, { color: C.textPrimary }]}>{displayHour < 10 ? `0${displayHour}` : displayHour}</Text>
-        <TouchableOpacity onPress={() => adjust('h', -1)} style={styles.tpArrow}><Text style={{ color: C.accent }}>▼</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => adjust('h', -1)} style={styles.tpArrow}>
+          <Svg width={14} height={10} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
+            <Path d="M5 6L0 0H10L5 6Z" />
+          </Svg>
+        </TouchableOpacity>
       </View>
       <Text style={[styles.tpSep, { color: C.textPrimary }]}>:</Text>
       <View style={styles.tpCol}>
-        <TouchableOpacity onPress={() => adjust('m', 5)} style={styles.tpArrow}><Text style={{ color: C.accent }}>▲</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => adjust('m', 5)} style={styles.tpArrow}>
+          <Svg width={14} height={10} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
+            <Path d="M5 0L10 6H0L5 0Z" />
+          </Svg>
+        </TouchableOpacity>
         <Text style={[styles.tpVal, { color: C.textPrimary }]}>{minute < 10 ? `0${minute}` : minute}</Text>
-        <TouchableOpacity onPress={() => adjust('m', -5)} style={styles.tpArrow}><Text style={{ color: C.accent }}>▼</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => adjust('m', -5)} style={styles.tpArrow}>
+          <Svg width={14} height={10} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
+            <Path d="M5 6L0 0H10L5 6Z" />
+          </Svg>
+        </TouchableOpacity>
       </View>
-      <View style={[styles.tpBadge, { backgroundColor: C.accentLight }]}>
-        <Text style={[styles.tpBadgeText, { color: C.accent }]}>{ampm}</Text>
+      <View style={styles.tpBadgeWrapper}>
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          onPress={() => adjust('h', 12)}
+          style={[styles.tpBadge, { backgroundColor: isDark ? 'rgba(139, 109, 174, 0.2)' : C.accentLight }]}
+        >
+          <Text style={[styles.tpBadgeText, { color: C.accent }]}>{ampm}</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

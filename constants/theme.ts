@@ -32,6 +32,10 @@ export const tokens = {
       soundsBg: "#C8DEF0",
       storiesBg: "#F0D8D0",
       gamesBg: "#F5F0E8",
+      overtitle: "#8B6DAE",
+      soundsVibrant: "#A3C6E5",
+      storiesVibrant: "#E5C4B8",
+      sleepVibrant: "#D6C8E5",
     },
     dark: {
       bgPrimary: "#2D2B3D",
@@ -48,6 +52,10 @@ export const tokens = {
       soundsBg: "rgba(200, 222, 240, 0.15)",
       storiesBg: "rgba(240, 216, 208, 0.15)",
       gamesBg: "rgba(245, 240, 232, 0.15)",
+      overtitle: "#C4AED8",
+      soundsVibrant: "rgba(200, 222, 240, 0.25)",
+      storiesVibrant: "rgba(240, 216, 208, 0.25)",
+      sleepVibrant: "rgba(232, 223, 240, 0.25)",
     }
   },
   

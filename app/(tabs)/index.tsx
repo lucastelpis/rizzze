@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { tokens } from '../../constants/theme';
 import { useColors } from '@/hooks/useColors';
-import { useAudio } from '@/context/AudioContext';
+import { useAudio, useAudioPlayback, useAudioStatus } from '@/context/AudioContext';
 import { useStreak } from '@/context/StreakContext';
 import * as SoundGraphics from '@/components/SoundGraphics';
 import { BottomNav } from '@/components/BottomNav';
@@ -179,7 +179,8 @@ export default function HomeScreen() {
   const C = useColors();
   const { greeting, subtitle } = useMemo(() => getGreeting(), []);
   const router = useRouter();
-  const { activeSound } = useAudio();
+  const { playSelectedSound } = useAudioPlayback();
+  const { activeSound } = useAudioStatus();
   const randomScene = useMemo(() => getDailyPick(SCENES_DATA), []);
   const PickGraphic = randomScene?.graphicId ? (SoundGraphics as any)[randomScene.graphicId] : null;
 
@@ -217,15 +218,19 @@ export default function HomeScreen() {
             <TouchableOpacity 
               style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
               activeOpacity={0.85}
-              onPress={() => router.push({
-                pathname: '/player',
-                params: {
+              onPress={() => {
+                const soundParams = {
                   title: randomScene.title,
                   subtitle: 'Scenes collection',
                   soundFile: randomScene.soundFile,
                   graphicId: randomScene.graphicId
-                }
-              })}
+                };
+                playSelectedSound(soundParams);
+                router.push({
+                  pathname: '/player',
+                  params: soundParams
+                });
+              }}
             >
               <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
                 {PickGraphic ? <PickGraphic w={52} h={52} /> : <AwakeSheep size={42} />}

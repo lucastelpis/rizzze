@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
-import { useAudio } from '@/context/AudioContext';
+import { useAudioPlayback, useAudioStatus } from '@/context/AudioContext';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -65,17 +65,20 @@ export default function PlayerScreen() {
   const insets = useSafeAreaInsets();
 
   const {
-    activeSound,
-    isPlaying,
-    isLooping,
-    toggleLoop,
-    visualDuration,
-    displayPosition,
     playSelectedSound,
     togglePlayPause,
     scrubTo,
-    setIsScrubbing
-  } = useAudio();
+    setIsScrubbing,
+    toggleLoop
+  } = useAudioPlayback();
+
+  const {
+    activeSound,
+    isPlaying,
+    isLooping,
+    visualDuration,
+    displayPosition
+  } = useAudioStatus();
 
   useEffect(() => {
     if (soundFile) {

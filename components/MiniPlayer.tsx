@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { useAudio } from '@/context/AudioContext';
+import { useAudioPlayback, useAudioStatus } from '@/context/AudioContext';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, Line } from 'react-native-svg';
@@ -58,7 +58,8 @@ const SheepFallbackIcon = () => (
 );
 
 export function MiniPlayer({ bottomOffset = 78 }: { bottomOffset?: number }) {
-  const { activeSound, isPlaying, isLooping, toggleLoop, visualProgress, visualDuration, togglePlayPause, stopSound } = useAudio();
+  const { togglePlayPause, stopSound, toggleLoop } = useAudioPlayback();
+  const { activeSound, isPlaying, isLooping, visualProgress, visualDuration } = useAudioStatus();
   const { isDark } = useTheme();
   const router = useRouter();
   const translateY = useSharedValue(100);
