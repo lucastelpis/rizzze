@@ -1,5 +1,5 @@
-import { MiniPlayer } from '@/components/MiniPlayer';
 import { AwakeSheep } from '@/components/AwakeSheep';
+import { MiniPlayer } from '@/components/MiniPlayer';
 import { CATEGORIES, STORIES } from '@/constants/stories';
 import { tokens } from '@/constants/theme';
 import { SOUND_ASSETS, useAudio } from '@/context/AudioContext';
@@ -98,6 +98,7 @@ export default function ReaderScreen() {
   const story = STORIES.find(s => s.id === storyId) || STORIES[0];
   const proNarrationPlayer = useAudioPlayer(story.audioFile ? SOUND_ASSETS[story.audioFile] : null);
   const proStatus = useAudioPlayerStatus(proNarrationPlayer);
+
 
   useEffect(() => {
     if (localFireplacePlayer) {
@@ -218,8 +219,8 @@ export default function ReaderScreen() {
       try {
         localFireplacePlayer.pause();
         if (proNarrationPlayer) {
-            proNarrationPlayer.pause();
-            proNarrationPlayer.seekTo(0);
+          proNarrationPlayer.pause();
+          proNarrationPlayer.seekTo(0);
         }
       } catch (e) { }
       setCurrentPara(0);
@@ -289,15 +290,15 @@ export default function ReaderScreen() {
 
   const handleSeekToStart = () => {
     if (proNarrationPlayer) {
-        proNarrationPlayer.seekTo(0);
+      proNarrationPlayer.seekTo(0);
     }
     Speech.stop();
     setCurrentPara(0);
     setIsPaused(false);
-    
+
     // If not currently narrating mode, activate it
     if (!isNarrating) {
-        setIsNarrating(true);
+      setIsNarrating(true);
     }
   };
 
@@ -390,8 +391,10 @@ export default function ReaderScreen() {
                     {
                       color: isActive ? C.accent : (isItalic ? C.textSecondary : C.textPrimary),
                       fontSize: fontSize,
-                      lineHeight: fontSize * 1.9,
+                      lineHeight: Math.floor(fontSize * 1.9), // Use integer for stable line measurement
                       backgroundColor: isActive ? 'rgba(139, 109, 174, 0.05)' : 'transparent',
+                      marginBottom: 24,
+                      paddingVertical: 4, // More breathing room for fonts to avoid clipping
                     },
                     isItalic && styles.italicPara
                   ]}
@@ -461,48 +464,48 @@ export default function ReaderScreen() {
 
             {isNarrating ? (
               <View style={[styles.actionBtn, styles.playbackContainer]}>
-                 <TouchableOpacity 
-                    style={styles.playbackSubBtn} 
-                    onPress={handleSeekToStart}
-                    activeOpacity={0.7}
+                <TouchableOpacity
+                  style={styles.playbackSubBtn}
+                  onPress={handleSeekToStart}
+                  activeOpacity={0.7}
                 >
-                   <SeekToStartIcon color={C.accent} />
-                 </TouchableOpacity>
+                  <SeekToStartIcon color={C.accent} />
+                </TouchableOpacity>
 
-                 <View style={styles.playbackDivider} />
+                <View style={styles.playbackDivider} />
 
-                 <TouchableOpacity 
-                    style={styles.playbackSubBtn} 
-                    onPress={handleTogglePlayPause}
-                    activeOpacity={0.7}
+                <TouchableOpacity
+                  style={styles.playbackSubBtn}
+                  onPress={handleTogglePlayPause}
+                  activeOpacity={0.7}
                 >
-                   {isPaused ? <PlayIcon color={C.accent} /> : <PauseIcon color={C.accent} />}
-                 </TouchableOpacity>
+                  {isPaused ? <PlayIcon color={C.accent} /> : <PauseIcon color={C.accent} />}
+                </TouchableOpacity>
 
-                 <View style={styles.playbackDivider} />
+                <View style={styles.playbackDivider} />
 
-                 <TouchableOpacity 
-                    style={styles.playbackSubBtn} 
-                    onPress={handleToggleListen}
-                    activeOpacity={0.7}
+                <TouchableOpacity
+                  style={styles.playbackSubBtn}
+                  onPress={handleToggleListen}
+                  activeOpacity={0.7}
                 >
-                   <StopIcon color={C.accent} />
-                 </TouchableOpacity>
+                  <StopIcon color={C.accent} />
+                </TouchableOpacity>
               </View>
             ) : (
-                <TouchableOpacity
-                    style={[
-                        styles.actionBtn,
-                        { backgroundColor: '#F0EBE3' }
-                    ]}
-                    activeOpacity={0.8}
-                    onPress={handleToggleListen}
-                >
+              <TouchableOpacity
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: '#F0EBE3' }
+                ]}
+                activeOpacity={0.8}
+                onPress={handleToggleListen}
+              >
                 <MusicIcon color={'#6B5A8E'} />
                 <Text style={[styles.actionLabel, { color: '#6B5A8E' }]}>
-                    Listen
+                  Listen
                 </Text>
-                </TouchableOpacity>
+              </TouchableOpacity>
             )}
 
             <TouchableOpacity
@@ -565,7 +568,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 28,
     paddingTop: 24,
-    paddingBottom: 160,
+    paddingBottom: 200, // Increased to ensure the last paragraph is never cut by the footer
   },
 
   storyHeader: {
@@ -594,13 +597,15 @@ const styles = StyleSheet.create({
   },
 
   bodyContainer: {
-    gap: 20,
+    paddingBottom: 20,
   },
   paragraph: {
     paddingHorizontal: 4,
     borderRadius: 4,
     fontFamily: 'Nunito_400Regular',
     fontWeight: '400',
+    textAlign: 'justify', // Premium book-like justification
+    letterSpacing: -0.2, // Subtle tracking adjustment for better justification flow
   },
   italicPara: {
     fontStyle: 'italic',

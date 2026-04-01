@@ -155,7 +155,7 @@ export const STORIES: Story[] = [
       "Every echo was evidence that someone had once lived here. Fully. Completely. Without holding back. The joy and the sorrow, the mundane and the magnificent—all of it mattered enough to leave a permanent mark on the space itself. The wood and the plaster had become a living record of human breath.",
       "One evening, as the light turned amber and the birds settled in the ivy, the resident realized that their own life would eventually become an echo too. Everything they did in this house—the way they brewed their tea, the way they sighed at the end of a long day—would be absorbed into its walls and floors. They were not just a tenant; they were a contributor to its memory.",
       "This realization changed the way they moved through the rooms. They stopped rushing. They started noticing the way the light fell across the floor at 4 PM. They started speaking more kindly to themselves and others, aware that their words would ripple through the air long after they were gone.",
-      "They weren't performing for an audience; they were simply honoring the knowledge that their presence left a lasting trace. They understood that their voice would be part of the house's eternal, collective memory, a single note in a vast and ongoing symphony.",
+      "They weren't performing for an audience; they were simply honoring the knowledge that their presence left a lasting trace. They understood that their voice would be part of the house.s eternal, collective memory, a single note in a vast and ongoing symphony.",
       "Years later, when the time came for them to move on, they didn't feel like they were leaving. They knew their echoes would remain, beautifully mixed with the echoes of the grandmother and the laughing child. They were leaving behind the best parts of themselves.",
       "This is what all old houses know, though few people take the time to listen: they exist not just to shelter us from the rain, but to hold our human lives. To witness them. To echo them forward, ensuring that every heartbeat remains, in some small way, eternal."
     ],
@@ -301,7 +301,6 @@ export const STORIES: Story[] = [
       "You are safe. You are warm. You are sheltered. Let the sound of the water carry away the last of your thoughts, leaving only the soft glow of the embers and the steady rhythm of the night."
     ],
     "italicParagraphs": [
-      5,
       7
     ]
   },
@@ -327,7 +326,6 @@ export const STORIES: Story[] = [
       "And many do return, seasons later, not because they are lost, but because they need to remember that there is a place in the world where they are enough, just as they are. Where rest is a sacred act and being is the only requirement."
     ],
     "italicParagraphs": [
-      10,
       11
     ]
   },
