@@ -16,6 +16,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AudioProvider } from '@/context/AudioContext';
 import { StreakProvider } from '@/context/StreakContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,7 +59,9 @@ export default function RootLayout() {
       <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <StreakProvider>
           <AudioProvider>
-            <RootLayoutContent />
+            <NotificationProvider>
+              <RootLayoutContent />
+            </NotificationProvider>
           </AudioProvider>
         </StreakProvider>
       </NavigationThemeProvider>

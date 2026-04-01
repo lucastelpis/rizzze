@@ -62,6 +62,10 @@
         "projectId": "9f83e2ad-cbd8-47bf-a85c-7663edcd666f"
       }
     },
-    "owner": "lucastelpis"
+    "owner": "lucastelpis",
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#8B6DAE"
+    }
   }
 }

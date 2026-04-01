@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Pressable, Alert } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -10,6 +11,8 @@ import { useColors } from '@/hooks/useColors';
 import { useStreak } from '@/context/StreakContext';
 import { SleepingSheep } from '@/components/SleepingSheep';
 import { AwakeSheep } from '@/components/AwakeSheep';
+import { useNotifications } from '@/context/NotificationContext';
+import { Modal } from 'react-native';
 
 const SettingsIcon = ({ size = 20 }: { size?: number }) => {
   const C = useColors();
@@ -40,10 +43,15 @@ const StatCard = ({ label, value, color }: { label: string; value: string; color
   );
 };
 
-const SettingsItem = ({ label, value, last }: { label: string; value?: string; last?: boolean }) => {
+const SettingsItem = ({ label, value, last, onPress }: { label: string; value?: string; last?: boolean; onPress?: () => void }) => {
   const C = useColors();
   return (
-    <TouchableOpacity style={[styles.settingsItem, last && { borderBottomWidth: 0 }, { borderBottomColor: C.border }]} activeOpacity={0.6}>
+    <TouchableOpacity 
+      style={[styles.settingsItem, last && { borderBottomWidth: 0 }, { borderBottomColor: C.border }]} 
+      activeOpacity={0.6}
+      onPress={onPress}
+      disabled={!onPress}
+    >
       <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>{label}</Text>
       <View style={styles.settingsRight}>
         {value && <Text style={[styles.settingsValue, { color: C.accent }]}>{value}</Text>}
@@ -57,8 +65,18 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   const { activeSound } = useAudio();
   const { themeMode, setThemeMode, isDark } = useTheme();
   const { streakCount } = useStreak();
+  const { bedtime, setBedtime, isNotificationsEnabled, toggleNotifications, sendTestNotification } = useNotifications();
   const C = useColors();
   const router = useRouter();
+
+  const [showTimePicker, setShowTimePicker] = React.useState(false);
+
+  const formatTime = (h: number, m: number) => {
+    const hh = h % 12 || 12;
+    const mm = m < 10 ? `0${m}` : m;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${hh}:${mm} ${ampm}`;
+  };
 
   const handleReset = async () => {
     Alert.alert(
@@ -141,9 +159,18 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: C.textMuted }]}>MY SLEEP</Text>
         <View style={[styles.settingsCard, { backgroundColor: C.bgCard }]}>
-          <SettingsItem label="Bedtime goal" value="11:30 PM" />
+          <SettingsItem 
+            label="Bedtime goal" 
+            value={formatTime(bedtime.hour, bedtime.minute)} 
+            onPress={() => setShowTimePicker(true)}
+          />
           <SettingsItem label="Wake up goal" value="7:30 AM" />
-          <SettingsItem label="Daily reminders" value="On" last />
+          <SettingsItem 
+            label="Daily reminders" 
+            value={isNotificationsEnabled ? "On" : "Off"} 
+            onPress={() => toggleNotifications(!isNotificationsEnabled)}
+            last 
+          />
         </View>
       </View>
 
@@ -151,10 +178,35 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         <Text style={[styles.sectionTitle, { color: C.textMuted }]}>ACCOUNT</Text>
         <View style={[styles.settingsCard, { backgroundColor: C.bgCard }]}>
           <SettingsItem label="Subscription" value="Rizzze Pro" />
-          <SettingsItem label="Notifications" />
+          <SettingsItem label="Test Notification" onPress={() => sendTestNotification()} />
           <SettingsItem label="Support & Feedback" last />
         </View>
       </View>
+
+      {/* Time Picker Modal */}
+      <Modal visible={showTimePicker} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setShowTimePicker(false)} />
+          <Animated.View style={[styles.modalContent, { backgroundColor: C.bgCard }]}>
+            <Text style={[styles.modalTitle, { color: C.textPrimary }]}>Set Bedtime</Text>
+            
+            <View style={styles.pickerContainer}>
+               <TimePicker 
+                 hour={bedtime.hour} 
+                 minute={bedtime.minute} 
+                 onChange={(h, m) => setBedtime(h, m)} 
+               />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.confirmBtn, { backgroundColor: C.accent }]} 
+              onPress={() => setShowTimePicker(false)}
+            >
+              <Text style={styles.confirmBtnText}>Done</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
 
       <TouchableOpacity style={styles.logoutBtn}>
         <Text style={styles.logoutText}>Log out</Text>
@@ -231,4 +283,116 @@ const styles = StyleSheet.create({
   settingsValue: { fontFamily: tokens.fonts.body, fontSize: 14 },
   logoutBtn: { paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   logoutText: { fontFamily: tokens.fonts.body, fontSize: 15, color: '#D47575' },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '100%',
+    borderRadius: 32,
+    padding: 32,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: "#2D2B3D",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 32,
+  },
+  modalTitle: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 20,
+    marginBottom: 24,
+  },
+  pickerContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  confirmBtn: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  confirmBtnText: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 16,
+    color: '#FFF',
+  },
+  // Time Picker Mini Component Styles
+  tpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  tpCol: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  tpVal: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 32,
+  },
+  tpArrow: {
+    padding: 8,
+  },
+  tpSep: {
+    fontSize: 32,
+    marginTop: -4,
+  },
+  tpBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  tpBadgeText: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 12,
+  }
 });
+
+const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; onChange: (h: number, m: number) => void }) => {
+  const C = useColors();
+  const displayHour = hour % 12 || 12;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+
+  const adjust = (type: 'h' | 'm', delta: number) => {
+    if (type === 'h') {
+      let next = hour + delta;
+      if (next > 23) next = 0;
+      if (next < 0) next = 23;
+      onChange(next, minute);
+    } else {
+      let next = minute + delta;
+      if (next > 59) { next = 0; adjust('h', 1); return; }
+      if (next < 0) { next = 55; adjust('h', -1); return; }
+      onChange(hour, next);
+    }
+  };
+
+  return (
+    <View style={styles.tpRow}>
+      <View style={styles.tpCol}>
+        <TouchableOpacity onPress={() => adjust('h', 1)} style={styles.tpArrow}><Text style={{ color: C.accent }}>▲</Text></TouchableOpacity>
+        <Text style={[styles.tpVal, { color: C.textPrimary }]}>{displayHour < 10 ? `0${displayHour}` : displayHour}</Text>
+        <TouchableOpacity onPress={() => adjust('h', -1)} style={styles.tpArrow}><Text style={{ color: C.accent }}>▼</Text></TouchableOpacity>
+      </View>
+      <Text style={[styles.tpSep, { color: C.textPrimary }]}>:</Text>
+      <View style={styles.tpCol}>
+        <TouchableOpacity onPress={() => adjust('m', 5)} style={styles.tpArrow}><Text style={{ color: C.accent }}>▲</Text></TouchableOpacity>
+        <Text style={[styles.tpVal, { color: C.textPrimary }]}>{minute < 10 ? `0${minute}` : minute}</Text>
+        <TouchableOpacity onPress={() => adjust('m', -5)} style={styles.tpArrow}><Text style={{ color: C.accent }}>▼</Text></TouchableOpacity>
+      </View>
+      <View style={[styles.tpBadge, { backgroundColor: C.accentLight }]}>
+        <Text style={[styles.tpBadgeText, { color: C.accent }]}>{ampm}</Text>
+      </View>
+    </View>
+  );
+};

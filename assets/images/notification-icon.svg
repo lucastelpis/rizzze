@@ -1,0 +1,9 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Solid white silhouette of the Rizzze sheep -->
+  <path d="M18 16h28v4h4v2h2v24h-4v2H16v-2h-4v-2h-2V24h2v-4h4v-2z" fill="#FFFFFF"/>
+  <!-- Legs -->
+  <rect x="18" y="50" width="4" height="4" fill="#FFFFFF"/>
+  <rect x="28" y="50" width="4" height="4" fill="#FFFFFF"/>
+  <rect x="36" y="50" width="4" height="4" fill="#FFFFFF"/>
+  <rect x="44" y="50" width="4" height="4" fill="#FFFFFF"/>
+</svg>

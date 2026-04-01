@@ -26,6 +26,7 @@ import { Sparkle } from '../components/SheepMascot';
 import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
 import { CloudIcon, StoriesIcon, GamesIcon } from '../components/BedtimeIcons';
+import { useNotifications } from '@/context/NotificationContext';
 
 // ─── COMPONENTS ───
 
@@ -222,6 +223,104 @@ const Page4 = ({ goal, setGoal }: any) => {
   );
 };
 
+const Page5 = () => {
+  const C = useColors();
+  const adjustTime = (type: 'hour' | 'minute', amount: number) => {
+    if (type === 'hour') {
+      let next = localHour + amount;
+      if (next > 23) next = 0;
+      if (next < 0) next = 23;
+      setLocalHour(next);
+    } else {
+      let next = localMinute + amount;
+      if (next > 59) {
+        next = 0;
+        adjustTime('hour', 1);
+      }
+      if (next < 0) {
+        next = 55;
+        adjustTime('hour', -1);
+      }
+      setLocalMinute(next);
+    }
+  };
+
+  const { bedtime, setBedtime, isNotificationsEnabled, toggleNotifications } = useNotifications();
+  const [localHour, setLocalHour] = useState(bedtime.hour);
+  const [localMinute, setLocalMinute] = useState(bedtime.minute);
+  
+  const switchAnim = useSharedValue(isNotificationsEnabled ? 1 : 0);
+
+  useEffect(() => {
+    switchAnim.value = withTiming(isNotificationsEnabled ? 1 : 0, { duration: 250, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+  }, [isNotificationsEnabled]);
+
+  const displayHour = localHour % 12 || 12;
+  const ampm = localHour >= 12 ? 'PM' : 'AM';
+
+  const trackStyle = useAnimatedStyle(() => ({
+    backgroundColor: switchAnim.value > 0.5 
+      ? C.accent 
+      : (C.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E8E2D8')
+  }));
+
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: switchAnim.value * 22 + 2 }]
+  }));
+
+  useEffect(() => {
+    setBedtime(localHour, localMinute);
+  }, [localHour, localMinute]);
+
+  return (
+    <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
+      <Mascot variant="teaching" />
+      <View style={styles.pageContent}>
+        <Text style={[styles.sectionLabel, { color: C.accent, marginBottom: 4 }]}>CONSISTENCY IS KEY TO A QUALITY SLEEP</Text>
+        <Text style={[styles.sectionTitle, { color: C.textPrimary, marginBottom: 16 }]}>Set a bedtime reminder</Text>
+
+        <View style={[styles.timeSelector, { backgroundColor: C.bgCard, paddingVertical: 14, marginBottom: 16 }]}>
+          <View style={styles.timeColumn}>
+            <TouchableOpacity onPress={() => adjustTime('hour', 1)} style={styles.timeArrow}><Text style={{ color: C.accent }}>▲</Text></TouchableOpacity>
+            <Text style={[styles.timeValue, { color: C.textPrimary }]}>{displayHour < 10 ? `0${displayHour}` : displayHour}</Text>
+            <TouchableOpacity onPress={() => adjustTime('hour', -1)} style={styles.timeArrow}><Text style={{ color: C.accent }}>▼</Text></TouchableOpacity>
+          </View>
+          <Text style={[styles.timeSeparator, { color: C.textPrimary }]}>:</Text>
+          <View style={styles.timeColumn}>
+            <TouchableOpacity onPress={() => adjustTime('minute', 5)} style={styles.timeArrow}><Text style={{ color: C.accent }}>▲</Text></TouchableOpacity>
+            <Text style={[styles.timeValue, { color: C.textPrimary }]}>{localMinute < 10 ? `0${localMinute}` : localMinute}</Text>
+            <TouchableOpacity onPress={() => adjustTime('minute', -5)} style={styles.timeArrow}><Text style={{ color: C.accent }}>▼</Text></TouchableOpacity>
+          </View>
+          <View style={[styles.ampmBadge, { backgroundColor: C.mode === 'dark' ? 'rgba(255,255,255,0.08)' : C.accentLight }]}>
+            <Text style={[styles.ampmText, { color: C.accent, fontWeight: '800' }]}>{ampm}</Text>
+          </View>
+        </View>
+
+        <Text style={[styles.heroSubtitle, { color: C.textSecondary, paddingHorizontal: 20, marginBottom: 16, marginTop: 0, fontSize: 16, opacity: 1, fontWeight: '500' }]}>
+          We'll send a gentle nudge when it's time to wind down.
+        </Text>
+
+        <View style={[styles.notifRow, { borderTopWidth: 1, borderTopColor: C.mode === 'dark' ? 'rgba(255,255,255,0.05)' : C.border, paddingTop: 20, marginTop: 4, alignItems: 'center' }]}>
+          <View style={{ flex: 1, paddingRight: 16 }}>
+            <Text style={[styles.notifRowTitle, { color: C.textPrimary }]}>Bedtime Notifications</Text>
+            <Text style={[styles.notifRowSubtitle, { color: C.textSecondary, opacity: 1, fontWeight: '600' }]}>
+              {isNotificationsEnabled ? "We'll nudge you at " + (displayHour < 10 ? `0${displayHour}` : displayHour) + ":" + (localMinute < 10 ? `0${localMinute}` : localMinute) + " " + ampm : "Stay on track with a gentle reminder"}
+            </Text>
+          </View>
+          <TouchableOpacity 
+            onPress={() => toggleNotifications(!isNotificationsEnabled)}
+            activeOpacity={1}
+          >
+            <Animated.View style={[styles.switchTrack, trackStyle]}>
+              <Animated.View style={[styles.switchThumb, { backgroundColor: '#FFF' }, thumbStyle]} />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
+
 // ─── MAIN ───
 
 export default function Onboarding() {
@@ -234,7 +333,7 @@ export default function Onboarding() {
   const { isDark } = useTheme();
 
   const next = () => {
-    if (currentPage < 3) {
+    if (currentPage < 4) {
       setCurrentPage(currentPage + 1);
     } else {
       router.replace('/(tabs)');
@@ -252,12 +351,12 @@ export default function Onboarding() {
       <SafeAreaView style={styles.safeArea}>
         {/* Progress Dots */}
         <View style={styles.progressContainer}>
-          {[0, 1, 2, 3].map(i => (
+          {[0, 1, 2, 3, 4].map(i => (
             <View
               key={i}
               style={[
                 styles.progressDot,
-                { backgroundColor: C.accentLight },
+                { backgroundColor: C.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)' },
                 i === currentPage && [styles.progressDotActive, { backgroundColor: C.accent }],
                 i < currentPage && [styles.progressDotCompleted, { backgroundColor: C.accentSoft }],
               ]}
@@ -271,6 +370,7 @@ export default function Onboarding() {
           {currentPage === 1 && <Page2 key="p2" />}
           {currentPage === 2 && <Page3 key="p3" age={age} setAge={setAge} />}
           {currentPage === 3 && <Page4 key="p4" goal={goal} setGoal={setGoal} />}
+          {currentPage === 4 && <Page5 key="p5" />}
         </View>
 
         {/* Navigation */}
@@ -293,7 +393,7 @@ export default function Onboarding() {
             <Text style={styles.nextButtonText}>
               {(currentPage === 2 && !age) || (currentPage === 3 && !goal)
                 ? "Pick an option"
-                : currentPage === 3 ? "Let's Start" : "Next"}
+                : currentPage === 4 ? "Let's Start" : "Next"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -343,16 +443,16 @@ const styles = StyleSheet.create({
   },
 
   mascotBgBox: {
-    width: 130,
-    height: 130,
-    borderRadius: 28,
-    padding: 15,
+    width: 110,
+    height: 110,
+    borderRadius: 24,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   mascotImage: {
-    width: 100,
-    height: 100,
+    width: 86,
+    height: 86,
   },
   mascotContainer: {
     position: 'relative',
@@ -496,5 +596,76 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.body,
     fontSize: 16,
     fontWeight: '700',
+  },
+  timeSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    gap: 12,
+    ...tokens.shadows.card,
+  },
+  timeColumn: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  timeValue: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 42,
+    fontWeight: '800',
+  },
+  timeArrow: {
+    padding: 8,
+  },
+  timeSeparator: {
+    fontSize: 42,
+    fontWeight: '800',
+    marginTop: -4,
+  },
+  ampmBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  ampmText: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  notifRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+  },
+  notifRowTitle: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  notifRowSubtitle: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  switchTrack: {
+    width: 52,
+    height: 30,
+    borderRadius: 15,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  switchThumb: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
