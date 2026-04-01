@@ -9,6 +9,9 @@ type StreakContextType = {
   streakCount: number;
   lastSevenDays: boolean[];
   todayIndex: number;
+  sleepRatingCount: number;
+  reportSleepRating: (dateKey: string) => void;
+  syncSleepRatings: () => Promise<void>;
 };
 
 const StreakContext = createContext<StreakContextType | null>(null);
@@ -22,14 +25,18 @@ function getDateKey(date: Date = new Date()) {
 
 export function StreakProvider({ children }: { children: React.ReactNode }) {
   const [activeDates, setActiveDates] = useState<string[]>([]);
+  const [ratedOnTimeDays, setRatedOnTimeDays] = useState<string[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const val = await AsyncStorage.getItem(STORAGE_KEY);
         if (val) setActiveDates(JSON.parse(val));
+        
+        const ratedDaysVal = await AsyncStorage.getItem('rizzze_rated_on_time_days');
+        if (ratedDaysVal) setRatedOnTimeDays(JSON.parse(ratedDaysVal));
       } catch (e) {
-        console.error('Failed to load streak data', e);
+        console.error('Failed to load streak or rating data', e);
       }
     };
     loadData();
@@ -45,6 +52,37 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         console.error('Failed to save streak data', e);
       }
+    }
+  };
+
+  const reportSleepRating = async (dateKey: string) => {
+    const today = getDateKey();
+    // Only count if it's today's date and not already in our list
+    if (dateKey === today && !ratedOnTimeDays.includes(dateKey)) {
+      const newRatedDays = [...ratedOnTimeDays, dateKey];
+      setRatedOnTimeDays(newRatedDays);
+      try {
+        await AsyncStorage.setItem('rizzze_rated_on_time_days', JSON.stringify(newRatedDays));
+      } catch (e) {
+        console.error('Failed to save rated days', e);
+      }
+    }
+  };
+
+  const syncSleepRatings = async () => {
+    try {
+      const sleepDataVal = await AsyncStorage.getItem('rizzze_sleep_data');
+      if (sleepDataVal) {
+        const sleepData = JSON.parse(sleepDataVal);
+        const today = getDateKey();
+        
+        // If today has a rating in the sleep data, but isn't in our "on time" list, add it
+        if (sleepData[today] && !ratedOnTimeDays.includes(today)) {
+          await reportSleepRating(today);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to sync sleep ratings', e);
     }
   };
 
@@ -114,6 +152,9 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
         streakCount: getStreakCount(),
         lastSevenDays,
         todayIndex,
+        sleepRatingCount: ratedOnTimeDays.length,
+        reportSleepRating,
+        syncSleepRatings,
       }}
     >
       {children}

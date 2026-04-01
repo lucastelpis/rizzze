@@ -9,6 +9,7 @@ import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as SoundGraphics from '@/components/SoundGraphics';
+import { ScreenLoader } from '@/components/ScreenLoader';
 
 // ─── UTILS & DATA ─────────────────────────────────────────────────────────────
 const formatTime = (millis: number) => {
@@ -99,6 +100,8 @@ export default function PlayerScreen() {
     );
   }, []);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   const animatedSheepStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: translateY.value }],
@@ -129,9 +132,16 @@ export default function PlayerScreen() {
   const GraphicComponent = (SoundGraphics as any)[graphicId || 'ForestNightBg'];
 
   return (
-    <View style={styles.container}>
+    <View 
+      style={[styles.container, { opacity: isLoading ? 0 : 1 }]}
+      onLayout={() => {
+        // Essential to wait for at least one frame of layout 
+        requestAnimationFrame(() => setIsLoading(false));
+      }}
+    >
       {/* Explicitly using light status bar to ensure icons are light on the dark background */}
       <StatusBar style="light" />
+
       <View style={[styles.safeArea, { paddingTop: Math.max(insets.top, 20) + 16, paddingBottom: Math.max(insets.bottom, 20) }]}>
         
         {/* TOP NAV BAR - Fixed at top */}
@@ -222,8 +232,9 @@ export default function PlayerScreen() {
             </View>
           </View>
         </View>
-
       </View>
+
+      <ScreenLoader isVisible={isLoading} />
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
@@ -50,11 +51,16 @@ export default function StoriesScreen() {
         </View>
         <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <ScrollView 
-          style={styles.scroll} 
-          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
-          showsVerticalScrollIndicator={false}
+        <Animated.View 
+          entering={FadeIn.duration(400)}
+          style={{ flex: 1 }}
         >
+          <ScrollView 
+            style={styles.scroll} 
+            contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
+            showsVerticalScrollIndicator={false}
+          >
+
           
           <TouchableOpacity 
             style={[styles.featuredCard, { backgroundColor: C.bgCard, borderTopColor: '#C8A29A', shadowColor: C.textPrimary }]}
@@ -82,38 +88,42 @@ export default function StoriesScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* CATEGORIES GRID */}
-          <View style={[styles.sectionHeader, { marginTop: 24 }]}>
-            <Text style={[styles.overline, { color: C.textSecondary }]}>CATEGORIES</Text>
-          </View>
+          {/* CATEGORIES SECTION */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.overline, { color: C.textSecondary }]}>CATEGORIES</Text>
+            </View>
 
-          <View style={styles.categoryGrid}>
-            {CATEGORIES.map((cat) => {
-              const Graphic = (StoryGraphics as any)[`${cat.id.charAt(0).toUpperCase() + cat.id.slice(1)}CategoryBg`];
-              return (
-                <TouchableOpacity 
-                  key={cat.id} 
-                  style={styles.categoryCard}
-                  activeOpacity={0.8}
-                  onPress={() => router.push(`/story-list/${cat.id}`)}
-                >
-                  <View style={styles.graphicWrap}>
-                    {Graphic && <Graphic />}
-                  </View>
-                  <View style={styles.categoryInfo}>
-                    <Text style={styles.catTitle}>{cat.title}</Text>
-                    <Text 
-                      style={[styles.catSubtitle, { color: cat.accentColor }]}
-                      numberOfLines={2}
-                    >
-                      {cat.subtitle}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
+            <View style={styles.categoryGrid}>
+              {CATEGORIES.map((cat) => {
+                const Graphic = (StoryGraphics as any)[`${cat.id.charAt(0).toUpperCase() + cat.id.slice(1)}CategoryBg`];
+                return (
+                  <TouchableOpacity 
+                    key={cat.id} 
+                    style={styles.categoryCard}
+                    activeOpacity={0.8}
+                    onPress={() => router.push(`/story-list/${cat.id}`)}
+                  >
+                    <View style={styles.graphicWrap}>
+                      {Graphic && <Graphic />}
+                    </View>
+                    <View style={styles.categoryInfo}>
+                      <Text style={styles.catTitle}>{cat.title}</Text>
+                      <Text 
+                        style={[styles.catSubtitle, { color: cat.accentColor }]}
+                        numberOfLines={2}
+                      >
+                        {cat.subtitle}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            </View>
+          </ScrollView>
+        </Animated.View>
+
 
         <BottomNav active="stories" />
       </SafeAreaView>
@@ -159,7 +169,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  sectionHeader: { marginBottom: 12 },
+  section: { gap: 12 },
+  sectionHeader: { },
   overline: { 
     fontFamily: tokens.fonts.caption, 
     fontSize: 11, 

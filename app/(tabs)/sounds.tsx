@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -129,13 +130,18 @@ export default function SoundsScreen() {
         </View>
         <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <ScrollView 
-          style={styles.scroll} 
-          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
-          showsVerticalScrollIndicator={false}
+        <Animated.View 
+          entering={FadeIn.duration(400)}
+          style={{ flex: 1 }}
         >
+          <ScrollView 
+            style={styles.scroll} 
+            contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
+            showsVerticalScrollIndicator={false}
+          >
+
           {/* TONIGHT'S SOUND */}
-          <View style={{ marginBottom: 24 }}>
+          <View>
             <TouchableOpacity 
               style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
               activeOpacity={0.85}
@@ -245,8 +251,9 @@ export default function SoundsScreen() {
               <SimpleSoundCard title="Static" BgGraphic={StaticBg} soundFile="simple_static.m4a" graphicId="StaticBg" />
               <SimpleSoundCard title="A/C" BgGraphic={AcBg} soundFile="simple_ac.m4a" graphicId="AcBg" />
             </View>
-          </View>
-        </ScrollView>
+            </View>
+          </ScrollView>
+        </Animated.View>
 
         <BottomNav active="sounds" />
       </SafeAreaView>
@@ -303,7 +310,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   section: {
-    // paddingHorizontal handles this
+    gap: 12,
   },
   // Tonight's Pick Card
   pickCard: {
@@ -353,7 +360,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sectionSimpleSounds: {
-    paddingTop: 24,
+    // padding handled by gap
   },
   sectionLabel: {
     fontFamily: tokens.fonts.caption,
@@ -361,7 +368,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginBottom: 12,
   },
   sceneGrid: {
     flexDirection: 'row',

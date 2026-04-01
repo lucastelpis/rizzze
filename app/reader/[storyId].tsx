@@ -12,6 +12,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { ScreenLoader } from '@/components/ScreenLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -120,6 +121,7 @@ export default function ReaderScreen() {
   const [isNarrating, setIsNarrating] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentPara, setCurrentPara] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Sync current paragraph with audio progress (Pro Mode only)
   useEffect(() => {
@@ -334,7 +336,14 @@ export default function ReaderScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <SafeAreaView 
+        style={[styles.safeArea, { opacity: isLoading ? 0 : 1 }]} 
+        edges={['top', 'left', 'right']}
+        onLayout={() => {
+          // Give one extra frame for SVG and complex text layout to settle visually
+          requestAnimationFrame(() => setIsLoading(false));
+        }}
+      >
         {/* TOP BAR */}
         <View style={styles.topBar}>
           <TouchableOpacity
@@ -523,9 +532,10 @@ export default function ReaderScreen() {
           </View>
         </View>
 
-        {/* Render MiniPlayer if a background sound is still playing (before pressing Listen) */}
         {!isNarrating && <MiniPlayer bottomOffset={122} />}
       </SafeAreaView>
+
+      <ScreenLoader isVisible={isLoading} />
     </View>
   );
 }

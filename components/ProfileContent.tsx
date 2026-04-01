@@ -1,25 +1,24 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Pressable, Alert } from 'react-native';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
-  Easing, 
-  interpolateColor 
-} from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Svg, { Path, Circle } from 'react-native-svg';
+import { AwakeSheep } from '@/components/AwakeSheep';
+import { SleepingSheep } from '@/components/SleepingSheep';
 import { tokens } from '@/constants/theme';
 import { useAudio } from '@/context/AudioContext';
+import { useNotifications } from '@/context/NotificationContext';
+import { useStreak } from '@/context/StreakContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
-import { useStreak } from '@/context/StreakContext';
-import { SleepingSheep } from '@/components/SleepingSheep';
-import { AwakeSheep } from '@/components/AwakeSheep';
-import { useNotifications } from '@/context/NotificationContext';
-import { Modal } from 'react-native';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  Easing,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 const SettingsIcon = ({ size = 20 }: { size?: number }) => {
   const C = useColors();
@@ -37,21 +36,19 @@ const HeaderEditIcon = ({ size = 12 }: { size?: number }) => (
   </Svg>
 );
 
-const DreamCoinIcon = ({ size = 16 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" fill="#E8C88A" />
-    <Circle cx="12" cy="12" r="8" fill="#F0D880" />
-    <Path 
-      d="M12 7.5L13.1 10.3H16.1L13.7 12.1L14.6 15L12 13.2L9.4 15L10.3 12.1L7.9 10.3H10.9L12 7.5Z" 
-      fill="#E8C88A" 
-    />
-  </Svg>
-);
+const CheckIcon = ({ size = 14 }: { size?: number }) => {
+  const C = useColors();
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M20 6L9 17l-5-5" />
+    </Svg>
+  );
+};
 
 const MoonIcon = ({ color = "#B5A9DF" }: { color?: string }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path 
-      d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" 
+    <Path
+      d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
       fill={color}
     />
   </Svg>
@@ -64,6 +61,14 @@ const SunIcon = ({ color = "#F0D880" }: { color?: string }) => (
   </Svg>
 );
 
+const InfoIcon = ({ size = 12, color = "currentColor" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+    <Circle cx="12" cy="12" r="10" />
+    <Line x1="12" y1="16" x2="12" y2="12" />
+    <Line x1="12" y1="8" x2="12.01" y2="8" />
+  </Svg>
+);
+
 const ChevronRight = () => {
   const C = useColors();
   return (
@@ -73,11 +78,48 @@ const ChevronRight = () => {
   );
 };
 
-const StatCard = ({ label, value, color, icon }: { label: string; value: string; color: string; icon?: React.ReactNode }) => {
+const StatCard = ({ 
+  label, 
+  value, 
+  color, 
+  icon,
+  infoTitle,
+  infoMessage,
+  onInfoPress
+}: { 
+  label: string; 
+  value: string; 
+  color: string; 
+  icon?: React.ReactNode;
+  infoTitle?: string;
+  infoMessage?: string;
+  onInfoPress?: (title: string, message: string) => void;
+}) => {
   const C = useColors();
+  const { isDark } = useTheme();
+
+  const handleInfo = () => {
+    if (infoTitle && infoMessage && onInfoPress) {
+      onInfoPress(infoTitle, infoMessage);
+    }
+  };
+
   return (
     <View style={[styles.statCard, { backgroundColor: color }]}>
-       <View style={styles.statMainContainer}>
+      {infoMessage && (
+        <TouchableOpacity 
+          style={[
+            styles.statInfoBtn, 
+            { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+          ]}
+          onPress={handleInfo}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          activeOpacity={0.7}
+        >
+          <InfoIcon color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)'} />
+        </TouchableOpacity>
+      )}
+      <View style={styles.statMainContainer}>
         {icon && <View style={styles.statIconWrapper}>{icon}</View>}
         <Text style={[styles.statValue, { color: C.textPrimary }]}>{value}</Text>
       </View>
@@ -86,27 +128,27 @@ const StatCard = ({ label, value, color, icon }: { label: string; value: string;
   );
 };
 
-const SettingsItem = ({ 
-  label, 
-  value, 
-  icon, 
+const SettingsItem = ({
+  label,
+  value,
+  icon,
   valueColor,
-  last, 
+  last,
   showChevron = true,
-  onPress 
-}: { 
-  label: string; 
-  value?: string; 
+  onPress
+}: {
+  label: string;
+  value?: string;
   icon?: React.ReactNode;
   valueColor?: string;
-  last?: boolean; 
+  last?: boolean;
   showChevron?: boolean;
-  onPress?: () => void 
+  onPress?: () => void
 }) => {
   const C = useColors();
   return (
-    <TouchableOpacity 
-      style={[styles.settingsItem, { borderBottomColor: C.border }]} 
+    <TouchableOpacity
+      style={[styles.settingsItem, { borderBottomColor: C.border }]}
       activeOpacity={0.6}
       onPress={onPress}
       disabled={!onPress}
@@ -123,10 +165,10 @@ const SettingsItem = ({
   );
 };
 
-const ToggleSettingsItem = ({ label, sublabel, isEnabled, onToggle }: { 
-  label: string; 
+const ToggleSettingsItem = ({ label, sublabel, isEnabled, onToggle }: {
+  label: string;
   sublabel?: string;
-  isEnabled: boolean; 
+  isEnabled: boolean;
   onToggle: (val: boolean) => void;
 }) => {
   const C = useColors();
@@ -134,9 +176,9 @@ const ToggleSettingsItem = ({ label, sublabel, isEnabled, onToggle }: {
   const switchAnim = useSharedValue(isEnabled ? 1 : 0);
 
   useEffect(() => {
-    switchAnim.value = withTiming(isEnabled ? 1 : 0, { 
-      duration: 250, 
-      easing: Easing.bezier(0.4, 0, 0.2, 1) 
+    switchAnim.value = withTiming(isEnabled ? 1 : 0, {
+      duration: 250,
+      easing: Easing.bezier(0.4, 0, 0.2, 1)
     });
   }, [isEnabled]);
 
@@ -161,7 +203,7 @@ const ToggleSettingsItem = ({ label, sublabel, isEnabled, onToggle }: {
       <TouchableOpacity activeOpacity={1} onPress={() => onToggle(!isEnabled)}>
         <Animated.View style={[styles.toggleTrack, trackStyle]}>
           <Animated.View style={[
-            styles.toggleThumb, 
+            styles.toggleThumb,
             { backgroundColor: '#FFF' },
             thumbStyle
           ]} />
@@ -174,15 +216,21 @@ const ToggleSettingsItem = ({ label, sublabel, isEnabled, onToggle }: {
 export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   const { activeSound } = useAudio();
   const { themeMode, setThemeMode, isDark } = useTheme();
-  const { streakCount } = useStreak();
-  const { 
-    bedtime, setBedtime, 
+  const { streakCount, sleepRatingCount, syncSleepRatings } = useStreak();
+  const {
+    bedtime, setBedtime,
     wakeUpTime, setWakeUpTime,
-    isNotificationsEnabled, toggleNotifications, 
+    isNotificationsEnabled, toggleNotifications,
     isDailyCheckInEnabled, toggleDailyCheckIn,
-    sendTestNotification 
+    sendTestNotification
   } = useNotifications();
   const C = useColors();
+  useEffect(() => {
+    syncSleepRatings();
+  }, []);
+
+  const [infoData, setInfoData] = React.useState<{ title: string; message: string } | null>(null);
+  const [showInfo, setShowInfo] = React.useState(false);
   const router = useRouter();
 
   const [showTimePicker, setShowTimePicker] = React.useState(false);
@@ -201,9 +249,9 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
       "Are you sure? This will permanently delete your streaks, sleep history, and preferences.",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Reset", 
-          style: "destructive", 
+        {
+          text: "Reset",
+          style: "destructive",
           onPress: async () => {
             try {
               await AsyncStorage.clear();
@@ -211,15 +259,15 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
             } catch (e) {
               console.error("Failed to clear storage", e);
             }
-          } 
+          }
         }
       ]
     );
   };
 
   return (
-    <ScrollView 
-      style={styles.scroll} 
+    <ScrollView
+      style={styles.scroll}
       contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }, isModal && { paddingTop: 12 }]}
       showsVerticalScrollIndicator={false}
     >
@@ -239,12 +287,22 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
 
       {/* Stats */}
       <View style={styles.statsGrid}>
-        <StatCard label="night streak" value={streakCount.toString()} color={isDark ? 'rgba(255,255,255,0.05)' : C.bgMuted} />
         <StatCard 
-          label="dream coins" 
-          value="342" 
-          icon={<DreamCoinIcon />}
+          label="daily rating streak" 
+          value={streakCount.toString()} 
+          onInfoPress={(title, message) => { setInfoData({ title, message }); setShowInfo(true); }}
+          infoTitle="Rating Streak"
+          infoMessage="The number of consecutive days you've completed a sleep rating."
           color={isDark ? 'rgba(255,255,255,0.05)' : C.bgMuted} 
+        />
+        <StatCard
+          label="daily sleep ratings"
+          value={sleepRatingCount.toString()}
+          icon={<CheckIcon />}
+          onInfoPress={(title, message) => { setInfoData({ title, message }); setShowInfo(true); }}
+          infoTitle="Daily Sleep Ratings"
+          infoMessage="Total count of sleep ratings recorded on the same day they were scheduled. Note: Ratings for past days aren't counted."
+          color={isDark ? 'rgba(255,255,255,0.05)' : C.bgMuted}
         />
       </View>
 
@@ -259,16 +317,16 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
               style={[
                 styles.themeOption,
                 themeMode === mode && [
-                  styles.themeOptionActive, 
+                  styles.themeOptionActive,
                   { backgroundColor: isDark ? '#4A4668' : C.bgCard }
                 ]
               ]}
             >
               <Text style={[
-                  styles.themeText, 
-                  { color: C.textSecondary },
-                  themeMode === mode && { color: isDark ? C.white : C.accent, fontFamily: 'Nunito_800ExtraBold' }
-                ]}
+                styles.themeText,
+                { color: C.textSecondary },
+                themeMode === mode && { color: isDark ? C.white : C.accent, fontFamily: 'Nunito_800ExtraBold' }
+              ]}
               >
                 {mode.toUpperCase()}
               </Text>
@@ -280,19 +338,19 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
       {/* Settings Section */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: C.textMuted }]}>MY SLEEP</Text>
-        <SettingsItem 
-          label="Bedtime goal" 
-          value={formatTime(bedtime.hour, bedtime.minute)} 
+        <SettingsItem
+          label="Bedtime goal"
+          value={formatTime(bedtime.hour, bedtime.minute)}
           icon={<MoonIcon />}
           onPress={() => { setPickerType('bedtime'); setShowTimePicker(true); }}
         />
-        <SettingsItem 
-          label="Wake-up goal" 
-          value={formatTime(wakeUpTime.hour, wakeUpTime.minute)} 
+        <SettingsItem
+          label="Wake-up goal"
+          value={formatTime(wakeUpTime.hour, wakeUpTime.minute)}
           icon={<SunIcon />}
           onPress={() => { setPickerType('wakeup'); setShowTimePicker(true); }}
         />
-        
+
         <View style={styles.durationRow}>
           <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <Circle cx="12" cy="12" r="10" />
@@ -303,16 +361,16 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
           </Text>
         </View>
 
-        <ToggleSettingsItem 
-          label="Bedtime reminder" 
+        <ToggleSettingsItem
+          label="Bedtime reminder"
           sublabel={`Nudge at ${formatTime(bedtime.hour, bedtime.minute)}`}
-          isEnabled={isNotificationsEnabled} 
+          isEnabled={isNotificationsEnabled}
           onToggle={toggleNotifications}
         />
-        <ToggleSettingsItem 
-          label="Daily check-in" 
+        <ToggleSettingsItem
+          label="Daily check-in"
           sublabel="Rate your sleep each morning"
-          isEnabled={isDailyCheckInEnabled} 
+          isEnabled={isDailyCheckInEnabled}
           onToggle={toggleDailyCheckIn}
         />
       </View>
@@ -340,6 +398,41 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         <Text style={[styles.logoutText, { color: C.textSecondary, fontSize: 13 }]}>Reset app data</Text>
       </TouchableOpacity>
 
+      {/* Info Popup Modal */}
+      <Modal
+        visible={showInfo}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowInfo(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay} 
+          onPress={() => setShowInfo(false)}
+        >
+          <Animated.View style={[
+            styles.infoModalContent, 
+            { 
+              backgroundColor: isDark ? '#2C2844' : C.bgCard,
+              borderWidth: isDark ? 1.5 : 0,
+              borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent'
+            }
+          ]}>
+            <Text style={[styles.infoModalTitle, { color: C.textPrimary }]}>
+              {infoData?.title}
+            </Text>
+            <Text style={[styles.infoModalMessage, { color: C.textSecondary }]}>
+              {infoData?.message}
+            </Text>
+            <TouchableOpacity 
+              style={[styles.infoModalCloseBtn, { backgroundColor: C.accent }]}
+              onPress={() => setShowInfo(false)}
+            >
+              <Text style={styles.infoModalCloseBtnText}>Got it</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </Pressable>
+      </Modal>
+
       {/* Time Picker Modal */}
       <Modal visible={showTimePicker} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -348,17 +441,17 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
             <Text style={[styles.modalTitle, { color: C.textPrimary }]}>
               {pickerType === 'bedtime' ? 'Set Bedtime' : 'Set Wake Up'}
             </Text>
-            
+
             <View style={styles.pickerContainer}>
-               <TimePicker 
-                 hour={pickerType === 'bedtime' ? bedtime.hour : wakeUpTime.hour} 
-                 minute={pickerType === 'bedtime' ? bedtime.minute : wakeUpTime.minute} 
-                 onChange={(h, m) => pickerType === 'bedtime' ? setBedtime(h, m) : setWakeUpTime(h, m)} 
-               />
+              <TimePicker
+                hour={pickerType === 'bedtime' ? bedtime.hour : wakeUpTime.hour}
+                minute={pickerType === 'bedtime' ? bedtime.minute : wakeUpTime.minute}
+                onChange={(h, m) => pickerType === 'bedtime' ? setBedtime(h, m) : setWakeUpTime(h, m)}
+              />
             </View>
 
-            <TouchableOpacity 
-              style={[styles.confirmBtn, { backgroundColor: C.accent }]} 
+            <TouchableOpacity
+              style={[styles.confirmBtn, { backgroundColor: C.accent }]}
               onPress={() => setShowTimePicker(false)}
             >
               <Text style={styles.confirmBtnText}>Done</Text>
@@ -375,11 +468,11 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 24, paddingBottom: 20 },
   header: { alignItems: 'center', marginTop: 12, marginBottom: 32 },
   avatarContainer: { position: 'relative', marginBottom: 16 },
-  avatarCircle: { 
-    width: 100, 
-    height: 100, 
-    borderRadius: 50, 
-    alignItems: 'center', 
+  avatarCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
     justifyContent: 'center',
     ...tokens.shadows.elevated
   },
@@ -422,7 +515,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  statCard: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  statCard: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  statInfoBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
   statMainContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   statIconWrapper: { marginBottom: 2 },
   statValue: { fontFamily: tokens.fonts.heading, fontSize: 28 },
@@ -463,6 +567,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -539,6 +644,43 @@ const styles = StyleSheet.create({
     fontFamily: tokens.fonts.caption,
     fontSize: 14,
     fontWeight: '900',
+  },
+  // Info Modal Styles
+  infoModalContent: {
+    width: '85%',
+    maxWidth: 400,
+    padding: 24,
+    borderRadius: 32,
+    alignItems: 'center',
+    ...tokens.shadows.elevated
+  },
+  infoModalTitle: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 20,
+    marginBottom: 12,
+    textAlign: 'center'
+  },
+  infoModalMessage: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 24
+  },
+  infoModalCloseBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 100,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  infoModalCloseBtnText: {
+    color: '#FFF',
+    fontFamily: tokens.fonts.heading,
+    fontSize: 16,
   }
 });
 
@@ -547,7 +689,7 @@ const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; 
   const C = useColors();
   const displayHour = hour % 12 || 12;
   const ampm = hour >= 12 ? 'PM' : 'AM';
-  
+
   // Align with onboarding colors
   const arrowColor = !isDark ? C.accent : '#C4AED8';
 
@@ -595,7 +737,7 @@ const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; 
         </TouchableOpacity>
       </View>
       <View style={styles.tpBadgeWrapper}>
-        <TouchableOpacity 
+        <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => adjust('h', 12)}
           style={[styles.tpBadge, { backgroundColor: isDark ? 'rgba(139, 109, 174, 0.2)' : C.accentLight }]}

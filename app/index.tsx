@@ -838,20 +838,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 20,
-    marginBottom: 28,
+    marginBottom: 16,
   },
   pickerRow: {
     flexDirection: 'row',
     width: '100%',
-    marginBottom: 24,
-    marginTop: 8,
+    marginBottom: 12,
+    marginTop: 4,
   },
   durationBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   durationText: {
     fontFamily: tokens.fonts.body,
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   togglesContainer: {
     width: '100%',

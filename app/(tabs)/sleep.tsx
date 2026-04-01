@@ -9,6 +9,7 @@ import {
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { useAudio } from '@/context/AudioContext';
@@ -160,7 +161,7 @@ export default function SleepScreen() {
   const [tipIndex, setTipIndex] = useState(0);
   const [evalTarget, setEvalTarget] = useState<{ day: number, month: number, year: number, dateKey: string } | null>(null);
   const [activeEval, setActiveEval] = useState<typeof evalTarget>(null);
-  const { markActivity } = useStreak();
+  const { markActivity, reportSleepRating } = useStreak();
   const { activeSound } = useAudio();
   const router = useRouter();
 
@@ -181,6 +182,11 @@ export default function SleepScreen() {
   }, [evalTarget]);
 
   const handleRateDate = async (dateKey: string, quality: SleepQuality) => {
+    // Report the rating to the streak context which will decide if it's on time
+    if (quality !== null) {
+      reportSleepRating(dateKey);
+    }
+
     const newData = { ...sleepData, [dateKey]: quality };
     if (dateKey === TODAY_KEY) setSelectedRating(quality);
     setSleepData(newData);
@@ -245,10 +251,15 @@ export default function SleepScreen() {
         </View>
         <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <ScrollView 
-          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
-          showsVerticalScrollIndicator={false}
+        <Animated.View 
+          entering={FadeIn.duration(400)}
+          style={{ flex: 1 }}
         >
+          <ScrollView 
+            contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
+            showsVerticalScrollIndicator={false}
+          >
+
           {/* RATING */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -351,8 +362,10 @@ export default function SleepScreen() {
                 <Text style={[styles.legendLabel, { color: C.textSecondary }]}>No data</Text>
               </View>
             </View>
-          </View>
-        </ScrollView>
+            </View>
+          </ScrollView>
+        </Animated.View>
+
 
         {/* MODAL */}
         <Modal visible={!!evalTarget} transparent animationType="fade" onRequestClose={() => setEvalTarget(null)}>

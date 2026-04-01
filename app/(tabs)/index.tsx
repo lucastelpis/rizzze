@@ -8,6 +8,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { tokens } from '../../constants/theme';
@@ -105,7 +106,7 @@ const StreakSection = () => {
     <View style={styles.streakSection}>
       {/* Label row */}
       <View style={styles.streakHeader}>
-        <Text style={[styles.overline, { color: C.textMuted }]}>YOUR STREAK</Text>
+        <Text style={[styles.overline, { color: C.textMuted }]}>YOUR DAILY STREAK</Text>
         <Text style={[styles.streakCount, { color: C.accent }]}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
       </View>
       {/* Bars */}
@@ -207,11 +208,16 @@ export default function HomeScreen() {
           </View>
           <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
-          showsVerticalScrollIndicator={false}
+        <Animated.View 
+          entering={FadeIn.duration(400)}
+          style={{ flex: 1 }}
         >
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
+            showsVerticalScrollIndicator={false}
+          >
+
 
           <View style={{ gap: 12 }}>
             {/* ── TONIGHT'S PICK: SOUND ── */}
@@ -310,9 +316,9 @@ export default function HomeScreen() {
             </View>
           </View>
         </ScrollView>
+      </Animated.View>
 
-        {/* ── BOTTOM NAV ── */}
-        <BottomNav active="home" />
+      <BottomNav active="home" />
       </SafeAreaView>
     </View>
   );
