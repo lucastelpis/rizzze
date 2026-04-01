@@ -821,13 +821,12 @@ export default function CozyFarmGame() {
       {/* LEVEL COMPLETE OVERLAY */}
       {isLevelComplete && (
         <View style={styles.overlay}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { width: Math.min(windowWidth * 0.9, 310) }]}>
             <ScrollView 
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalScrollContent}
             >
-              <View style={{ alignItems: 'center' }}>
-                {/* Fixed-height wrapper for the badge to prevent layout jumps */}
+              {/* Fixed-height wrapper for the badge to prevent layout jumps */}
                 <View style={{ height: 40, justifyContent: 'center', marginBottom: 12 }}>
                   {isNewBest && (
                     <View style={styles.newBestBanner}>
@@ -851,7 +850,6 @@ export default function CozyFarmGame() {
                 <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
                   <Text style={styles.secondaryButtonText}>Back to games</Text>
                 </TouchableOpacity>
-              </View>
             </ScrollView>
           </View>
         </View>
@@ -1330,7 +1328,7 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 24, // Slightly more rounded for premium feel
     alignItems: 'center',
     shadowColor: 'rgba(45,43,61,0.15)',
     shadowOffset: { width: 0, height: 12 },
@@ -1338,6 +1336,7 @@ const styles = StyleSheet.create({
     shadowRadius: 40,
     elevation: 10,
     maxHeight: '90%',
+    overflow: 'hidden', // Ensure content doesn't bleed out
   },
   modalScrollContent: {
     paddingVertical: 32,
@@ -1357,12 +1356,13 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24, // Sligthly larger
     fontWeight: '900',
     color: '#2D2B3D',
+    textAlign: 'center',
   },
   modalSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
     color: '#7A7589',
     marginTop: 4,
