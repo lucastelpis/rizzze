@@ -4,10 +4,12 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   Pressable,
   useWindowDimensions,
+  ScrollView,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { ScreenLoader } from '../components/ScreenLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -30,14 +32,22 @@ import { CloudIcon, StoriesIcon, GamesIcon } from '../components/BedtimeIcons';
 import { useNotifications } from '@/context/NotificationContext';
 import { SleepingSheep } from '../components/SleepingSheep';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
+import { SheepStage1, SheepStage2, SheepStage3, SheepStage4, SheepStage5, SheepStage6 } from '../components/sheepStages';
 
 // ─── COMPONENTS ───
 
 const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welcome' | 'features' | 'teaching' | 'reading' | 'age' | 'goal', size?: number, hideSparkles?: boolean }) => {
   const C = useColors();
   const { isDark } = useTheme();
+  const { height } = useWindowDimensions();
   const bob = useSharedValue(0);
+  
+  // Responsive sizing based on screen height
+  const baseSize = height < 700 ? 80 : 110;
+  const imageSize = height < 700 ? 64 : 86;
+  const mascotPadding = height < 700 ? 8 : 12;
+  const containerRadius = height < 700 ? 18 : 24;
 
   useEffect(() => {
     if (variant === 'welcome') {
@@ -67,15 +77,26 @@ const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welco
 
   return (
     <View style={styles.mascotContainer}>
-      <View style={[styles.mascotBgBox, { backgroundColor: isDark ? 'rgba(139, 107, 174, 0.15)' : 'rgba(139, 107, 174, 0.1)' }, variant === 'goal' && { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(45, 43, 61, 0.03)' }]}>
+      <View style={[
+        styles.mascotBgBox, 
+        { 
+          backgroundColor: isDark ? 'rgba(139, 107, 174, 0.15)' : 'rgba(139, 107, 174, 0.1)',
+          width: baseSize,
+          height: baseSize,
+          borderRadius: containerRadius,
+          padding: mascotPadding,
+        }, 
+        variant === 'goal' && { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(45, 43, 61, 0.03)' }
+      ]}>
         <Animated.View style={animatedStyle}>
           {variant === 'goal' ? (
-            <SleepingSheep size={80} />
+            <SleepingSheep size={Math.min(80, imageSize)} />
           ) : (
             <Image
               source={images[variant]}
-              style={styles.mascotImage}
-              resizeMode="contain"
+              style={{ width: imageSize, height: imageSize }}
+              contentFit="contain"
+              transition={200}
             />
           )}
         </Animated.View>
@@ -90,13 +111,16 @@ const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welco
   );
 };
 
-const FeatureItem = ({ title, description, color, Icon, isLast }: any) => {
+const FeatureItem = ({ title, description, bgColor, Icon, isLast }: any) => {
   const C = useColors();
+  const { isDark } = useTheme();
+  const iconColor = isDark ? 'rgba(255, 255, 255, 0.9)' : C.accent;
+
   return (
     <View>
       <View style={styles.featureContent}>
-        <View style={[styles.iconCircle, { backgroundColor: color }]}>
-          <Icon size={24} color="rgba(255, 255, 255, 0.95)" />
+        <View style={[styles.iconCircle, { backgroundColor: bgColor }]}>
+          <Icon size={24} color={iconColor} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.featureTitle, { color: C.textPrimary }]}>{title}</Text>
@@ -142,49 +166,57 @@ const Page1 = () => {
   const C = useColors();
   return (
     <Animated.View exiting={FadeOutLeft} style={[styles.page, { paddingHorizontal: 0 }]}>
-      <Mascot variant="welcome" />
-      <View style={[styles.pageContent, { paddingHorizontal: 32, marginTop: height * 0.045 }]}>
-        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>
-          Welcome to <Text style={{ color: C.accent }}>Rizzze</Text>!
-        </Text>
-        <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-          Settle in for a cozy night with sleep-inducing sounds, soft-read stories, and peaceful puzzles
-        </Text>
-      </View>
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContent, { paddingTop: height * 0.02 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <Mascot variant="welcome" />
+        <View style={[styles.pageContent, { paddingHorizontal: 32 }]}>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>
+            Welcome to <Text style={{ color: C.accent }}>Rizzze</Text>!
+          </Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            Settle in for a cozy night with sleep-inducing sounds, soft-read stories, and peaceful puzzles
+          </Text>
+        </View>
+      </ScrollView>
     </Animated.View>
   );
 };
 
 const Page2 = () => {
   const C = useColors();
+  const { isDark } = useTheme();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <Mascot variant="teaching" />
-      <View style={styles.pageContent}>
-        <Text style={[styles.overtitle, { color: C.overtitle }]}>HOW WE HELP</Text>
-        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Designed for deep rest</Text>
-        <View style={styles.featureList}>
-          <FeatureItem
-            title="White noise"
-            description="High-fidelity environment sounds"
-            color={C.soundsVibrant}
-            Icon={CloudIcon}
-          />
-          <FeatureItem
-            title="Bedtime stories"
-            description="Gentle stories and guided sessions"
-            color={C.sleepVibrant}
-            Icon={StoriesIcon}
-          />
-          <FeatureItem
-            title="Relaxing games"
-            description="Mini-games to lower heart rate"
-            color={C.storiesVibrant}
-            Icon={GamesIcon}
-            isLast
-          />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Mascot variant="teaching" />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>HOW WE HELP</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Designed for deep rest</Text>
+          <View style={styles.featureList}>
+            <FeatureItem
+              title="White noise"
+              description="High-fidelity environment sounds"
+              bgColor={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
+              Icon={CloudIcon}
+            />
+            <FeatureItem
+              title="Bedtime stories"
+              description="Gentle stories and guided sessions"
+              bgColor={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
+              Icon={StoriesIcon}
+            />
+            <FeatureItem
+              title="Relaxing games"
+              description="Mini-games to lower heart rate"
+              bgColor={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
+              Icon={GamesIcon}
+              isLast
+            />
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
@@ -194,16 +226,21 @@ const PageGender = ({ gender, setGender }: any) => {
   const C = useColors();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <Mascot variant="reading" />
-      <View style={styles.pageContent}>
-        <Text style={[styles.overtitle, { color: C.overtitle }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
-        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How do you identify?</Text>
-        <View style={styles.selectionGrid}>
-          {genders.map(g => (
-            <GoalCard key={g} title={g} selected={gender === g} onPress={() => setGender(g)} />
-          ))}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Mascot variant="reading" />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How do you identify?</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            This helps us personalize your experience
+          </Text>
+          <View style={styles.selectionGrid}>
+            {genders.map(g => (
+              <GoalCard key={g} title={g} selected={gender === g} onPress={() => setGender(g)} />
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
@@ -213,16 +250,21 @@ const Page3 = ({ age, setAge }: any) => {
   const C = useColors();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <Mascot variant="reading" />
-      <View style={styles.pageContent}>
-        <Text style={[styles.overtitle, { color: C.overtitle }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
-        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
-        <View style={styles.selectionGrid}>
-          {ages.map(a => (
-            <GoalCard key={a} title={a} selected={age === a} onPress={() => setAge(a)} />
-          ))}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Mascot variant="reading" />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            Sleep needs change with age — we'll adapt
+          </Text>
+          <View style={styles.selectionGrid}>
+            {ages.map(a => (
+              <GoalCard key={a} title={a} selected={age === a} onPress={() => setAge(a)} />
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
@@ -237,16 +279,21 @@ const Page4 = ({ goal, setGoal }: any) => {
   const C = useColors();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <Mascot variant="reading" />
-      <View style={styles.pageContent}>
-        <Text style={[styles.overtitle, { color: C.overtitle }]}>TELL ME A LITTLE MORE ABOUT YOU</Text>
-        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What is your goal?</Text>
-        <View style={styles.selectionGrid}>
-          {goals.map(g => (
-            <GoalCard key={g} title={g} selected={goal === g} onPress={() => setGoal(g)} />
-          ))}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Mascot variant="reading" />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR GOAL</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What brings you here?</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            We'll tailor your experience to match
+          </Text>
+          <View style={styles.selectionGrid}>
+            {goals.map(g => (
+              <GoalCard key={g} title={g} selected={goal === g} onPress={() => setGoal(g)} />
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
@@ -294,73 +341,318 @@ const Page5 = () => {
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <Mascot variant="welcome" hideSparkles />
-      <View style={styles.pageContent}>
-        <Text style={[styles.overtitle, { color: C.overtitle }]}>CONSISTENCY IS KEY</Text>
-        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Set your sleep schedule</Text>
-        <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-          Wind down at night. Rise with a boost.
-        </Text>
-
-        <View style={styles.pickerRow}>
-          <TimePickerCard
-            label="BEDTIME"
-            hour={localBedtime.hour}
-            minute={localBedtime.minute}
-            onAdjust={adjustBedtime}
-            themeColor="#C4AED8"
-            Icon={() => (
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="#C4AED8">
-                <Path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-              </Svg>
-            )}
-          />
-          <View style={{ width: 12 }} />
-          <TimePickerCard
-            label="WAKE UP"
-            hour={localWakeUp.hour}
-            minute={localWakeUp.minute}
-            onAdjust={adjustWakeUp}
-            themeColor="#E8C88A"
-            Icon={() => (
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="#E8C88A">
-                <Circle cx="12" cy="12" r="5" />
-                <Path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#E8C88A" strokeWidth="2" strokeLinecap="round" />
-              </Svg>
-            )}
-          />
-        </View>
-
-        <View style={styles.durationBox}>
-          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.textSecondary} strokeWidth="1.5">
-            <Circle cx="12" cy="12" r="10" />
-            <Path d="M12 6v6l4 2" />
-          </Svg>
-          <Text style={[styles.durationText, { color: C.textSecondary }]}>
-            {formatDuration(duration.hours, duration.minutes)} of sleep
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Mascot variant="welcome" hideSparkles />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>CONSISTENCY IS KEY</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Set your sleep schedule</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            Wind down at night. Rise with a boost.
           </Text>
-        </View>
 
-        <View style={[styles.divider, { backgroundColor: C.border }]} />
+          <View style={[styles.pickerRow, { marginHorizontal: -8 }]}>
+            <TimePickerCard
+              label="BEDTIME"
+              hour={localBedtime.hour}
+              minute={localBedtime.minute}
+              onAdjust={adjustBedtime}
+              themeColor="#C4AED8"
+              Icon={() => (
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="#C4AED8">
+                  <Path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                </Svg>
+              )}
+            />
+            <View style={{ width: 10 }} />
+            <TimePickerCard
+              label="WAKE UP"
+              hour={localWakeUp.hour}
+              minute={localWakeUp.minute}
+              onAdjust={adjustWakeUp}
+              themeColor="#E8C88A"
+              Icon={() => (
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="#E8C88A">
+                  <Circle cx="12" cy="12" r="5" />
+                  <Path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#E8C88A" strokeWidth="2" strokeLinecap="round" />
+                </Svg>
+              )}
+            />
+          </View>
 
-        <View style={styles.togglesContainer}>
-          <ToggleRow
-            title="Bedtime nudge"
-            description="Soft wind-down reminders"
-            isEnabled={isNotificationsEnabled}
-            onToggle={toggleNotifications}
-          />
-          <ToggleRow
-            title="Morning check-in"
-            description="Rate your sleep & rise with a cozy nudge"
-            isEnabled={isDailyCheckInEnabled}
-            onToggle={toggleDailyCheckIn}
-          />
+          <View style={styles.durationBox}>
+            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.textSecondary} strokeWidth="1.5">
+              <Circle cx="12" cy="12" r="10" />
+              <Path d="M12 6v6l4 2" />
+            </Svg>
+            <Text style={[styles.durationText, { color: C.textSecondary }]}>
+              {formatDuration(duration.hours, duration.minutes)} of sleep
+            </Text>
+          </View>
+
+          <View style={[styles.divider, { backgroundColor: C.border }]} />
+
+          <View style={styles.togglesContainer}>
+            <ToggleRow
+              title="Bedtime nudge"
+              description="Soft wind-down reminders"
+              isEnabled={isNotificationsEnabled}
+              onToggle={toggleNotifications}
+            />
+            <ToggleRow
+              title="Morning check-in"
+              description="Rate your sleep & rise with a cozy nudge"
+              isEnabled={isDailyCheckInEnabled}
+              onToggle={toggleDailyCheckIn}
+            />
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
+
+// ─── PAGE 6 — MEET YOUR COMPANION ───
+
+const STAGE_LABELS = ['Tiny', 'Small', 'Young', 'Adult', 'Elder', '???'];
+const STAGE_SIZES = [24, 32, 42, 56, 52, 36];
+const STAGE_OPACITIES = [0.35, 0.5, 0.7, 1, 0.55, 0.35];
+
+const CompanionBenefitRow = ({ icon, title, description, isLast, iconBg }: any) => {
+  const C = useColors();
+  return (
+    <View>
+      <View style={p6Styles.benefitRow}>
+        <View style={[p6Styles.benefitIcon, { backgroundColor: iconBg }]}>
+          {icon}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[p6Styles.benefitTitle, { color: C.textPrimary }]}>{title}</Text>
+          <Text style={[p6Styles.benefitDesc, { color: C.textSecondary }]}>{description}</Text>
+        </View>
+      </View>
+      {!isLast && <View style={[p6Styles.benefitDivider, { backgroundColor: C.border }]} />}
+    </View>
+  );
+};
+
+const Page6 = () => {
+  const C = useColors();
+  const { isDark } = useTheme();
+  const { width } = useWindowDimensions();
+
+  const SheepComponents = [SheepStage1, SheepStage2, SheepStage3, SheepStage4, SheepStage5, SheepStage6];
+  const responsiveSizes = STAGE_SIZES;
+
+  const iconColor = isDark ? 'rgba(255,255,255,0.9)' : C.accent;
+
+  return (
+    <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR COMPANION</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Meet your sheep</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            Check in daily and watch it grow.{"\n"}How far can you take it?
+          </Text>
+
+          {/* ─── Growth Showcase ─── */}
+          <View style={p6Styles.showcaseContainer}>
+            <View style={p6Styles.sheepRow}>
+              {SheepComponents.map((SheepComp, i) => (
+                <View key={i} style={[p6Styles.sheepSlot, { opacity: STAGE_OPACITIES[i] }]}>
+                  <View style={p6Styles.sheepSvgWrap}>
+                    <SheepComp size={responsiveSizes[i]} />
+                  </View>
+                  <Text style={[
+                    p6Styles.stageLabel,
+                    { color: C.textSecondary, fontSize: width < 380 ? 8.5 : 10 },
+                    i === 3 && { color: C.textPrimary, fontWeight: '800', fontSize: width < 380 ? 10 : 12 },
+                  ]}>
+                    {STAGE_LABELS[i]}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {/* ─── Timeline Bar ─── */}
+            <View style={p6Styles.timelineContainer}>
+              <View style={[p6Styles.timelineLine, { 
+                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E8E2D8',
+                width: '83.3%',
+                alignSelf: 'center',
+              }]}>
+                <View style={[p6Styles.timelineFilled, { backgroundColor: C.accent, width: '60%' }]} />
+              </View>
+
+              <View style={p6Styles.dotsRow}>
+                {[0, 1, 2, 3, 4, 5].map(i => (
+                  <View key={i} style={p6Styles.dotSlot}>
+                    <View
+                      style={[
+                        p6Styles.dot,
+                        i <= 3 && { backgroundColor: C.accent },
+                        i > 3 && [
+                          p6Styles.dotRing,
+                          { borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#D8D2CC', backgroundColor: 'transparent' },
+                        ],
+                        width < 380 && { width: 7, height: 7, borderRadius: 4 },
+                      ]}
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* ─── Benefits ─── */}
+          <View style={p6Styles.benefitsList}>
+            <CompanionBenefitRow
+              icon={
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="1.5" />
+                  <Path d="M12 7v5l3 3" stroke={iconColor} strokeWidth="1.5" strokeLinecap="round" />
+                </Svg>
+              }
+              iconBg={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
+              title="Rate your sleep daily"
+              description="Each check-in helps your sheep grow"
+            />
+            <CompanionBenefitRow
+              icon={
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill={iconColor} />
+                </Svg>
+              }
+              iconBg={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
+              title="6 unique stages"
+              description="Each one a surprise to discover"
+            />
+            <CompanionBenefitRow
+              icon={
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="1.5" />
+                  <Circle cx="12" cy="12" r="4" fill={iconColor} />
+                </Svg>
+              }
+              iconBg={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
+              title="No pressure, just progress"
+              description="Missed a day? Your sheep waits patiently"
+              isLast
+            />
+          </View>
+
+          {/* ─── Access hint ─── */}
+          <Text style={[p6Styles.accessHint, { color: C.textMuted }]}>
+            Visit your sheep anytime on your Profile
+          </Text>
+        </View>
+      </ScrollView>
+    </Animated.View>
+  );
+};
+
+const p6Styles = StyleSheet.create({
+  showcaseContainer: {
+    width: '100%',
+    marginBottom: 8,
+    paddingHorizontal: 8,
+  },
+  sheepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingHorizontal: 0,
+    marginBottom: 12,
+  },
+  sheepSlot: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  sheepSvgWrap: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    minHeight: 60,
+  },
+  stageLabel: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  timelineContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  timelineLine: {
+    height: 3,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  timelineFilled: {
+    height: '100%',
+    width: '33%',
+    borderRadius: 2,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    marginTop: -6,
+  },
+  dotSlot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+  },
+  dotRing: {
+    borderWidth: 2,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    marginTop: -1,
+  },
+  benefitsList: {
+    width: '100%',
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: 14,
+  },
+  benefitIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  benefitTitle: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 1,
+  },
+  benefitDesc: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 12.5,
+  },
+  benefitDivider: {
+    height: 1,
+  },
+  accessHint: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 11,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 16,
+    opacity: 0.7,
+  },
+});
 
 const formatTime = (h: number, m: number) => {
   const hours = h % 12 || 12;
@@ -472,6 +764,7 @@ const ToggleRow = ({ title, description, isEnabled, onToggle }: any) => {
 export default function Onboarding() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [goal, setGoal] = useState('');
@@ -481,7 +774,7 @@ export default function Onboarding() {
   const { isNotificationsEnabled, requestPermission } = useNotifications();
 
   const next = async () => {
-    if (currentPage < 5) {
+    if (currentPage < 6) {
       setCurrentPage(currentPage + 1);
     } else {
       // If notifications are enabled, make sure we have permission
@@ -497,18 +790,24 @@ export default function Onboarding() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: C.bgPrimary }]}>
+    <View 
+      style={[styles.container, { backgroundColor: C.bgPrimary, opacity: isLoading ? 0 : 1 }]}
+      onLayout={() => {
+        // Essential to wait for layout before hiding ScreenLoader
+        requestAnimationFrame(() => setIsLoading(false));
+      }}
+    >
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <SafeAreaView style={styles.safeArea}>
         {/* Progress Dots */}
         <View style={styles.progressContainer}>
-          {[0, 1, 2, 3, 4, 5].map(i => (
+          {[0, 1, 2, 3, 4, 5, 6].map(i => (
             <View
               key={i}
               style={[
                 styles.progressDot,
-                { backgroundColor: C.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)' },
+                { backgroundColor: C.mode === 'dark' ? '#5A5670' : 'rgba(0,0,0,0.1)' },
                 i === currentPage && [styles.progressDotActive, { backgroundColor: C.accent }],
                 i < currentPage && [styles.progressDotCompleted, { backgroundColor: C.accentSoft }],
               ]}
@@ -524,6 +823,7 @@ export default function Onboarding() {
           {currentPage === 3 && <Page3 key="p3" age={age} setAge={setAge} />}
           {currentPage === 4 && <Page4 key="p4" goal={goal} setGoal={setGoal} />}
           {currentPage === 5 && <Page5 key="p5" />}
+          {currentPage === 6 && <Page6 key="p6" />}
         </View>
 
         {/* Navigation */}
@@ -546,11 +846,13 @@ export default function Onboarding() {
             <Text style={styles.nextButtonText}>
               {(currentPage === 2 && !gender) || (currentPage === 3 && !age) || (currentPage === 4 && !goal)
                 ? "Pick an option"
-                : currentPage === 5 ? "Let's Start" : "Next"}
+                : currentPage === 6 ? "Let's Start" : "Next"}
             </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+
+      <ScreenLoader isVisible={isLoading} />
     </View>
   );
 }
@@ -571,8 +873,8 @@ const styles = StyleSheet.create({
   },
   progressDot: {
     width: 20,
-    height: 4,
-    borderRadius: 2,
+    height: 5,
+    borderRadius: 3,
   },
   progressDotActive: {
     width: 32,
@@ -585,14 +887,20 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'center',
     paddingHorizontal: tokens.spacing.xl,
   },
   pageContent: {
     alignItems: 'center',
-    marginTop: tokens.spacing.lg,
     width: '100%',
+    alignSelf: 'stretch',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: tokens.spacing.xl,
   },
 
   mascotBgBox: {
@@ -611,6 +919,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 28,
   },
   sparkle1: { position: 'absolute', top: -10, right: -10 },
   sparkle2: { position: 'absolute', bottom: 20, left: -20 },
@@ -657,6 +966,7 @@ const styles = StyleSheet.create({
   },
   featureList: {
     width: '100%',
+    alignSelf: 'stretch',
     marginTop: 20,
   },
   featureContent: {
@@ -687,26 +997,27 @@ const styles = StyleSheet.create({
   },
   selectionGrid: {
     width: '100%',
-    gap: 16,
-    marginTop: 24,
+    alignSelf: 'stretch',
+    gap: 12,
+    marginTop: 20,
   },
   goalCard: {
+    width: '100%',
     borderRadius: 16,
-    borderWidth: 0,
+    borderWidth: 2,
+    borderColor: 'transparent',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: 13,
     paddingHorizontal: 20,
-    // Top shadow effect
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   goalCardSelected: {
-    borderWidth: 2,
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.12,
   },
   goalText: {
     fontFamily: tokens.fonts.body,
@@ -714,7 +1025,7 @@ const styles = StyleSheet.create({
   },
   goalCheck: {
     position: 'absolute',
-    right: 20,
+    right: 14,
     width: 20,
     height: 20,
     borderRadius: 10,
@@ -740,10 +1051,11 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   nextButtonText: {
-    fontFamily: tokens.fonts.body,
+    fontFamily: tokens.fonts.caption,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFF',
+    letterSpacing: 0.3,
   },
   backButton: {
     flex: 1,
@@ -871,8 +1183,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#3D3A52',
     borderRadius: 20,
-    paddingVertical: 14,
-    paddingHorizontal: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   tpHeader: {
@@ -894,7 +1206,7 @@ const styles = StyleSheet.create({
   },
   tpCol: {
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
   tpArrow: {
     padding: 2,

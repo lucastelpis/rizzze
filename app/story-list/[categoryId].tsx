@@ -10,6 +10,7 @@ import { BottomNav } from '@/components/BottomNav';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { CATEGORIES, STORIES, Story } from '@/constants/stories';
 import { AwakeSheep } from '@/components/AwakeSheep';
+import { HeaderSheep } from '@/components/HeaderSheep';
 import { MiniPlayer } from '@/components/MiniPlayer';
 
 // Chevron Left (Back)
@@ -87,7 +88,7 @@ export default function StoryListScreen() {
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >
-            <AwakeSheep size={34} />
+            <HeaderSheep size={34} />
           </TouchableOpacity>
         </View>
         <View style={[styles.headerDivider, { backgroundColor: C.border }]} />

@@ -1,8 +1,9 @@
-import { AwakeSheep } from '@/components/AwakeSheep';
-import { SleepingSheep } from '@/components/SleepingSheep';
+import { getSheepComponent } from '@/components/sheepStages';
+import { POINT_COLORS } from '@/constants/sheepGrowth';
 import { tokens } from '@/constants/theme';
 import { useAudio } from '@/context/AudioContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useSheepGrowth } from '@/context/SheepGrowthContext';
 import { useStreak } from '@/context/StreakContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
@@ -16,25 +17,11 @@ import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withSequence,
   withTiming
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
-
-const SettingsIcon = ({ size = 20 }: { size?: number }) => {
-  const C = useColors();
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={C.textSecondary} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Circle cx="12" cy="12" r="3" />
-      <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </Svg>
-  );
-};
-
-const HeaderEditIcon = ({ size = 12 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 5V19M5 12H19" stroke="#7A7589" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
 
 const CheckIcon = ({ size = 14 }: { size?: number }) => {
   const C = useColors();
@@ -78,18 +65,36 @@ const ChevronRight = () => {
   );
 };
 
-const StatCard = ({ 
-  label, 
-  value, 
-  color, 
+const HeartIcon = ({ size = 24, color = '#D4928A', showFill = true }: { size?: number; color?: string; showFill?: boolean }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={showFill ? color : 'none'} stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
+  </Svg>
+);
+
+function formatCooldownTime(ms: number): string {
+  if (ms <= 0) return '';
+  const totalMin = Math.ceil(ms / 60000);
+  const hours = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+  if (hours > 0) {
+    const mm = mins < 10 ? `0${mins}` : mins;
+    return `${hours}:${mm}h`;
+  }
+  return `${mins}m`;
+}
+
+const StatCard = ({
+  label,
+  value,
+  color,
   icon,
   infoTitle,
   infoMessage,
   onInfoPress
-}: { 
-  label: string; 
-  value: string; 
-  color: string; 
+}: {
+  label: string;
+  value: string;
+  color: string;
   icon?: React.ReactNode;
   infoTitle?: string;
   infoMessage?: string;
@@ -107,9 +112,9 @@ const StatCard = ({
   return (
     <View style={[styles.statCard, { backgroundColor: color }]}>
       {infoMessage && (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
-            styles.statInfoBtn, 
+            styles.statInfoBtn,
             { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
           ]}
           onPress={handleInfo}
@@ -213,18 +218,127 @@ const ToggleSettingsItem = ({ label, sublabel, isEnabled, onToggle }: {
   );
 };
 
+// ─── SHEEP GAMIFICATION SECTION ──────────────────────────────────────────────
+const SheepGamificationWidget = () => {
+  const C = useColors();
+  const { isDark } = useTheme();
+  const {
+    currentStageIndex,
+    currentStageName,
+    progressToNextStage,
+    pointsInCurrentStage,
+    pointsForNextStage,
+    isMaxStage,
+    totalPoints,
+  } = useSheepGrowth();
+
+  const SheepComponent = getSheepComponent(currentStageIndex);
+
+  // Early stages have smaller pixel art in the viewBox, so render them larger
+  const STAGE_RENDER_SIZES = [140, 120, 105, 90, 90, 90];
+  const sheepRenderSize = STAGE_RENDER_SIZES[currentStageIndex] ?? 90;
+
+  // Heart Animation setup
+  const heartScale = useSharedValue(0);
+  const heartOpacity = useSharedValue(0);
+  const heartTranslateY = useSharedValue(0);
+
+  const triggerHeartPop = () => {
+    // Reset values immediately
+    heartScale.value = 0;
+    heartTranslateY.value = 0;
+    heartOpacity.value = 1;
+
+    // Execute with a slight sequence for smoothness
+    heartScale.value = withSequence(
+      withTiming(1.2, { duration: 250, easing: Easing.out(Easing.back(1.5)) }),
+      withTiming(1, { duration: 150 })
+    );
+
+    heartTranslateY.value = withTiming(-15, {
+      duration: 1000,
+      easing: Easing.out(Easing.quad),
+    });
+
+    heartOpacity.value = withSequence(
+      withDelay(600, withTiming(0, { duration: 600 }))
+    );
+  };
+
+  const heartAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: heartOpacity.value,
+    transform: [
+      { scale: heartScale.value },
+      { translateY: heartTranslateY.value }
+    ],
+    position: 'absolute',
+    top: 20,
+    zIndex: 100,
+  }));
+
+  return (
+    <View style={styles.gamificationContainer}>
+      {/* Sheep mascot container */}
+      <View style={styles.sheepMainWrapper}>
+        <Pressable 
+          onPress={triggerHeartPop}
+          style={({ pressed }) => [
+            styles.avatarCircle, 
+            { backgroundColor: C.accentLight, transform: [{ scale: pressed ? 0.96 : 1 }] }
+          ]}
+        >
+          <View style={{ transform: [{ scaleX: -1 }], overflow: 'hidden' }}>
+            <SheepComponent size={sheepRenderSize} />
+          </View>
+          <Animated.View pointerEvents="none" style={heartAnimatedStyle}>
+            <HeartIcon size={18} />
+          </Animated.View>
+        </Pressable>
+      </View>
+
+      {/* Stage label */}
+      <Text style={[styles.stageName, { color: C.textPrimary }]}>{currentStageName}</Text>
+
+      {/* Progress Label — ABOVE the bar */}
+      <Text style={[styles.progressLabelTop, { color: C.textMuted }]}>
+        {isMaxStage ? `${totalPoints} pts` : `${pointsInCurrentStage} of ${pointsForNextStage} check-ins to next stage`}
+      </Text>
+
+      {/* Centered Status Bar */}
+      <View style={styles.progressAreaCentered}>
+        <View style={styles.progressBarTrackMini}>
+          <View style={[styles.progressBarTrackBase, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.bgMuted }]}>
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${Math.min(progressToNextStage * 100, 100)}%`,
+                  backgroundColor: POINT_COLORS.daily,
+                }
+              ]}
+            />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
 export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   const { activeSound } = useAudio();
   const { themeMode, setThemeMode, isDark } = useTheme();
-  const { streakCount, sleepRatingCount, syncSleepRatings } = useStreak();
+  const { streakCount, sleepRatingCount, syncSleepRatings, resetStreakData } = useStreak();
   const {
     bedtime, setBedtime,
     wakeUpTime, setWakeUpTime,
     isNotificationsEnabled, toggleNotifications,
     isDailyCheckInEnabled, toggleDailyCheckIn,
-    sendTestNotification
+    sendTestNotification,
+    resetConfig
   } = useNotifications();
+  const { resetGrowthData, addDailyRatingPoint } = useSheepGrowth();
   const C = useColors();
+
   useEffect(() => {
     syncSleepRatings();
   }, []);
@@ -246,7 +360,7 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   const handleReset = async () => {
     Alert.alert(
       "Reset App Data",
-      "Are you sure? This will permanently delete your streaks, sleep history, and preferences.",
+      "Are you sure? This will permanently delete your streaks, sleep history, sheep progress, and preferences.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -255,6 +369,9 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
           onPress: async () => {
             try {
               await AsyncStorage.clear();
+              await resetStreakData();
+              await resetGrowthData();
+              await resetConfig();
               router.replace('/');
             } catch (e) {
               console.error("Failed to clear storage", e);
@@ -268,32 +385,25 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }, isModal && { paddingTop: 12 }]}
+      contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }, isModal && { paddingTop: 0 }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
+      {/* Sheep Gamification Header */}
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <View style={[styles.avatarCircle, { backgroundColor: C.accentLight }]}>
-            {isDark ? <SleepingSheep size={80} /> : <AwakeSheep size={80} />}
-          </View>
-          <TouchableOpacity style={[styles.editBadge, { backgroundColor: C.white, borderColor: C.bgPrimary }]}>
-            <HeaderEditIcon size={12} />
-          </TouchableOpacity>
-        </View>
+        <SheepGamificationWidget />
         <Text style={[styles.userName, { color: C.textPrimary }]}>Lucas Telpis</Text>
-        <Text style={[styles.userJoined, { color: C.textSecondary }]}>Zen sleeper since March 2026</Text>
+        <Text style={[styles.userJoined, { color: C.textSecondary }]}>Rizzzer since March 2026</Text>
       </View>
 
       {/* Stats */}
       <View style={styles.statsGrid}>
-        <StatCard 
-          label="daily rating streak" 
-          value={streakCount.toString()} 
+        <StatCard
+          label="daily rating streak"
+          value={streakCount.toString()}
           onInfoPress={(title, message) => { setInfoData({ title, message }); setShowInfo(true); }}
           infoTitle="Rating Streak"
           infoMessage="The number of consecutive days you've completed a sleep rating."
-          color={isDark ? 'rgba(255,255,255,0.05)' : C.bgMuted} 
+          color={isDark ? 'rgba(255,255,255,0.05)' : C.bgMuted}
         />
         <StatCard
           label="daily sleep ratings"
@@ -387,6 +497,12 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
           </TouchableOpacity>
         </View>
         <SettingsItem label="Test notification" onPress={() => sendTestNotification()} />
+        <SettingsItem
+          label="Add points (+5)"
+          onPress={() => {
+            for (let i = 0; i < 5; i++) addDailyRatingPoint();
+          }}
+        />
         <SettingsItem label="Support & feedback" />
       </View>
 
@@ -405,13 +521,13 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         animationType="fade"
         onRequestClose={() => setShowInfo(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay} 
+        <Pressable
+          style={styles.modalOverlay}
           onPress={() => setShowInfo(false)}
         >
           <Animated.View style={[
-            styles.infoModalContent, 
-            { 
+            styles.infoModalContent,
+            {
               backgroundColor: isDark ? '#2C2844' : C.bgCard,
               borderWidth: isDark ? 1.5 : 0,
               borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent'
@@ -423,7 +539,7 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
             <Text style={[styles.infoModalMessage, { color: C.textSecondary }]}>
               {infoData?.message}
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.infoModalCloseBtn, { backgroundColor: C.accent }]}
               onPress={() => setShowInfo(false)}
             >
@@ -463,234 +579,12 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24, paddingBottom: 20 },
-  header: { alignItems: 'center', marginTop: 12, marginBottom: 32 },
-  avatarContainer: { position: 'relative', marginBottom: 16 },
-  avatarCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...tokens.shadows.elevated
-  },
-  editBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userName: { fontFamily: tokens.fonts.heading, fontSize: 24 },
-  userJoined: { fontFamily: tokens.fonts.body, fontSize: 13, marginTop: 4 },
-  themeSelector: {
-    height: 48,
-    borderRadius: 24,
-    flexDirection: 'row',
-    padding: 4,
-    marginBottom: 8,
-  },
-  themeOption: {
-    flex: 1,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  themeOptionActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  themeText: {
-    fontFamily: 'Nunito_600SemiBold',
-    fontSize: 12,
-    letterSpacing: 0.5,
-  },
-  statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  statCard: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  statInfoBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  statMainContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  statIconWrapper: { marginBottom: 2 },
-  statValue: { fontFamily: tokens.fonts.heading, fontSize: 28 },
-  statLabel: { fontFamily: tokens.fonts.body, fontSize: 13, textTransform: 'lowercase', marginTop: 0 },
-  section: { marginBottom: 32 },
-  sectionTitle: { fontFamily: tokens.fonts.caption, fontSize: 11, letterSpacing: 1.2, marginBottom: 12, marginLeft: 4 },
-  settingsCard: { borderRadius: 20, overflow: 'hidden', paddingHorizontal: 16 },
-  settingsItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1 },
-  settingsLabelContainer: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  settingsIconWrapper: { width: 24, alignItems: 'center' },
-  settingsLabel: { fontFamily: tokens.fonts.body, fontSize: 16 },
-  settingsSublabel: { fontFamily: tokens.fonts.body, fontSize: 13, marginTop: 2 },
-  settingsRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  settingsValue: { fontFamily: tokens.fonts.body, fontSize: 16 },
-  durationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
-  durationText: { fontFamily: tokens.fonts.body, fontSize: 13 },
-  settingsFlatItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1 },
-  badgeWrapper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  proBadge: { paddingVertical: 4, paddingHorizontal: 12, borderRadius: 9999 },
-  proBadgeText: { fontFamily: tokens.fonts.caption, fontSize: 11 },
-  logoutBtn: { paddingVertical: 12, alignItems: 'center', marginTop: 12 },
-  logoutText: { fontFamily: tokens.fonts.body, fontSize: 15 },
-  toggleTrack: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    paddingHorizontal: 3,
-    justifyContent: 'center',
-  },
-  toggleThumb: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    width: '100%',
-    borderRadius: 32,
-    padding: 32,
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: "#2D2B3D",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 32,
-  },
-  modalTitle: {
-    fontFamily: tokens.fonts.heading,
-    fontSize: 20,
-    marginBottom: 24,
-  },
-  pickerContainer: {
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  confirmBtn: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  confirmBtnText: {
-    fontFamily: tokens.fonts.heading,
-    fontSize: 16,
-    color: '#FFF',
-  },
-  // Time Picker Mini Component Styles
-  tpRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-  },
-  tpCol: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  tpVal: {
-    fontFamily: tokens.fonts.heading,
-    fontSize: 48,
-    fontWeight: '900',
-  },
-  tpArrow: {
-    width: 44,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tpSep: {
-    fontFamily: tokens.fonts.heading,
-    fontSize: 40,
-    fontWeight: '800',
-    marginTop: -4,
-  },
-  tpBadgeWrapper: {
-    marginLeft: 4,
-  },
-  tpBadge: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  tpBadgeText: {
-    fontFamily: tokens.fonts.caption,
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  // Info Modal Styles
-  infoModalContent: {
-    width: '85%',
-    maxWidth: 400,
-    padding: 24,
-    borderRadius: 32,
-    alignItems: 'center',
-    ...tokens.shadows.elevated
-  },
-  infoModalTitle: {
-    fontFamily: tokens.fonts.heading,
-    fontSize: 20,
-    marginBottom: 12,
-    textAlign: 'center'
-  },
-  infoModalMessage: {
-    fontFamily: tokens.fonts.body,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-    marginBottom: 24
-  },
-  infoModalCloseBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 100,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  infoModalCloseBtnText: {
-    color: '#FFF',
-    fontFamily: tokens.fonts.heading,
-    fontSize: 16,
-  }
-});
-
 const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; onChange: (h: number, m: number) => void }) => {
   const { isDark } = useTheme();
   const C = useColors();
   const displayHour = hour % 12 || 12;
   const ampm = hour >= 12 ? 'PM' : 'AM';
 
-  // Align with onboarding colors
   const arrowColor = !isDark ? C.accent : '#C4AED8';
 
   const adjust = (type: 'h' | 'm', delta: number) => {
@@ -748,3 +642,260 @@ const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; 
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 20 },
+  header: {
+    alignItems: 'center',
+    marginTop: 0,
+    marginBottom: 12,
+  },
+  userName: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 24,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  userJoined: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 12,
+    textAlign: 'center'
+  },
+
+  // ── Gamification ──
+  gamificationContainer: { alignItems: 'center', gap: 0, width: '100%', marginTop: 20 },
+  sheepMainWrapper: { width: '100%', height: 110, alignItems: 'center', justifyContent: 'center' },
+  avatarCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    ...tokens.shadows.elevated
+  },
+  stageName: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 14,
+    letterSpacing: 0.5,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  progressAreaCentered: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 0,
+  },
+  progressBarTrackMini: { width: 250 },
+  progressLabelTop: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 11,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.3
+  },
+  progressBarTrackBase: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+
+  themeSelector: {
+    height: 48,
+    borderRadius: 24,
+    flexDirection: 'row',
+    padding: 4,
+    marginBottom: 8,
+  },
+  themeOption: {
+    flex: 1,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeOptionActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  themeText: {
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
+  statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  statCard: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  statInfoBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  statMainContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  statIconWrapper: { marginBottom: 2 },
+  statValue: { fontFamily: tokens.fonts.heading, fontSize: 28 },
+  statLabel: { fontFamily: tokens.fonts.body, fontSize: 13, textTransform: 'lowercase', marginTop: 0 },
+  section: { marginBottom: 32 },
+  sectionTitle: { fontFamily: tokens.fonts.caption, fontSize: 11, letterSpacing: 1.2, marginBottom: 12, marginLeft: 4 },
+  settingsItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1 },
+  settingsLabelContainer: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  settingsIconWrapper: { width: 24, alignItems: 'center' },
+  settingsLabel: { fontFamily: tokens.fonts.body, fontSize: 16 },
+  settingsSublabel: { fontFamily: tokens.fonts.body, fontSize: 13, marginTop: 2 },
+  settingsRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  settingsValue: { fontFamily: tokens.fonts.body, fontSize: 16 },
+  durationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
+  durationText: { fontFamily: tokens.fonts.body, fontSize: 13 },
+  settingsFlatItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 18, borderBottomWidth: 1 },
+  badgeWrapper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  proBadge: { paddingVertical: 4, paddingHorizontal: 12, borderRadius: 9999 },
+  proBadgeText: { fontFamily: tokens.fonts.caption, fontSize: 11 },
+  logoutBtn: { paddingVertical: 12, alignItems: 'center', marginTop: 12 },
+  logoutText: { fontFamily: tokens.fonts.body, fontSize: 15 },
+  toggleTrack: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '100%',
+    borderRadius: 32,
+    padding: 32,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: "#2D2B3D",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 32,
+  },
+  modalTitle: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 20,
+    marginBottom: 24,
+  },
+  pickerContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  confirmBtn: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  confirmBtnText: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 16,
+    color: '#FFF',
+  },
+  tpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  tpCol: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  tpVal: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 48,
+    fontWeight: '900',
+  },
+  tpArrow: {
+    width: 44,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tpSep: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 40,
+    fontWeight: '800',
+    marginTop: -4,
+  },
+  tpBadgeWrapper: {
+    marginLeft: 4,
+  },
+  tpBadge: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  tpBadgeText: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  infoModalContent: {
+    width: '85%',
+    maxWidth: 400,
+    padding: 24,
+    borderRadius: 32,
+    alignItems: 'center',
+    ...tokens.shadows.elevated
+  },
+  infoModalTitle: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 20,
+    marginBottom: 12,
+    textAlign: 'center'
+  },
+  infoModalMessage: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 24
+  },
+  infoModalCloseBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 100,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  infoModalCloseBtnText: {
+    color: '#FFF',
+    fontFamily: tokens.fonts.heading,
+    fontSize: 16,
+  }
+});

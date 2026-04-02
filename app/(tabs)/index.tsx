@@ -10,19 +10,28 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, G, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { tokens } from '../../constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useAudio, useAudioPlayback, useAudioStatus } from '@/context/AudioContext';
+import { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withTiming
+} from 'react-native-reanimated';
 import { useStreak } from '@/context/StreakContext';
 import * as SoundGraphics from '@/components/SoundGraphics';
 import { BottomNav } from '@/components/BottomNav';
 import { useTheme } from '@/context/ThemeContext';
 import { AwakeSheep } from '@/components/AwakeSheep';
+import { HeaderSheep } from '@/components/HeaderSheep';
 import * as StoryGraphics from '@/components/StoryGraphics';
-import { STORIES } from '@/constants/stories';
-import { SCENES_DATA } from '@/constants/sounds';
-import { getDailyPick } from '@/utils/dailyPicks';
+import { SleepRatingWidget } from '@/components/SleepRatingWidget';
+import { useSleep } from '@/context/SleepContext';
+import { useSheepGrowth } from '@/context/SheepGrowthContext';
+import { EvolutionToast } from '@/components/EvolutionToast';
 
 // ─── GREETING ─────────────────────────────────────────────────────────────────
 function getGreeting(): { greeting: string; subtitle: string } {
@@ -140,37 +149,113 @@ const StreakSection = () => {
   );
 };
 
+// ─── DECORATIVE PATTERNS ──────────────────────────────────────────────────────
+
+const CardDecor = ({ type, color }: { type: string; color: string }) => {
+  if (type === 'Sleep') {
+    return (
+      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Circle cx="85%" cy="20%" r="40" fill={color} opacity={0.15} />
+        <Circle cx="90%" cy="30%" r="20" fill={color} opacity={0.1} />
+        <G opacity={0.2}>
+          <Path d="M20 30h6l-6 6h6" stroke={color} strokeWidth={2} fill="none" transform="translate(10, 10) scale(0.8)" />
+          <Path d="M20 30h6l-6 6h6" stroke={color} strokeWidth={2} fill="none" transform="translate(30, 5) scale(0.6)" />
+        </G>
+      </Svg>
+    );
+  }
+  if (type === 'Sounds') {
+    return (
+      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Circle cx="90%" cy="50%" r="50" stroke={color} strokeWidth="1" fill="none" opacity={0.15} />
+        <Circle cx="90%" cy="50%" r="35" stroke={color} strokeWidth="1" fill="none" opacity={0.1} />
+        <Circle cx="90%" cy="50%" r="20" stroke={color} strokeWidth="1" fill="none" opacity={0.05} />
+      </Svg>
+    );
+  }
+  if (type === 'Stories') {
+    return (
+      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Path d="M85 20l2 2-2 2-2-2zM92 35l1.5 1.5-1.5 1.5-1.5-1.5zM75 40l1 1-1 1-1-1z" fill={color} opacity={0.3} />
+        <Circle cx="85%" cy="30%" r="30" fill={color} opacity={0.1} />
+      </Svg>
+    );
+  }
+  return (
+    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
+      <G opacity={0.06}>
+        <Rect x="70%" y="10%" width="10" height="10" rx="2" fill={color} />
+        <Rect x="85%" y="10%" width="10" height="10" rx="2" fill={color} />
+        <Rect x="70%" y="30%" width="10" height="10" rx="2" fill={color} />
+        <Rect x="85%" y="30%" width="10" height="10" rx="2" fill={color} />
+      </G>
+    </Svg>
+  );
+};
+
 // ─── CATEGORY CARD ────────────────────────────────────────────────────────────
 type CategoryCardProps = {
   title: string;
   subtitle: string;
-  bg: string;
+  gradient: string[];
   Icon: React.ComponentType<any>;
   iconColor: string;
-  border?: boolean;
+  accentColor: string;
   onPress?: () => void;
 };
 
-const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border, onPress }: CategoryCardProps) => {
+const CategoryCard = ({ title, subtitle, gradient, Icon, iconColor, accentColor, onPress }: CategoryCardProps) => {
   const C = useColors();
+  const { isDark } = useTheme();
+  const scale = useSharedValue(1);
+
+  const colors = gradient as [string, string];
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
+
   return (
-    <TouchableOpacity
+    <LinearGradient
+      colors={colors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       style={[
-        styles.categoryCard,
-        { backgroundColor: bg },
-        border && { borderColor: C.border, borderWidth: 1 },
+        styles.categoryCardWrapper,
+        { shadowColor: accentColor }
       ]}
-      activeOpacity={0.85}
-      onPress={onPress}
     >
-      <View style={styles.categoryIconWrap}>
-        <Icon size={28} color={iconColor} />
-      </View>
-      <View style={styles.categoryTextWrap}>
-        <Text style={[styles.categoryTitle, { color: C.textPrimary }]}>{title}</Text>
-        <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>{subtitle}</Text>
-      </View>
-    </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={{ flex: 1 }}
+      >
+        <Animated.View style={[styles.categoryCard, animatedStyle]}>
+          <CardDecor type={title} color={accentColor} />
+          
+          <View style={styles.categoryIconWrap}>
+            <View style={[styles.iconBlurCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.2)' }]}>
+              <Icon size={24} color={iconColor} />
+            </View>
+          </View>
+
+          <View style={styles.categoryTextWrap}>
+            <Text style={[styles.categoryTitle, { color: C.textPrimary }]}>{title}</Text>
+            <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>{subtitle}</Text>
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
+    </LinearGradient>
   );
 };
 
@@ -178,16 +263,11 @@ const CategoryCard = ({ title, subtitle, bg, Icon, iconColor, border, onPress }:
 export default function HomeScreen() {
   const { isDark } = useTheme();
   const C = useColors();
+  const { hasRatedToday } = useSleep();
+  const { evolutionReward, clearEvolutionReward } = useSheepGrowth();
   const { greeting, subtitle } = useMemo(() => getGreeting(), []);
   const router = useRouter();
-  const { playSelectedSound } = useAudioPlayback();
   const { activeSound } = useAudioStatus();
-  const randomScene = useMemo(() => getDailyPick(SCENES_DATA), []);
-  const PickGraphic = randomScene?.graphicId ? (SoundGraphics as any)[randomScene.graphicId] : null;
-
-  const randomStory = useMemo(() => getDailyPick(STORIES), []);
-  // Helper to get story thumb component
-  const StoryThumb = (StoryGraphics as any)[randomStory.id.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('') + 'Thumb'];
 
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
@@ -203,7 +283,7 @@ export default function HomeScreen() {
               onPress={() => router.push('/profile')}
               activeOpacity={0.8}
             >
-              <AwakeSheep size={34} />
+              <HeaderSheep size={34} />
             </TouchableOpacity>
           </View>
           <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
@@ -212,78 +292,31 @@ export default function HomeScreen() {
           entering={FadeIn.duration(400)}
           style={{ flex: 1 }}
         >
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
-            showsVerticalScrollIndicator={false}
-          >
-
-
-          <View style={{ gap: 12 }}>
-            {/* ── TONIGHT'S PICK: SOUND ── */}
-            <TouchableOpacity 
-              style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: C.accent, shadowColor: C.textPrimary }]}
-              activeOpacity={0.85}
-              onPress={() => {
-                const soundParams = {
-                  title: randomScene.title,
-                  subtitle: 'Scenes collection',
-                  soundFile: randomScene.soundFile,
-                  graphicId: randomScene.graphicId
-                };
-                playSelectedSound(soundParams);
-                router.push({
-                  pathname: '/player',
-                  params: soundParams
-                });
-              }}
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
+              showsVerticalScrollIndicator={false}
             >
-              <View style={[styles.pickThumb, { backgroundColor: C.accentLight }]}>
-                {PickGraphic ? <PickGraphic w={52} h={52} /> : <AwakeSheep size={42} />}
-              </View>
-              <View style={styles.pickContent}>
-                <Text style={[styles.pickOverline, { color: C.accent }]}>TONIGHT'S SOUND</Text>
-                <Text style={[styles.pickTitle, { color: C.textPrimary }]}>{randomScene.title}</Text>
-                <Text style={[styles.pickSubtitle, { color: C.textSecondary }]}>{randomScene.tag}</Text>
-              </View>
-              <View style={[styles.playButton, { backgroundColor: C.accent }]}>
-                <PlayIcon size={16} />
-              </View>
-            </TouchableOpacity>
-
-            {/* ── TONIGHT'S PICK: STORY ── */}
-            <TouchableOpacity 
-              style={[styles.pickCard, { backgroundColor: C.bgCard, borderTopColor: '#C8A29A', shadowColor: C.textPrimary }]}
-              activeOpacity={0.85}
-              onPress={() => router.push(`/reader/${randomStory.id}`)}
-            >
-              <View style={[styles.pickThumb, { backgroundColor: 'rgba(240, 216, 208, 0.15)' }]}>
-                {StoryThumb ? <StoryThumb size={52} /> : <AwakeSheep size={42} />}
-              </View>
-              <View style={styles.pickContent}>
-                <Text style={[styles.pickOverline, { color: '#8B4A40' }]}>TONIGHT'S READ</Text>
-                <Text style={[styles.pickTitle, { color: C.textPrimary }]}>{randomStory.title}</Text>
-                <Text style={[styles.pickSubtitle, { color: '#9E7E78' }]} numberOfLines={1}>
-                  {randomStory.subtitle}
-                </Text>
-              </View>
-              <View style={[styles.playButton, { backgroundColor: '#8B4A40' }]}>
-                <PlayIcon size={16} />
-              </View>
-            </TouchableOpacity>
-          </View>
+              <Animated.View entering={FadeIn.duration(600)}>
+                <SleepRatingWidget />
+              </Animated.View>
 
           {/* ── STREAK ── */}
           <StreakSection />
 
           {/* ── EXPLORE GRID ── */}
           <View style={styles.exploreSection}>
-            <Text style={[styles.overline, { color: C.textMuted }]}>EXPLORE</Text>
+            <View style={styles.exploreHeader}>
+              <Text style={[styles.overline, { color: C.textMuted }]}>EXPLORE</Text>
+              <View style={[styles.overlineDot, { backgroundColor: C.accentSoft }]} />
+            </View>
+            
             <View style={styles.categoryGrid}>
               <CategoryCard
                 title="Sleep"
                 subtitle="Track and improve"
-                bg={C.sleepBg}
+                gradient={isDark ? ['#3D344B', '#2D2B3D'] : ['#E8DFF0', '#F8F4EE']}
+                accentColor={C.accent}
                 Icon={MoonIcon}
                 iconColor={C.sleepIcon}
                 onPress={() => router.push('/(tabs)/sleep')}
@@ -291,7 +324,8 @@ export default function HomeScreen() {
               <CategoryCard
                 title="Sounds"
                 subtitle="Calming soundscapes"
-                bg={C.soundsBg}
+                gradient={isDark ? ['#2D3B4A', '#2D2B3D'] : ['#C8DEF0', '#F8F4EE']}
+                accentColor="#5391C8"
                 Icon={CloudRainIcon}
                 iconColor={C.soundsIcon}
                 onPress={() => router.push('/(tabs)/sounds')}
@@ -299,7 +333,8 @@ export default function HomeScreen() {
               <CategoryCard
                 title="Stories"
                 subtitle="Bedtime tales"
-                bg={C.storiesBg}
+                gradient={isDark ? ['#423232', '#2D2B3D'] : ['#F0D8D0', '#F8F4EE']}
+                accentColor="#C88E84"
                 Icon={StoriesIcon}
                 iconColor={C.storiesIcon}
                 onPress={() => router.push('/(tabs)/stories')}
@@ -307,10 +342,10 @@ export default function HomeScreen() {
               <CategoryCard
                 title="Games"
                 subtitle="Focus and unwind"
-                bg={C.gamesBg}
+                gradient={isDark ? ['#3D3D3D', '#2D2B3D'] : ['#F5F0E8', '#F8F4EE']}
+                accentColor="#8A8A8A"
                 Icon={GamesIcon}
                 iconColor={C.gamesIcon}
-                border
                 onPress={() => router.push('/(tabs)/games')}
               />
             </View>
@@ -319,6 +354,13 @@ export default function HomeScreen() {
       </Animated.View>
 
       <BottomNav active="home" />
+
+      {evolutionReward && (
+        <EvolutionToast 
+          stageName={evolutionReward} 
+          onDismiss={clearEvolutionReward} 
+        />
+      )}
       </SafeAreaView>
     </View>
   );
@@ -374,57 +416,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  // Tonight's Pick Card
-  pickCard: {
-    borderRadius: 20,
-    borderTopWidth: 3,
-    borderLeftWidth: 0,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.10,
-    shadowRadius: 40,
-    elevation: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 14,
-  },
-  pickThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickContent: {
-    flex: 1,
-    gap: 2,
-  },
-  pickOverline: {
-    fontFamily: tokens.fonts.caption,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  pickTitle: {
-    fontFamily: tokens.fonts.caption,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  pickSubtitle: {
-    fontFamily: tokens.fonts.body,
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  playButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   // Streak
   streakSection: {
     gap: 10,
@@ -468,37 +459,66 @@ const styles = StyleSheet.create({
     letterSpacing: 1.1,
   },
 
-  // Category Grid
+  // Explore Grid
   exploreSection: {
-    gap: 12,
+    gap: 16,
+  },
+  exploreHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  overlineDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
-  categoryCard: {
+  categoryCardWrapper: {
     width: '47.5%',
-    minHeight: 120,
-    borderRadius: 20,
+    minHeight: 130,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  categoryCard: {
+    flex: 1,
     padding: 18,
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   categoryIconWrap: {
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
+  },
+  iconBlurCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categoryTextWrap: {
-    gap: 2,
+    gap: 1,
   },
   categoryTitle: {
     fontFamily: tokens.fonts.caption,
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '900',
+    letterSpacing: -0.3,
   },
   categorySubtitle: {
     fontFamily: tokens.fonts.body,
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 11.5,
+    fontWeight: '600',
+    opacity: 0.8,
   },
 
   // End of styles

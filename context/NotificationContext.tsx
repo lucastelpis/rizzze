@@ -38,6 +38,7 @@ interface NotificationContextType {
   toggleNotifications: (enabled: boolean) => Promise<void>;
   toggleDailyCheckIn: (enabled: boolean) => Promise<void>;
   sendTestNotification: () => Promise<void>;
+  resetConfig: () => Promise<void>;
 }
 
 const STORAGE_KEYS = {
@@ -197,6 +198,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     });
   };
 
+  const resetConfig = async () => {
+    setIsNotificationsEnabled(true);
+    setIsDailyCheckInEnabled(true);
+    setBedtimeState({ hour: 22, minute: 30 });
+    setWakeUpTimeState({ hour: 7, minute: 0 });
+    if (isNative && Notifications) {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    }
+  };
+
   return (
     <NotificationContext.Provider
       value={{
@@ -211,6 +222,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         toggleNotifications,
         toggleDailyCheckIn,
         sendTestNotification,
+        resetConfig,
       }}
     >
       {children}

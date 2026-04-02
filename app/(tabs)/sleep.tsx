@@ -17,8 +17,9 @@ import { BottomNav } from '@/components/BottomNav';
 import { useStreak } from '@/context/StreakContext';
 import { useTheme } from '@/context/ThemeContext';
 import { tokens } from '@/constants/theme';
-import { AwakeSheep } from '@/components/AwakeSheep';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { HeaderSheep } from '@/components/HeaderSheep';
+import { useSleep } from '@/context/SleepContext';
+import { SleepRatingWidget } from '@/components/SleepRatingWidget';
 
 // ─── CONSTANT QUALITY COLORS ──────────────────────────────────────────────────
 const QUALITY_COLORS = {
@@ -103,9 +104,6 @@ const PerfectFace = ({ color }: { color: string }) => (
   </Svg>
 );
 
-// SheepIcon removed in favor of SleepingSheep component
-
-// ─── RATING OPTIONS ───────────────────────────────────────────────────────────
 const ratingOptions = [
   { key: 'bad', label: 'Bad', bg: QUALITY_COLORS.badBg, faceColor: QUALITY_COLORS.bad, labelColor: QUALITY_COLORS.badText, Face: BadFace },
   { key: 'okay', label: 'Okay', bg: QUALITY_COLORS.okayBg, faceColor: QUALITY_COLORS.okay, labelColor: QUALITY_COLORS.okayText, Face: OkayFace },
@@ -154,48 +152,21 @@ type SleepQuality = 'bad' | 'okay' | 'good' | 'great' | 'perfect' | null;
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function SleepScreen() {
   const { colors: C, isDark } = useTheme();
-  const [selectedRating, setSelectedRating] = useState<string | null>(null);
-  const [sleepData, setSleepData] = useState<Record<string, SleepQuality>>({});
+  const { sleepData, rateSleep } = useSleep();
   const [currentMonth, setCurrentMonth] = useState(ACTUAL_MONTH);
   const [currentYear, setCurrentYear] = useState(ACTUAL_YEAR);
   const [tipIndex, setTipIndex] = useState(0);
   const [evalTarget, setEvalTarget] = useState<{ day: number, month: number, year: number, dateKey: string } | null>(null);
   const [activeEval, setActiveEval] = useState<typeof evalTarget>(null);
-  const { markActivity, reportSleepRating } = useStreak();
   const { activeSound } = useAudio();
   const router = useRouter();
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const val = await AsyncStorage.getItem(STORAGE_KEY);
-        if (val) setSleepData(JSON.parse(val));
-      } catch (e) {
-        console.error('Failed load sleep', e);
-      }
-    };
-    loadData();
-  }, []);
 
   useEffect(() => {
     if (evalTarget) setActiveEval(evalTarget);
   }, [evalTarget]);
 
   const handleRateDate = async (dateKey: string, quality: SleepQuality) => {
-    // Report the rating to the streak context which will decide if it's on time
-    if (quality !== null) {
-      reportSleepRating(dateKey);
-    }
-
-    const newData = { ...sleepData, [dateKey]: quality };
-    if (dateKey === TODAY_KEY) setSelectedRating(quality);
-    setSleepData(newData);
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-      if (quality) markActivity();
-    } catch (e) {
-      console.error('Failed save sleep', e);
-    }
+    await rateSleep(dateKey, quality);
     setEvalTarget(null);
   };
 
@@ -246,7 +217,7 @@ export default function SleepScreen() {
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >
-            <AwakeSheep size={34} />
+            <HeaderSheep size={34} />
           </TouchableOpacity>
         </View>
         <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
@@ -261,30 +232,7 @@ export default function SleepScreen() {
           >
 
           {/* RATING */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.overline, { color: C.textSecondary }]}>HOW DID YOU SLEEP?</Text>
-            </View>
-            <Text style={[styles.helperText, { color: C.textMuted }]}>Tap to rate today</Text>
-
-            <View style={styles.ratingRow}>
-              {ratingOptions.map(({ key, label, bg, faceColor, labelColor, Face }) => {
-                const isSelected = selectedRating === key || sleepData[TODAY_KEY] === key;
-                return (
-                  <TouchableOpacity 
-                    key={key} 
-                    onPress={() => handleRateDate(TODAY_KEY, key as SleepQuality)}
-                    style={[styles.ratingItem, isSelected && { opacity: 1 }, !isSelected && (selectedRating || sleepData[TODAY_KEY]) && { opacity: 0.5 }]}
-                  >
-                    <View style={[styles.ratingIcon, { backgroundColor: bg }, isSelected && { borderWidth: 2, borderColor: faceColor }]}>
-                      <Face color={faceColor} />
-                    </View>
-                    <Text style={[styles.ratingLabel, { color: labelColor }, isSelected && { fontFamily: 'Nunito_900Black' }]}>{label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+          <SleepRatingWidget />
 
           {/* TIP */}
           <View style={styles.section}>

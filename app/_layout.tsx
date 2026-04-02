@@ -17,6 +17,8 @@ import { AudioProvider } from '@/context/AudioContext';
 import { StreakProvider } from '@/context/StreakContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { NotificationProvider } from '@/context/NotificationContext';
+import { SheepGrowthProvider } from '@/context/SheepGrowthContext';
+import { SleepProvider } from '@/context/SleepContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,13 +59,17 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <StreakProvider>
-          <AudioProvider>
-            <NotificationProvider>
-              <RootLayoutContent />
-            </NotificationProvider>
-          </AudioProvider>
-        </StreakProvider>
+        <SheepGrowthProvider>
+          <StreakProvider>
+            <SleepProvider>
+              <AudioProvider>
+                <NotificationProvider>
+                  <RootLayoutContent />
+                </NotificationProvider>
+              </AudioProvider>
+            </SleepProvider>
+          </StreakProvider>
+        </SheepGrowthProvider>
       </NavigationThemeProvider>
     </ThemeProvider>
   );

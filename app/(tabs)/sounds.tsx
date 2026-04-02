@@ -22,6 +22,7 @@ import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
 import { tokens } from '@/constants/theme';
 import { AwakeSheep } from '@/components/AwakeSheep';
+import { HeaderSheep } from '@/components/HeaderSheep';
 import { SCENES_DATA } from '@/constants/sounds';
 import { getDailyPick } from '@/utils/dailyPicks';
 
@@ -125,7 +126,7 @@ export default function SoundsScreen() {
             activeOpacity={0.8}
             onPress={() => router.push('/profile')}
           >
-            <AwakeSheep size={34} />
+            <HeaderSheep size={34} />
           </TouchableOpacity>
         </View>
         <View style={[styles.headerDivider, { backgroundColor: C.border }]} />

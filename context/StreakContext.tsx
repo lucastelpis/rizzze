@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSheepGrowth } from './SheepGrowthContext';
 
 const STORAGE_KEY = 'rizzze_streak_data';
 
@@ -12,6 +13,7 @@ type StreakContextType = {
   sleepRatingCount: number;
   reportSleepRating: (dateKey: string) => void;
   syncSleepRatings: () => Promise<void>;
+  resetStreakData: () => Promise<void>;
 };
 
 const StreakContext = createContext<StreakContextType | null>(null);
@@ -26,6 +28,7 @@ function getDateKey(date: Date = new Date()) {
 export function StreakProvider({ children }: { children: React.ReactNode }) {
   const [activeDates, setActiveDates] = useState<string[]>([]);
   const [ratedOnTimeDays, setRatedOnTimeDays] = useState<string[]>([]);
+  const sheepGrowth = useSheepGrowth();
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,6 +50,13 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
     if (!activeDates.includes(today)) {
       const newDates = [...activeDates, today];
       setActiveDates(newDates);
+      // Check if this creates a streak (previous day also active)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = getDateKey(yesterday);
+      if (activeDates.includes(yesterdayKey)) {
+        sheepGrowth.addStreakPoint();
+      }
       try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newDates));
       } catch (e) {
@@ -61,6 +71,7 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
     if (dateKey === today && !ratedOnTimeDays.includes(dateKey)) {
       const newRatedDays = [...ratedOnTimeDays, dateKey];
       setRatedOnTimeDays(newRatedDays);
+      sheepGrowth.addDailyRatingPoint();
       try {
         await AsyncStorage.setItem('rizzze_rated_on_time_days', JSON.stringify(newRatedDays));
       } catch (e) {
@@ -142,6 +153,11 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  const resetStreakData = async () => {
+    setActiveDates([]);
+    setRatedOnTimeDays([]);
+  };
+
   const { lastSevenDays, todayIndex } = getWeekState();
 
   return (
@@ -155,6 +171,7 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
         sleepRatingCount: ratedOnTimeDays.length,
         reportSleepRating,
         syncSleepRatings,
+        resetStreakData,
       }}
     >
       {children}

@@ -18,6 +18,7 @@ import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
 import { BottomNav } from '@/components/BottomNav';
 import { AwakeSheep } from '@/components/AwakeSheep';
+import { HeaderSheep } from '@/components/HeaderSheep';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -199,7 +200,7 @@ export default function GamesScreen() {
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >
-            <AwakeSheep size={34} />
+            <HeaderSheep size={34} />
           </TouchableOpacity>
         </View>
         <View style={[styles.headerDivider, { backgroundColor: C.border }]} />

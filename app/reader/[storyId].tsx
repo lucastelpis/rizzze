@@ -1,4 +1,5 @@
 import { AwakeSheep } from '@/components/AwakeSheep';
+import { HeaderSheep } from '@/components/HeaderSheep';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { CATEGORIES, STORIES } from '@/constants/stories';
 import { tokens } from '@/constants/theme';
@@ -364,7 +365,7 @@ export default function ReaderScreen() {
             onPress={handleProfile}
             activeOpacity={0.8}
           >
-            <AwakeSheep size={34} />
+            <HeaderSheep size={34} />
           </TouchableOpacity>
         </View>
 

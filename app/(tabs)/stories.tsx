@@ -10,6 +10,7 @@ import { useColors } from '@/hooks/useColors';
 import { useAudio } from '@/context/AudioContext';
 import { BottomNav } from '@/components/BottomNav';
 import { AwakeSheep } from '@/components/AwakeSheep';
+import { HeaderSheep } from '@/components/HeaderSheep';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { CATEGORIES, STORIES } from '@/constants/stories';
 import { getDailyPick } from '@/utils/dailyPicks';
@@ -46,7 +47,7 @@ export default function StoriesScreen() {
             onPress={() => router.push('/profile')}
             activeOpacity={0.8}
           >
-            <AwakeSheep size={34} />
+            <HeaderSheep size={34} />
           </TouchableOpacity>
         </View>
         <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
