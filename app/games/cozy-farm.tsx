@@ -337,21 +337,33 @@ export default function CozyFarmGame() {
 
     // Start background animations
     const startWanderTop = () => {
+      const duration = 28000 + Math.random() * 18000; // Variable speed
+      const delay = 1000 + Math.random() * 5000; // Random pause between walks
+      
       wanderTopAnim.setValue(-100);
-      Animated.timing(wanderTopAnim, {
-        toValue: windowWidth + 100,
-        duration: 32000,
-        useNativeDriver: true,
-      }).start(() => startWanderTop());
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(wanderTopAnim, {
+          toValue: windowWidth + 100,
+          duration: duration,
+          useNativeDriver: true,
+        })
+      ]).start(() => startWanderTop());
     };
 
     const startWanderBottom = () => {
+      const duration = 24000 + Math.random() * 14000; // Variable speed
+      const delay = 500 + Math.random() * 4000; // Random pause between walks
+      
       wanderBottomAnim.setValue(windowWidth + 100);
-      Animated.timing(wanderBottomAnim, {
-        toValue: -100,
-        duration: 28000,
-        useNativeDriver: true,
-      }).start(() => startWanderBottom());
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(wanderBottomAnim, {
+          toValue: -100,
+          duration: duration,
+          useNativeDriver: true,
+        })
+      ]).start(() => startWanderBottom());
     };
 
     startWanderTop();
@@ -987,10 +999,10 @@ const SheepField = ({ wanderTop, wanderBottom }: any) => {
     <View style={styles.sheepField} onLayout={onLayout}>
       {height > 0 && (
         <>
-          <Animated.View style={{ position: 'absolute', top: '15%', transform: [{ translateX: wanderTop }, { scale }], zIndex: 1 }}>
+          <Animated.View style={{ position: 'absolute', left: 0, top: '15%', transform: [{ translateX: wanderTop }, { scale }], zIndex: 1 }}>
             <AwakeSheepNoBorder size={40} />
           </Animated.View>
-          <Animated.View style={{ position: 'absolute', top: '45%', transform: [{ translateX: wanderBottom }, { scale }, { scaleX: -1 }], zIndex: 1 }}>
+          <Animated.View style={{ position: 'absolute', left: 0, top: '45%', transform: [{ translateX: wanderBottom }, { scale }, { scaleX: -1 }], zIndex: 1 }}>
             <AwakeSheepNoBorder size={40} />
           </Animated.View>
         </>
@@ -1155,12 +1167,13 @@ const styles = StyleSheet.create({
     minHeight: 40,
     justifyContent: 'center',
     marginVertical: 2,
+    marginHorizontal: -24, // Override gameContent padding
   },
   sheepField: {
     flex: 1,
     width: '100%',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Allow absolute left: 0 to work correctly
   },
   playableArea: {
     flex: 4, // More space for the grid
