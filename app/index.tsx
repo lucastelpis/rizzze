@@ -365,13 +365,13 @@ const Page3 = () => {
               title="Bedtime nudge"
               description="Soft wind-down reminders"
               isEnabled={isNotificationsEnabled}
-              onToggle={toggleNotifications}
+              onToggle={(enabled: boolean) => toggleNotifications(enabled, false)}
             />
             <ToggleRow
               title="Morning check-in"
               description="Rate your sleep & rise with a cozy nudge"
               isEnabled={isDailyCheckInEnabled}
-              onToggle={toggleDailyCheckIn}
+              onToggle={(enabled: boolean) => toggleDailyCheckIn(enabled, false)}
             />
           </View>
 
@@ -743,7 +743,7 @@ export default function Onboarding() {
   const { height } = useWindowDimensions();
   const C = useColors();
   const { isDark } = useTheme();
-  const { isNotificationsEnabled, requestPermission } = useNotifications();
+  const { isNotificationsEnabled, isDailyCheckInEnabled, requestPermission } = useNotifications();
   const { isPro, isLoading: subLoading, presentPaywall } = useSubscription();
   const { setName: saveUserName } = useUser();
 
@@ -756,6 +756,11 @@ export default function Onboarding() {
 
   const next = async () => {
     if (currentPage < 4) {
+      // If we are advancing from the notification page (Page 3),
+      // and at least one notification is enabled, request permission now.
+      if (currentPage === 3 && (isNotificationsEnabled || isDailyCheckInEnabled)) {
+        await requestPermission();
+      }
       setCurrentPage(currentPage + 1);
     } else {
       // Finalize setup
@@ -763,10 +768,6 @@ export default function Onboarding() {
         await saveUserName(name);
       }
       
-      // If notifications are enabled, make sure we have permission
-      if (isNotificationsEnabled) {
-        await requestPermission();
-      }
       // Show paywall — only navigate into app if user starts trial/purchases
       const purchased = await presentPaywall();
       if (purchased) {

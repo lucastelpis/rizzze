@@ -35,8 +35,8 @@ interface NotificationContextType {
   requestPermission: () => Promise<boolean>;
   setBedtime: (hour: number, minute: number) => Promise<void>;
   setWakeUpTime: (hour: number, minute: number) => Promise<void>;
-  toggleNotifications: (enabled: boolean) => Promise<void>;
-  toggleDailyCheckIn: (enabled: boolean) => Promise<void>;
+  toggleNotifications: (enabled: boolean, shouldRequestPermission?: boolean) => Promise<void>;
+  toggleDailyCheckIn: (enabled: boolean, shouldRequestPermission?: boolean) => Promise<void>;
   sendTestNotification: () => Promise<void>;
   resetConfig: () => Promise<void>;
 }
@@ -161,15 +161,22 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     await AsyncStorage.setItem(STORAGE_KEYS.WAKEUP, JSON.stringify(newWakeUp));
   };
 
-  const toggleDailyCheckIn = async (enabled: boolean) => {
+  const toggleDailyCheckIn = async (enabled: boolean, shouldRequestPermission: boolean = true) => {
+    if (enabled && shouldRequestPermission) {
+      const granted = await requestPermission();
+      if (!granted) return;
+    }
+    
     setIsDailyCheckInEnabled(enabled);
     await AsyncStorage.setItem(STORAGE_KEYS.CHECKIN_ENABLED, JSON.stringify(enabled));
   };
 
-  const toggleNotifications = async (enabled: boolean) => {
+  const toggleNotifications = async (enabled: boolean, shouldRequestPermission: boolean = true) => {
     if (enabled) {
-      const granted = await requestPermission();
-      if (!granted) return;
+      if (shouldRequestPermission) {
+        const granted = await requestPermission();
+        if (!granted) return;
+      }
       
       setIsNotificationsEnabled(true);
       await AsyncStorage.setItem(STORAGE_KEYS.ENABLED, JSON.stringify(true));
