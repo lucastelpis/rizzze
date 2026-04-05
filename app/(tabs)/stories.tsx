@@ -12,7 +12,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { AwakeSheep } from '@/components/AwakeSheep';
 import { HeaderSheep } from '@/components/HeaderSheep';
 import * as StoryGraphics from '@/components/StoryGraphics';
-import { CATEGORIES, STORIES } from '@/constants/stories';
+import { CATEGORIES, STORIES, Story, getCategoryStoryCount } from '@/constants/stories';
 import { getDailyPick } from '@/utils/dailyPicks';
 
 // Chevron Right
@@ -76,7 +76,7 @@ export default function StoriesScreen() {
               <View style={styles.featuredText}>
                 <Text style={[styles.overline, { color: '#8B4A40', marginBottom: 2 }]}>TONIGHT'S READ</Text>
                 <Text style={[styles.featuredTitle, { color: C.textPrimary }]}>{featuredStory.title}</Text>
-                <Text style={[styles.featuredSubtitle, { color: '#9E7E78' }]} numberOfLines={1}>
+                <Text style={[styles.featuredSubtitle, { color: '#9E7E78' }]} numberOfLines={2}>
                   {featuredStory.subtitle}
                 </Text>
               </View>
@@ -116,6 +116,7 @@ export default function StoriesScreen() {
                       >
                         {cat.subtitle}
                       </Text>
+                      {/* Story count removed per user request */}
                     </View>
                   </TouchableOpacity>
                 );
@@ -241,5 +242,14 @@ const styles = StyleSheet.create({
     fontWeight: '600', 
     marginTop: 2,
     lineHeight: 14,
+  },
+  catCount: {
+    fontFamily: 'Nunito_700Bold',
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(245, 240, 232, 0.6)',
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

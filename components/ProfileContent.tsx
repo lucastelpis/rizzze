@@ -6,6 +6,10 @@ import { useNotifications } from '@/context/NotificationContext';
 import { useSheepGrowth } from '@/context/SheepGrowthContext';
 import { useStreak } from '@/context/StreakContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { useSleep } from '@/context/SleepContext';
+import { useUser } from '@/context/UserContext';
+import RevenueCatUI from 'react-native-purchases-ui';
 import { useColors } from '@/hooks/useColors';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -337,7 +341,18 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
     resetConfig
   } = useNotifications();
   const { resetGrowthData, addDailyRatingPoint } = useSheepGrowth();
+  const { resetSleepData } = useSleep();
+  const { isPro, isLoading: subLoading, presentPaywall, restorePurchases } = useSubscription();
+  const { name: userName, resetUserData } = useUser();
   const C = useColors();
+
+  const handleSubscriptionPress = async () => {
+    if (isPro) {
+      await RevenueCatUI.presentCustomerCenter();
+    } else {
+      await presentPaywall();
+    }
+  };
 
   useEffect(() => {
     syncSleepRatings();
@@ -372,6 +387,8 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
               await resetStreakData();
               await resetGrowthData();
               await resetConfig();
+              await resetSleepData();
+              await resetUserData();
               router.replace('/');
             } catch (e) {
               console.error("Failed to clear storage", e);
@@ -391,7 +408,7 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
       {/* Sheep Gamification Header */}
       <View style={styles.header}>
         <SheepGamificationWidget />
-        <Text style={[styles.userName, { color: C.textPrimary }]}>Lucas Telpis</Text>
+        <Text style={[styles.userName, { color: C.textPrimary }]}>{userName}</Text>
         <Text style={[styles.userJoined, { color: C.textSecondary }]}>Rizzzer since March 2026</Text>
       </View>
 
@@ -489,13 +506,25 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         <Text style={[styles.sectionTitle, { color: C.textMuted }]}>ACCOUNT</Text>
         <View style={[styles.settingsFlatItem, { borderBottomColor: C.border }]}>
           <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Subscription</Text>
-          <TouchableOpacity style={styles.badgeWrapper}>
-            <View style={[styles.proBadge, { backgroundColor: isDark ? 'rgba(139, 109, 174, 0.2)' : '#EDE5F5' }]}>
-              <Text style={[styles.proBadgeText, { color: '#8B6DAE' }]}>Rizzze Pro</Text>
+          <TouchableOpacity style={styles.badgeWrapper} onPress={handleSubscriptionPress} disabled={subLoading}>
+            <View style={[styles.proBadge, {
+              backgroundColor: isPro
+                ? (isDark ? 'rgba(139, 109, 174, 0.2)' : '#EDE5F5')
+                : (isDark ? 'rgba(255,255,255,0.08)' : '#F0EDE8')
+            }]}>
+              <Text style={[styles.proBadgeText, { color: isPro ? '#8B6DAE' : C.textSecondary }]}>
+                {subLoading ? '...' : isPro ? 'Rizzze Pro' : 'Free'}
+              </Text>
             </View>
             <ChevronRight />
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          style={[styles.settingsFlatItem, { borderBottomColor: C.border }]}
+          onPress={restorePurchases}
+        >
+          <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Restore purchases</Text>
+        </TouchableOpacity>
         <SettingsItem label="Test notification" onPress={() => sendTestNotification()} />
         <SettingsItem
           label="Add points (+5)"
@@ -604,13 +633,13 @@ const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; 
   return (
     <View style={styles.tpRow}>
       <View style={styles.tpCol}>
-        <TouchableOpacity onPress={() => adjust('h', 1)} style={styles.tpArrow}>
+        <TouchableOpacity onPress={() => adjust('h', 1)} style={styles.tpArrow} hitSlop={{ top: 15, bottom: 10, left: 15, right: 15 }}>
           <Svg width={14} height={10} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
             <Path d="M5 0L10 6H0L5 0Z" />
           </Svg>
         </TouchableOpacity>
         <Text style={[styles.tpVal, { color: C.textPrimary }]}>{displayHour < 10 ? `0${displayHour}` : displayHour}</Text>
-        <TouchableOpacity onPress={() => adjust('h', -1)} style={styles.tpArrow}>
+        <TouchableOpacity onPress={() => adjust('h', -1)} style={styles.tpArrow} hitSlop={{ top: 10, bottom: 15, left: 15, right: 15 }}>
           <Svg width={14} height={10} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
             <Path d="M5 6L0 0H10L5 6Z" />
           </Svg>
@@ -618,13 +647,13 @@ const TimePicker = ({ hour, minute, onChange }: { hour: number; minute: number; 
       </View>
       <Text style={[styles.tpSep, { color: C.textPrimary }]}>:</Text>
       <View style={styles.tpCol}>
-        <TouchableOpacity onPress={() => adjust('m', 5)} style={styles.tpArrow}>
+        <TouchableOpacity onPress={() => adjust('m', 5)} style={styles.tpArrow} hitSlop={{ top: 15, bottom: 10, left: 15, right: 15 }}>
           <Svg width={14} height={10} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
             <Path d="M5 0L10 6H0L5 0Z" />
           </Svg>
         </TouchableOpacity>
         <Text style={[styles.tpVal, { color: C.textPrimary }]}>{minute < 10 ? `0${minute}` : minute}</Text>
-        <TouchableOpacity onPress={() => adjust('m', -5)} style={styles.tpArrow}>
+        <TouchableOpacity onPress={() => adjust('m', -5)} style={styles.tpArrow} hitSlop={{ top: 10, bottom: 15, left: 15, right: 15 }}>
           <Svg width={14} height={10} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
             <Path d="M5 6L0 0H10L5 6Z" />
           </Svg>
@@ -838,7 +867,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   tpArrow: {
-    width: 44,
+    padding: 2,
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',

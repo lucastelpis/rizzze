@@ -7,6 +7,9 @@ import {
   Pressable,
   useWindowDimensions,
   ScrollView,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { ScreenLoader } from '../components/ScreenLoader';
@@ -28,16 +31,17 @@ import { tokens } from '../constants/theme';
 import { Sparkle } from '../components/SheepMascot';
 import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
-import { CloudIcon, StoriesIcon, GamesIcon } from '../components/BedtimeIcons';
+import { CloudIcon, StoriesIcon, GamesIcon, TrackerIcon } from '../components/BedtimeIcons';
 import { useNotifications } from '@/context/NotificationContext';
-import { SleepingSheep } from '../components/SleepingSheep';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { useUser } from '@/context/UserContext';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { SheepStage1, SheepStage2, SheepStage3, SheepStage4, SheepStage5, SheepStage6 } from '../components/sheepStages';
 
 // ─── COMPONENTS ───
 
-const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welcome' | 'features' | 'teaching' | 'reading' | 'age' | 'goal', size?: number, hideSparkles?: boolean }) => {
+const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welcome' | 'features' | 'teaching' | 'reading' | 'age' | 'goal' | 'name', size?: number, hideSparkles?: boolean }) => {
   const C = useColors();
   const { isDark } = useTheme();
   const { height } = useWindowDimensions();
@@ -71,6 +75,7 @@ const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welco
     features: require('../assets/images/mascot_features.png'),
     teaching: require('../assets/images/mascot_teaching.png'),
     reading: require('../assets/images/mascot_reading.png'),
+    name: require('../assets/images/mascot_name.png'),
     age: require('../assets/images/mascot_age.png'),
     goal: require('../assets/images/mascot_goal.png'),
   };
@@ -89,16 +94,12 @@ const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welco
         variant === 'goal' && { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(45, 43, 61, 0.03)' }
       ]}>
         <Animated.View style={animatedStyle}>
-          {variant === 'goal' ? (
-            <SleepingSheep size={Math.min(80, imageSize)} />
-          ) : (
-            <Image
-              source={images[variant]}
-              style={{ width: imageSize, height: imageSize }}
-              contentFit="contain"
-              transition={200}
-            />
-          )}
+          <Image
+            source={images[variant]}
+            style={{ width: imageSize, height: imageSize }}
+            contentFit="contain"
+            transition={200}
+          />
         </Animated.View>
       </View>
       {variant === 'welcome' && !hideSparkles && (
@@ -196,20 +197,26 @@ const Page2 = () => {
           <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Designed for deep rest</Text>
           <View style={styles.featureList}>
             <FeatureItem
-              title="White noise"
-              description="High-fidelity environment sounds"
+              title="Sleep tracking"
+              description="Track your sleep quality over time and receive thoughtful sleep tips"
+              bgColor={isDark ? 'rgba(125, 176, 219, 0.2)' : '#E5F0F8'}
+              Icon={TrackerIcon}
+            />
+            <FeatureItem
+              title="Sleep sounds"
+              description="Elaborated scenes & simple ambient sounds crafted to help you drift off"
               bgColor={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
               Icon={CloudIcon}
             />
             <FeatureItem
-              title="Bedtime stories"
-              description="Gentle stories and guided sessions"
+              title="Stories"
+              description="Soft-read tales for a gentle wind-down"
               bgColor={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
               Icon={StoriesIcon}
             />
             <FeatureItem
-              title="Relaxing games"
-              description="Mini-games to lower heart rate"
+              title="Games"
+              description="Cozy mini-games designed to quiet a busy mind"
               bgColor={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
               Icon={GamesIcon}
               isLast
@@ -221,23 +228,38 @@ const Page2 = () => {
   );
 };
 
-const PageGender = ({ gender, setGender }: any) => {
-  const genders = ['Female', 'Male', 'Others', 'Prefer not to say'];
+const PageName = ({ name, setName }: any) => {
   const C = useColors();
+  const { isDark } = useTheme();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="reading" />
+        <Mascot variant="name" />
         <View style={styles.pageContent}>
           <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How do you identify?</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What should we call you?</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            This helps us personalize your experience
+            This name will appear on your profile screen
           </Text>
-          <View style={styles.selectionGrid}>
-            {genders.map(g => (
-              <GoalCard key={g} title={g} selected={gender === g} onPress={() => setGender(g)} />
-            ))}
+          
+          <View style={[styles.inputWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: C.border }]}>
+            <TextInput
+              style={[styles.nameInput, { color: C.textPrimary }]}
+              placeholder="Your name"
+              placeholderTextColor={C.textMuted}
+              value={name}
+              onChangeText={(text) => {
+                if (text.length <= 15) {
+                  setName(text);
+                }
+              }}
+              maxLength={15}
+              autoFocus
+              selectionColor={C.accent}
+            />
+            <Text style={[styles.charCount, { color: C.textMuted }]}>
+              {name.length}/15
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -245,60 +267,7 @@ const PageGender = ({ gender, setGender }: any) => {
   );
 };
 
-const Page3 = ({ age, setAge }: any) => {
-  const ages = ['18-24', '25-34', '35-44', '45+'];
-  const C = useColors();
-  return (
-    <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="reading" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Sleep needs change with age — we'll adapt
-          </Text>
-          <View style={styles.selectionGrid}>
-            {ages.map(a => (
-              <GoalCard key={a} title={a} selected={age === a} onPress={() => setAge(a)} />
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    </Animated.View>
-  );
-};
-
-const Page4 = ({ goal, setGoal }: any) => {
-  const goals = [
-    'Get to sleep easier',
-    'Reduce anxiety',
-    'Relax after a hard day',
-    "I don't really know yet"
-  ];
-  const C = useColors();
-  return (
-    <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="reading" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR GOAL</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What brings you here?</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            We'll tailor your experience to match
-          </Text>
-          <View style={styles.selectionGrid}>
-            {goals.map(g => (
-              <GoalCard key={g} title={g} selected={goal === g} onPress={() => setGoal(g)} />
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    </Animated.View>
-  );
-};
-
-const Page5 = () => {
+const Page3 = () => {
   const C = useColors();
   const { 
     bedtime, setBedtime, 
@@ -342,7 +311,7 @@ const Page5 = () => {
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="welcome" hideSparkles />
+        <Mascot variant="goal" />
         <View style={styles.pageContent}>
           <Text style={[styles.overtitle, { color: C.overtitle }]}>CONSISTENCY IS KEY</Text>
           <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Set your sleep schedule</Text>
@@ -405,6 +374,11 @@ const Page5 = () => {
               onToggle={toggleDailyCheckIn}
             />
           </View>
+
+          <Text style={[styles.notificationDisclaimer, { color: C.textSecondary }]}>
+            Toggle these off if you'd prefer not to receive notifications. 
+            You can change this anytime in your profile settings.
+          </Text>
         </View>
       </ScrollView>
     </Animated.View>
@@ -435,7 +409,7 @@ const CompanionBenefitRow = ({ icon, title, description, isLast, iconBg }: any) 
   );
 };
 
-const Page6 = () => {
+const Page4 = () => {
   const C = useColors();
   const { isDark } = useTheme();
   const { width } = useWindowDimensions();
@@ -683,13 +657,13 @@ const TimePickerCard = ({ label, hour, minute, onAdjust, themeColor, Icon }: any
       
       <View style={styles.tpControls}>
         <View style={styles.tpCol}>
-          <TouchableOpacity onPress={() => onAdjust('hour', 1)} style={styles.tpArrow}>
+          <TouchableOpacity onPress={() => onAdjust('hour', 1)} style={styles.tpArrow} hitSlop={{ top: 15, bottom: 10, left: 15, right: 15 }}>
             <Svg width={10} height={6} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
               <Path d="M5 0L10 6H0L5 0Z" />
             </Svg>
           </TouchableOpacity>
           <Text style={[styles.tpValue, { color: C.textPrimary }]}>{displayHour < 10 ? `0${displayHour}` : displayHour}</Text>
-          <TouchableOpacity onPress={() => onAdjust('hour', -1)} style={styles.tpArrow}>
+          <TouchableOpacity onPress={() => onAdjust('hour', -1)} style={styles.tpArrow} hitSlop={{ top: 10, bottom: 15, left: 15, right: 15 }}>
             <Svg width={10} height={6} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
               <Path d="M5 6L0 0H10L5 6Z" />
             </Svg>
@@ -699,13 +673,13 @@ const TimePickerCard = ({ label, hour, minute, onAdjust, themeColor, Icon }: any
         <Text style={[styles.tpSeparator, { color: C.textSecondary }]}>:</Text>
         
         <View style={styles.tpCol}>
-          <TouchableOpacity onPress={() => onAdjust('minute', 5)} style={styles.tpArrow}>
+          <TouchableOpacity onPress={() => onAdjust('minute', 5)} style={styles.tpArrow} hitSlop={{ top: 15, bottom: 10, left: 15, right: 15 }}>
             <Svg width={10} height={6} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
               <Path d="M5 0L10 6H0L5 0Z" />
             </Svg>
           </TouchableOpacity>
           <Text style={[styles.tpValue, { color: C.textPrimary }]}>{minute < 10 ? `0${minute}` : minute}</Text>
-          <TouchableOpacity onPress={() => onAdjust('minute', -5)} style={styles.tpArrow}>
+          <TouchableOpacity onPress={() => onAdjust('minute', -5)} style={styles.tpArrow} hitSlop={{ top: 10, bottom: 15, left: 15, right: 15 }}>
             <Svg width={10} height={6} viewBox="0 0 10 6" fill={arrowColor} opacity={isDark ? 0.6 : 0.8}>
               <Path d="M5 6L0 0H10L5 6Z" />
             </Svg>
@@ -765,23 +739,39 @@ export default function Onboarding() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [gender, setGender] = useState('');
-  const [age, setAge] = useState('');
-  const [goal, setGoal] = useState('');
+  const [name, setName] = useState('');
   const { height } = useWindowDimensions();
   const C = useColors();
   const { isDark } = useTheme();
   const { isNotificationsEnabled, requestPermission } = useNotifications();
+  const { isPro, isLoading: subLoading, presentPaywall } = useSubscription();
+  const { setName: saveUserName } = useUser();
+
+  // Returning users who already have an active subscription skip onboarding
+  useEffect(() => {
+    if (!subLoading && isPro) {
+      router.replace('/(tabs)');
+    }
+  }, [subLoading, isPro]);
 
   const next = async () => {
-    if (currentPage < 6) {
+    if (currentPage < 4) {
       setCurrentPage(currentPage + 1);
     } else {
+      // Finalize setup
+      if (name) {
+        await saveUserName(name);
+      }
+      
       // If notifications are enabled, make sure we have permission
       if (isNotificationsEnabled) {
         await requestPermission();
       }
-      router.replace('/(tabs)');
+      // Show paywall — only navigate into app if user starts trial/purchases
+      const purchased = await presentPaywall();
+      if (purchased) {
+        router.replace('/(tabs)');
+      }
     }
   };
 
@@ -800,56 +790,60 @@ export default function Onboarding() {
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Progress Dots */}
-        <View style={styles.progressContainer}>
-          {[0, 1, 2, 3, 4, 5, 6].map(i => (
-            <View
-              key={i}
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+          {/* Progress Dots */}
+          <View style={styles.progressContainer}>
+            {[0, 1, 2, 3, 4].map(i => (
+              <View
+                key={i}
+                style={[
+                  styles.progressDot,
+                  { backgroundColor: C.mode === 'dark' ? '#5A5670' : 'rgba(0,0,0,0.1)' },
+                  i === currentPage && [styles.progressDotActive, { backgroundColor: C.accent }],
+                  i < currentPage && [styles.progressDotCompleted, { backgroundColor: C.accentSoft }],
+                ]}
+              />
+            ))}
+          </View>
+
+          {/* Page Container */}
+          <View style={styles.viewPager}>
+            {currentPage === 0 && <Page1 key="p1" />}
+            {currentPage === 1 && <Page2 key="p2" />}
+            {currentPage === 2 && <PageName key="pn" name={name} setName={setName} />}
+            {currentPage === 3 && <Page3 key="p3" />}
+            {currentPage === 4 && <Page4 key="p4" />}
+          </View>
+
+          {/* Navigation */}
+          <View style={[styles.navigation, { paddingBottom: Math.max(24, height * 0.04) }]}>
+            {currentPage > 0 && (
+              <TouchableOpacity onPress={back} style={styles.backButton}>
+                <Text style={[styles.backButtonText, { color: C.textSecondary }]}>Back</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={next}
               style={[
-                styles.progressDot,
-                { backgroundColor: C.mode === 'dark' ? '#5A5670' : 'rgba(0,0,0,0.1)' },
-                i === currentPage && [styles.progressDotActive, { backgroundColor: C.accent }],
-                i < currentPage && [styles.progressDotCompleted, { backgroundColor: C.accentSoft }],
+                styles.nextButton,
+                { backgroundColor: C.accent },
+                currentPage === 4 && { width: '100%' },
+                (currentPage === 2 && !name) && [styles.nextButtonDisabled, { backgroundColor: C.accentSoft }]
               ]}
-            />
-          ))}
-        </View>
-
-        {/* Page Container */}
-        <View style={styles.viewPager}>
-          {currentPage === 0 && <Page1 key="p1" />}
-          {currentPage === 1 && <Page2 key="p2" />}
-          {currentPage === 2 && <PageGender key="pg" gender={gender} setGender={setGender} />}
-          {currentPage === 3 && <Page3 key="p3" age={age} setAge={setAge} />}
-          {currentPage === 4 && <Page4 key="p4" goal={goal} setGoal={setGoal} />}
-          {currentPage === 5 && <Page5 key="p5" />}
-          {currentPage === 6 && <Page6 key="p6" />}
-        </View>
-
-        {/* Navigation */}
-        <View style={[styles.navigation, { paddingBottom: Math.max(24, height * 0.04) }]}>
-          {currentPage > 0 && (
-            <TouchableOpacity onPress={back} style={styles.backButton}>
-              <Text style={[styles.backButtonText, { color: C.textSecondary }]}>Back</Text>
+              disabled={currentPage === 2 && !name}
+            >
+              <Text style={styles.nextButtonText}>
+                {currentPage === 2 && !name
+                  ? "Fill in to continue"
+                  : currentPage === 4 ? "Let's Start" : "Next"}
+              </Text>
             </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            onPress={next}
-            style={[
-              styles.nextButton,
-              { backgroundColor: C.accent },
-              currentPage === 0 && { width: '100%' },
-              (currentPage === 2 && !gender || currentPage === 3 && !age || currentPage === 4 && !goal) && [styles.nextButtonDisabled, { backgroundColor: C.accentSoft }]
-            ]}
-            disabled={(currentPage === 2 && !gender) || (currentPage === 3 && !age) || (currentPage === 4 && !goal)}
-          >
-            <Text style={styles.nextButtonText}>
-              {(currentPage === 2 && !gender) || (currentPage === 3 && !age) || (currentPage === 4 && !goal)
-                ? "Pick an option"
-                : currentPage === 6 ? "Let's Start" : "Next"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       <ScreenLoader isVisible={isLoading} />
@@ -1183,7 +1177,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#3D3A52',
     borderRadius: 20,
-    paddingVertical: 18,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     alignItems: 'center',
   },
@@ -1257,5 +1251,38 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: '#FFF',
+  },
+  notificationDisclaimer: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 11,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 20,
+    opacity: 0.6,
+    paddingHorizontal: 20,
+    lineHeight: 16,
+  },
+  inputWrapper: {
+    width: '100%',
+    height: 60,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 20,
+  },
+  nameInput: {
+    flex: 1,
+    height: '100%',
+    fontFamily: tokens.fonts.heading,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  charCount: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

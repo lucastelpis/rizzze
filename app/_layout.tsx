@@ -19,6 +19,8 @@ import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { SheepGrowthProvider } from '@/context/SheepGrowthContext';
 import { SleepProvider } from '@/context/SleepContext';
+import { SubscriptionProvider } from '@/context/SubscriptionContext';
+import { UserProvider } from '@/context/UserContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,6 +60,8 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
+      <UserProvider>
+      <SubscriptionProvider>
       <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <SheepGrowthProvider>
           <StreakProvider>
@@ -71,6 +75,8 @@ export default function RootLayout() {
           </StreakProvider>
         </SheepGrowthProvider>
       </NavigationThemeProvider>
+      </SubscriptionProvider>
+      </UserProvider>
     </ThemeProvider>
   );
 }

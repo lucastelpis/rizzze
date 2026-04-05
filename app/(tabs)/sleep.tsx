@@ -27,7 +27,7 @@ const QUALITY_COLORS = {
   badBg: '#F0D8D0',
   badText: '#8B4A40',
   okay: '#E8C88A',
-  okayBg: 'rgba(232,200,138,0.2)',
+  okayBg: '#F2E8D5',
   okayText: '#8B7030',
   good: '#5A8AB0',
   goodBg: '#C8DEF0',
@@ -36,7 +36,7 @@ const QUALITY_COLORS = {
   greatBg: '#E8DFF0',
   greatText: '#6B5A8E',
   perfect: '#6B9A60',
-  perfectBg: 'rgba(168,197,160,0.2)',
+  perfectBg: '#E5F0E0',
   perfectText: '#4A7A42',
 };
 

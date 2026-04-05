@@ -27,3 +27,11 @@ export const GamesIcon: React.FC<IconProps> = ({ size = 24, color = "currentColo
     <Rect x="9" y="9" width="6" height="6" rx="1" fill={color} />
   </Svg>
 );
+
+export const TrackerIcon: React.FC<IconProps> = ({ size = 24, color = "currentColor" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 19V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    <Path d="M7 16L11 10L14 13L17 7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+

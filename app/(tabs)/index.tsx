@@ -151,48 +151,6 @@ const StreakSection = () => {
 
 // ─── DECORATIVE PATTERNS ──────────────────────────────────────────────────────
 
-const CardDecor = ({ type, color }: { type: string; color: string }) => {
-  if (type === 'Sleep') {
-    return (
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Circle cx="85%" cy="20%" r="40" fill={color} opacity={0.15} />
-        <Circle cx="90%" cy="30%" r="20" fill={color} opacity={0.1} />
-        <G opacity={0.2}>
-          <Path d="M20 30h6l-6 6h6" stroke={color} strokeWidth={2} fill="none" transform="translate(10, 10) scale(0.8)" />
-          <Path d="M20 30h6l-6 6h6" stroke={color} strokeWidth={2} fill="none" transform="translate(30, 5) scale(0.6)" />
-        </G>
-      </Svg>
-    );
-  }
-  if (type === 'Sounds') {
-    return (
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Circle cx="90%" cy="50%" r="50" stroke={color} strokeWidth="1" fill="none" opacity={0.15} />
-        <Circle cx="90%" cy="50%" r="35" stroke={color} strokeWidth="1" fill="none" opacity={0.1} />
-        <Circle cx="90%" cy="50%" r="20" stroke={color} strokeWidth="1" fill="none" opacity={0.05} />
-      </Svg>
-    );
-  }
-  if (type === 'Stories') {
-    return (
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Path d="M85 20l2 2-2 2-2-2zM92 35l1.5 1.5-1.5 1.5-1.5-1.5zM75 40l1 1-1 1-1-1z" fill={color} opacity={0.3} />
-        <Circle cx="85%" cy="30%" r="30" fill={color} opacity={0.1} />
-      </Svg>
-    );
-  }
-  return (
-    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-      <G opacity={0.06}>
-        <Rect x="70%" y="10%" width="10" height="10" rx="2" fill={color} />
-        <Rect x="85%" y="10%" width="10" height="10" rx="2" fill={color} />
-        <Rect x="70%" y="30%" width="10" height="10" rx="2" fill={color} />
-        <Rect x="85%" y="30%" width="10" height="10" rx="2" fill={color} />
-      </G>
-    </Svg>
-  );
-};
-
 // ─── CATEGORY CARD ────────────────────────────────────────────────────────────
 type CategoryCardProps = {
   title: string;
@@ -241,8 +199,6 @@ const CategoryCard = ({ title, subtitle, gradient, Icon, iconColor, accentColor,
         style={{ flex: 1 }}
       >
         <Animated.View style={[styles.categoryCard, animatedStyle]}>
-          <CardDecor type={title} color={accentColor} />
-          
           <View style={styles.categoryIconWrap}>
             <View style={[styles.iconBlurCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.2)' }]}>
               <Icon size={24} color={iconColor} />
@@ -315,7 +271,7 @@ export default function HomeScreen() {
               <CategoryCard
                 title="Sleep"
                 subtitle="Track and improve"
-                gradient={isDark ? ['#3D344B', '#2D2B3D'] : ['#E8DFF0', '#F8F4EE']}
+                gradient={isDark ? ['#3D344B', '#2D2B3D'] : ['#F0E5F5', '#E0D0F0']}
                 accentColor={C.accent}
                 Icon={MoonIcon}
                 iconColor={C.sleepIcon}
@@ -324,7 +280,7 @@ export default function HomeScreen() {
               <CategoryCard
                 title="Sounds"
                 subtitle="Calming soundscapes"
-                gradient={isDark ? ['#2D3B4A', '#2D2B3D'] : ['#C8DEF0', '#F8F4EE']}
+                gradient={isDark ? ['#2D3B4A', '#2D2B3D'] : ['#DCEBF5', '#BAD2E8']}
                 accentColor="#5391C8"
                 Icon={CloudRainIcon}
                 iconColor={C.soundsIcon}
@@ -333,7 +289,7 @@ export default function HomeScreen() {
               <CategoryCard
                 title="Stories"
                 subtitle="Bedtime tales"
-                gradient={isDark ? ['#423232', '#2D2B3D'] : ['#F0D8D0', '#F8F4EE']}
+                gradient={isDark ? ['#423232', '#2D2B3D'] : ['#F7E6DF', '#E8C6B8']}
                 accentColor="#C88E84"
                 Icon={StoriesIcon}
                 iconColor={C.storiesIcon}
@@ -342,7 +298,7 @@ export default function HomeScreen() {
               <CategoryCard
                 title="Games"
                 subtitle="Focus and unwind"
-                gradient={isDark ? ['#3D3D3D', '#2D2B3D'] : ['#F5F0E8', '#F8F4EE']}
+                gradient={isDark ? ['#3D3D3D', '#2D2B3D'] : ['#FBF6EF', '#E3D7CC']}
                 accentColor="#8A8A8A"
                 Icon={GamesIcon}
                 iconColor={C.gamesIcon}

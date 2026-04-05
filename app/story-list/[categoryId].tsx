@@ -8,7 +8,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { BottomNav } from '@/components/BottomNav';
 import * as StoryGraphics from '@/components/StoryGraphics';
-import { CATEGORIES, STORIES, Story } from '@/constants/stories';
+import { CATEGORIES, STORIES, Story, getCategoryStoryCount } from '@/constants/stories';
 import { AwakeSheep } from '@/components/AwakeSheep';
 import { HeaderSheep } from '@/components/HeaderSheep';
 import { MiniPlayer } from '@/components/MiniPlayer';
@@ -81,7 +81,9 @@ export default function StoryListScreen() {
           </TouchableOpacity>
           <View style={styles.topBarText}>
             <Text style={[styles.categoryTitle, { color: C.textPrimary }]}>{category.title}</Text>
-            <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>{category.subtitle}</Text>
+            <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>
+              {category.subtitle} · {getCategoryStoryCount(category.id)}
+            </Text>
           </View>
           <TouchableOpacity 
             style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#EDE5F5' }]}

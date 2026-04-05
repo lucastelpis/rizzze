@@ -11,6 +11,7 @@ type SleepContextType = {
   getQuality: (dateKey: string) => SleepQuality;
   hasSeenSuccessToday: boolean;
   markSuccessSeen: () => void;
+  resetSleepData: () => Promise<void>;
 };
 
 const SleepContext = createContext<SleepContextType | null>(null);
@@ -73,6 +74,11 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
   };
 
   const markSuccessSeen = () => setHasSeenSuccessToday(true);
+  
+  const resetSleepData = async () => {
+    setSleepData({});
+    setHasSeenSuccessToday(false);
+  };
 
   const hasRatedToday = !!sleepData[getDateKey()];
 
@@ -85,6 +91,7 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
         getQuality,
         hasSeenSuccessToday,
         markSuccessSeen,
+        resetSleepData,
       }}
     >
       {children}

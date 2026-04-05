@@ -15,7 +15,7 @@ export interface Category {
   id: string;
   title: string;
   subtitle: string;
-  countLabel: string;
+  countLabel?: string; // Optional during transition
   accentColor: string;
 }
 
@@ -24,28 +24,24 @@ export const CATEGORIES: Category[] = [
     id: 'cozy',
     title: 'Cozy readings',
     subtitle: 'Warm stories for quiet nights',
-    countLabel: '10 stories',
     accentColor: '#E8C88A',
   },
   {
     id: 'folklore',
     title: 'Folklore & legends',
     subtitle: 'Timeless tales from ancient cultures',
-    countLabel: '10 stories',
     accentColor: '#C4AED8',
   },
   {
     id: 'reflective',
     title: 'Reflective essays',
     subtitle: 'Gentle thoughts to quiet the mind',
-    countLabel: '10 stories',
     accentColor: '#8B6DAE',
   },
   {
     id: 'wonder',
     title: 'World wonders',
     subtitle: 'Awe that puts the soul at ease',
-    countLabel: '10 stories',
     accentColor: '#C8DEF0',
   },
 ];
@@ -70,7 +66,6 @@ export const STORIES: Story[] = [
       "And in that shared silence, between the earth and the moon, you are less alone. You are part of the rabbit's garden now."
     ],
     "italicParagraphs": [
-      4,
       7
     ]
   },
@@ -116,7 +111,6 @@ export const STORIES: Story[] = [
       "The woman returned to her shelves, her shadow long against the wall. She continued her work, not trying to keep things alive, but honoring their quiet passing. She was the witness to their transformation—from a precious possession to a beautiful, shared memory."
     ],
     "italicParagraphs": [
-      8,
       9
     ]
   },
@@ -139,7 +133,6 @@ export const STORIES: Story[] = [
       "But that traveler would never again listen to the dawn chorus in the same way. They would spend the rest of their days trying to find the melody they shared with the world around them, knowing that harmony is the highest form of truth."
     ],
     "italicParagraphs": [
-      6,
       7
     ]
   },
@@ -158,12 +151,12 @@ export const STORIES: Story[] = [
       "Every echo was evidence that someone had once lived here. Fully. Completely. Without holding back. The joy and the sorrow, the mundane and the magnificent—all of it mattered enough to leave a permanent mark on the space itself. The wood and the plaster had become a living record of human breath.",
       "One evening, as the light turned amber and the birds settled in the ivy, the resident realized that their own life would eventually become an echo too. Everything they did in this house—the way they brewed their tea, the way they sighed at the end of a long day—would be absorbed into its walls and floors. They were not just a tenant; they were a contributor to its memory.",
       "This realization changed the way they moved through the rooms. They stopped rushing. They started noticing the way the light fell across the floor at 4 PM. They started speaking more kindly to themselves and others, aware that their words would ripple through the air long after they were gone.",
-      "They weren't performing for an audience; they were simply honoring the knowledge that their presence left a lasting trace. They understood that their voice would be part of the house.s eternal, collective memory, a single note in a vast and ongoing symphony.",
+      "They weren't performing for an audience; they were simply honoring the knowledge that their presence left a lasting trace. They understood that their voice would be part of the house's eternal, collective memory, a single note in a vast and ongoing symphony.",
       "Years later, when the time came for them to move on, they didn't feel like they were leaving. They knew their echoes would remain, beautifully mixed with the echoes of the grandmother and the laughing child. They were leaving behind the best parts of themselves.",
       "This is what all old houses know, though few people take the time to listen: they exist not just to shelter us from the rain, but to hold our human lives. To witness them. To echo them forward, ensuring that every heartbeat remains, in some small way, eternal."
     ],
     "italicParagraphs": [
-      7
+      8
     ]
   },
   {
@@ -369,7 +362,7 @@ export const STORIES: Story[] = [
     "readTime": "3 min read",
     "audioFile": "15-the-bench-by-the-river",
     "content": [
-      "There is a simple wooden bench situated on the bank of a slow-moving river, far enough from the city that the only sounds are the rustle of the reeds and the occasional splash of a fish. It is not a bench built for a View, in the grand sense of the word. It is a bench built for Witnessing.",
+      "There is a simple wooden bench situated on the bank of a slow-moving river, far enough from the city that the only sounds are the rustle of the reeds and the occasional splash of a fish. It is not a bench built for a view, in the grand sense of the word. It is a bench built for witnessing.",
       "The wood is weathered to a soft, silvery grey, and the green paint is peeling in patterns that look like distant islands. It's not a beautiful piece of furniture, but it has a shape that seems to welcome any back that leans against it.",
       "People come to this bench not to exercise or to think \"important\" thoughts, but to watch the water move. The river here doesn't rush; it flows with a patient, unhurried strength. It carries leaves from upstream, swirling them in gentle eddies before letting them go. It reflects the sky and the overhanging willow trees, turning the world into a shimmering, fluid painting.",
       "Watching the water move helps people understand their own movement. It helps them accept that they, too, are always flowing, even when they feel stuck. The river doesn't try to go backward, and it doesn't worry about the rocks ahead; it simply yields to the pull of the earth and the shape of the land.",
@@ -433,7 +426,7 @@ export const STORIES: Story[] = [
     "content": [
       "In a tall, brick apartment building in the heart of a city that never stops moving, there is a back stairwell made of old oak and iron. It is not the most efficient way to get to the higher floors, and most residents prefer the bright, mirrored elevator. But for a few minutes every evening, that stairwell becomes the most beautiful place in the world.",
       "As the sun begins its long, slow descent, the light hits the stained-glass window on the third-floor landing at a perfect angle. It floods the wooden stairs with pools of deep amber, ruby red, and a soft, violet blue. For twenty minutes, the mundane act of climbing the stairs becomes a walk through a cathedral of light.",
-      "An elderly woman who has lived in the building for forty years comes to the landing every evening at 6:00 PM. she doesn't bring a book or a phone; she simply sits on the middle step and watches the light move. She watches the dust motes dance in the tinted beams, like tiny stars in a colorful galaxy.",
+      "An elderly woman who has lived in the building for forty years comes to the landing every evening at 6:00 PM. She doesn't bring a book or a phone; she simply sits on the middle step and watches the light move. She watches the dust motes dance in the tinted beams, like tiny stars in a colorful galaxy.",
       "She doesn't meditate in any formal way. She just sits. She notices the way the light picks up the grain of the wood, and the way the shadows of the iron railing stretch and grow thin.",
       "Occasionally, other residents will stumble upon her. Some are in a rush and barely notice the light. But many find themselves slowing down. They see the woman sitting in the silence, and they see the improbable beauty of the colors on the wall, and they feel a sudden, sharp connection to the moment.",
       "The stairwell has become an unofficial sanctuary. People gather there without ever having a meeting. They acknowledge each other with a nod or a quiet \"Good evening,\" sharing the secret of the dusk.",
@@ -496,8 +489,8 @@ export const STORIES: Story[] = [
     "content": [
       "We often speak of letting go as if it were a single, dramatic act—a grand gesture of opening our hands and watching the past fly away like a bird. But in reality, letting go is a slow, quiet process, more like the way a tree loses its leaves in autumn. It happens one leaf at a time, often so gradually that we barely notice the change until the branches are bare and the sky is suddenly visible.",
       "To let go is not to forget, nor is it to diminish the importance of what once was. It is simply to acknowledge that the season has changed. The leaf that was vital and green in the spring has done its work. It has nourished the tree, and now, it must return to the earth to make room for what comes next.",
-      "There is a strange kind of bravery in allowancy. It requires us to trust that the emptiness is not a void, but a space for new growth. When we cling to the past, we are trying to force a season to stay when it is already over. We exhaust ourselves trying to hold onto what is already departing.",
-      "Letting go is the ultimate act of self-care. it is the recognition that our hands were meant for holding many things throughout our lives, not just one. When we let go, we are finally free to reach for the present moment, with all its messy, beautiful potential."
+      "There is a strange kind of bravery in allowing. It requires us to trust that the emptiness is not a void, but a space for new growth. When we cling to the past, we are trying to force a season to stay when it is already over. We exhaust ourselves trying to hold onto what is already departing.",
+      "Letting go is the ultimate act of self-care. It is the recognition that our hands were meant for holding many things throughout our lives, not just one. When we let go, we are finally free to reach for the present moment, with all its messy, beautiful potential."
     ],
     "italicParagraphs": [
       3
@@ -513,7 +506,7 @@ export const STORIES: Story[] = [
     "content": [
       "In a world that celebrates the monumental—the grand achievements, the epic journeys, the life-altering decisions—it is easy to overlook the profound power of small rituals. These are the tiny, repetitive acts that anchor us to our days: the specific way you grind your coffee beans, the five minutes you spend stretching before bed, the route you always take through the park.",
       "These rituals are not mere habits; they are a way of sanctifying time. They are small, private ceremonies that say: \"I am here. I am present. This moment matters.\" They provide a sense of continuity in a world that often feels chaotic and fragmented.",
-      "When we engage in a ritual, we are stepping out of the frantic \"todo list\" of our minds and into the direct experience of our senses. We feel the warmth of the mug, hear the rhythmic sound of our own breath, and see the way the light catches a familiar object. These sensations are grounding. They remind us that we are grounded, physical beings.",
+      "When we engage in a ritual, we are stepping out of the frantic \"to-do list\" of our minds and into the direct experience of our senses. We feel the warmth of the mug, hear the rhythmic sound of our own breath, and see the way the light catches a familiar object. These sensations are grounding. They remind us that we are grounded, physical beings.",
       "You don't need a cathedral to find the sacred. You only need a moment of intentionality. A small ritual is a bridge between the mundane and the meaningful. It is a way of honoring the life you are actually living, rather than the one you are constantly planning for."
     ],
     "italicParagraphs": [
@@ -670,7 +663,7 @@ export const STORIES: Story[] = [
       "But what if death isn't the enemy of life, but its most essential companion?",
       "If life lasted forever, it would have no value. If we had infinite time, we would spend it with a crushing carelessness. A sunset is beautiful because it is fleeting. A flower is precious because it will wilt. A conversation with a parent is meaningful because there is a finite number of them left.",
       "The fact that this is temporary is what gives it weight. The \"once-ness\" of each moment is what makes it a miracle.",
-      "When we embrace the reality of the end, our priorities shift. We stop worrying about trivial slights and petty competitions. we start being more honest with the people we love. We start paying closer attention to the quality of our existence rather than the quantity of our possessions. We realize that we are here for a very short visit, and we want to be fully present for it.",
+      "When we embrace the reality of the end, our priorities shift. We stop worrying about trivial slights and petty competitions. We start being more honest with the people we love. We start paying closer attention to the quality of our existence rather than the quantity of our possessions. We realize that we are here for a very short visit, and we want to be fully present for it.",
       "Death is the great clarifier. It peels away everything that isn't essential and leaves us with the core of our humanity: our capacity to love, to wonder, and to connect.",
       "Don't let the fear of the end stop you from living. Let the knowledge of the end inspire you to live more deeply. Love boldly, because the time is short. Forgive quickly, because the time is short. Be kind, because everyone you meet is carrying the same weight of mortality. The ending is what makes the story worth telling."
     ],
@@ -776,7 +769,7 @@ export const STORIES: Story[] = [
     "content": [
       "For a long time, scientists believed that life required very specific, gentle conditions to survive: sunlight, a moderate temperature, and plenty of oxygen. But in recent decades, they have discovered organisms that defy every rule we ever wrote. These are the extremophiles.",
       "They have found life in the boiling water of undersea volcanic vents, where the pressure would crush a submarine. They have found life in the lightless depths of Antarctic ice, and in lakes so acidic they would dissolve a human hand. They have found organisms that can survive the vacuum of space and the intense radiation of a nuclear reactor.",
-      "These simple, resilient creatures have taught us a profound lesson: life is far more stubborn than we imagined. Life doesn't just \"survive\" in difficult conditions; it learns how to thrive there. It adapts, it mutations, and it finds a way to turn the impossible into a home.",
+      "These simple, resilient creatures have taught us a profound lesson: life is far more stubborn than we imagined. Life doesn't just \"survive\" in difficult conditions; it learns how to thrive there. It adapts, it mutates, and it finds a way to turn the impossible into a home.",
       "You carry that same biological stubbornness in your own cells. You are the descendant of four billion years of survivors. You are made of the stuff that endured ice ages, asteroid impacts, and a thousand near-extinctions.",
       "When you face a \"boiling\" or a \"frozen\" time in your own life, remember the extremophiles. Resilience is not about being complicated or sophisticated; it is about the fundamental refusal to give up. You were built for endurance. You were designed to find a way, even when the environment feels hostile. Your very existence is a victory of persistence over probability."
     ],
@@ -792,7 +785,7 @@ export const STORIES: Story[] = [
     "readTime": "4 min read",
     "audioFile": "37-on-decomposition",
     "content": [
-      "Our culture is deeply afraid of decay. We spend billions of dollars trying to preserve our youth, our buildings, and our memories. we treat the process of breaking down as a failure, a sign that something has gone wrong. But in the natural world, decomposition is the most vital and generous process there is.",
+      "Our culture is deeply afraid of decay. We spend billions of dollars trying to preserve our youth, our buildings, and our memories. We treat the process of breaking down as a failure, a sign that something has gone wrong. But in the natural world, decomposition is the most vital and generous process there is.",
       "A fallen tree in a forest is not a \"dead\" thing. It is a \"nurse log.\" As it slowly breaks down, it becomes a source of nutrient-rich soil for thousands of new life forms. Fungi, moss, insects, and new seedlings all draw their life from the energy of the fallen giant. The tree is not vanishing; it is being redistributed. It is becoming the foundation for the next generation of the forest.",
       "This constant recycling is the only way life has managed to persist on this planet for so long. Nothing is ever truly wasted in the universe. An atom of carbon that was once part of a dinosaur's bone might now be part of your own heart. The elements that make up your body have been used millions of times before, and they will be used millions of times again.",
       "Understanding decomposition takes the sting out of loss. It allows us to see that endings are not voids, but transformations. When a phase of our life \"dies\"—a relationship, a career, or a dream—it doesn't just disappear. It decomposes into the \"soil\" of our experience, providing the nutrients we will need for the next version of ourselves.",
@@ -846,7 +839,7 @@ export const STORIES: Story[] = [
     "readTime": "3 min read",
     "audioFile": "40-on-kindness-as-physics",
     "content": [
-      "We often think of kindness as a soft, optional virtue—a \"nice\" thing to do if we have the time and energy. But if you look at the way influence travel through the world, kindness starts to look less like a personality trait and more like a fundamental law of physics.",
+      "We often think of kindness as a soft, optional virtue—a \"nice\" thing to do if we have the time and energy. But if you look at the way influence travels through the world, kindness starts to look less like a personality trait and more like a fundamental law of physics.",
       "In standard physics, every action has an equal and opposite reaction. But in the physics of human connection, the reaction is often exponential.",
       "A single, small act of kindness—a genuine compliment, a moment of patience, a small favor—can alter the trajectory of a person's entire day. That person, feeling seen and valued, is more likely to be kind to the next three people they meet. Those three people carry that light forward to nine others, then twenty-seven, then eighty-one.",
       "Within a short period, a single original act of kindness can touch thousands of lives that you will never see. It compounds over time, like interest in a bank account, but far more powerful. Kindness is the only thing in the universe that grows when you give it away.",
@@ -858,3 +851,8 @@ export const STORIES: Story[] = [
     ]
   }
 ];
+
+export const getCategoryStoryCount = (categoryId: string): string => {
+  const count = STORIES.filter(s => s.category === categoryId).length;
+  return `${count} stories`;
+};
