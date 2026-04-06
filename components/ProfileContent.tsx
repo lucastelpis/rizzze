@@ -11,6 +11,7 @@ import { useSleep } from '@/context/SleepContext';
 import { useUser } from '@/context/UserContext';
 import RevenueCatUI from 'react-native-purchases-ui';
 import { useColors } from '@/hooks/useColors';
+import { posthog } from '@/config/posthog';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -521,7 +522,10 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         </View>
         <TouchableOpacity
           style={[styles.settingsFlatItem, { borderBottomColor: C.border }]}
-          onPress={restorePurchases}
+          onPress={() => {
+            posthog.capture('restore_purchases_tapped');
+            restorePurchases();
+          }}
         >
           <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Restore purchases</Text>
         </TouchableOpacity>

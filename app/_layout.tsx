@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, usePathname, useGlobalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   useFonts,
@@ -11,6 +11,8 @@ import {
   Nunito_800ExtraBold,
   Nunito_900Black,
 } from '@expo-google-fonts/nunito';
+import { PostHogProvider } from 'posthog-react-native';
+import { posthog } from '@/config/posthog';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AudioProvider } from '@/context/AudioContext';
@@ -26,7 +28,20 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutContent() {
   const { isDark } = useTheme();
-  
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  const previousPathname = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (previousPathname.current !== pathname) {
+      posthog.screen(pathname, {
+        previous_screen: previousPathname.current ?? null,
+        ...params,
+      });
+      previousPathname.current = pathname;
+    }
+  }, [pathname, params]);
+
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
@@ -59,24 +74,39 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <ThemeProvider>
-      <UserProvider>
-      <SubscriptionProvider>
-      <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <SheepGrowthProvider>
-          <StreakProvider>
-            <SleepProvider>
-              <AudioProvider>
-                <NotificationProvider>
-                  <RootLayoutContent />
-                </NotificationProvider>
-              </AudioProvider>
-            </SleepProvider>
-          </StreakProvider>
-        </SheepGrowthProvider>
-      </NavigationThemeProvider>
-      </SubscriptionProvider>
-      </UserProvider>
-    </ThemeProvider>
+    <PostHogProvider
+      client={posthog}
+      autocapture={{
+        captureScreens: false,
+        captureTouches: true,
+        propsToCapture: ['testID'],
+        maxElementsCaptured: 20,
+      }}
+      enableSessionReplay={true}
+      sessionReplayConfig={{
+        maskAllTextInputs: true,
+        maskAllImages: true,
+      }}
+    >
+      <ThemeProvider>
+        <UserProvider>
+        <SubscriptionProvider>
+        <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <SheepGrowthProvider>
+            <StreakProvider>
+              <SleepProvider>
+                <AudioProvider>
+                  <NotificationProvider>
+                    <RootLayoutContent />
+                  </NotificationProvider>
+                </AudioProvider>
+              </SleepProvider>
+            </StreakProvider>
+          </SheepGrowthProvider>
+        </NavigationThemeProvider>
+        </SubscriptionProvider>
+        </UserProvider>
+      </ThemeProvider>
+    </PostHogProvider>
   );
 }

@@ -8,6 +8,7 @@ import {
   POINTS_PET,
   POINTS_FEED,
 } from '@/constants/sheepGrowth';
+import { posthog } from '@/config/posthog';
 
 // ─── STORAGE KEYS ────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'rizzze_sheep_growth';
@@ -141,6 +142,7 @@ export function SheepGrowthProvider({ children }: { children: React.ReactNode })
         lastPetTime: Date.now(),
       };
       persist(newData);
+      posthog.capture('sheep_petted', { total_pet_points: newData.points.pet });
       return newData;
     });
   }, [persist]);
@@ -154,6 +156,7 @@ export function SheepGrowthProvider({ children }: { children: React.ReactNode })
         lastFeedTime: Date.now(),
       };
       persist(newData);
+      posthog.capture('sheep_fed', { total_feed_points: newData.points.feed });
       return newData;
     });
   }, [persist]);
@@ -193,6 +196,10 @@ export function SheepGrowthProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (prevStageRef.current !== null && currentStageIndex > prevStageRef.current) {
       setEvolutionReward(currentStageName);
+      posthog.capture('sheep_evolved', {
+        stage_name: currentStageName,
+        stage_index: currentStageIndex,
+      });
     }
     prevStageRef.current = currentStageIndex;
   }, [currentStageIndex, currentStageName]);

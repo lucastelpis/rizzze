@@ -25,6 +25,7 @@ import { AwakeSheep } from '@/components/AwakeSheep';
 import { HeaderSheep } from '@/components/HeaderSheep';
 import { SCENES_DATA } from '@/constants/sounds';
 import { getDailyPick } from '@/utils/dailyPicks';
+import { posthog } from '@/config/posthog';
 
 // Local C removed in favor of useColors()
 
@@ -50,6 +51,7 @@ const SceneCard = ({ title, subtitle, tag, bgColor, BgGraphic, gradientOverlay, 
     onPress={() => {
       // Trigger sound immediately for better perceived performance
       playSelectedSound({ title, subtitle: 'Scenes collection', soundFile, graphicId });
+      posthog.capture('sound_played', { title, sound_file: soundFile, graphic_id: graphicId, sound_type: 'scene' });
       router.push({
         pathname: '/player',
         params: { title, subtitle: 'Scenes collection', soundFile, graphicId }
@@ -85,6 +87,7 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
     onPress={() => {
       // Trigger sound immediately for better perceived performance
       playSelectedSound({ title, subtitle: 'Simple sounds collection', soundFile, graphicId });
+      posthog.capture('sound_played', { title, sound_file: soundFile, graphic_id: graphicId, sound_type: 'simple' });
       router.push({
         pathname: '/player',
         params: { title, subtitle: 'Simple sounds collection', soundFile, graphicId }
@@ -361,7 +364,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sectionSimpleSounds: {
-    // padding handled by gap
+    gap: 12,
   },
   sectionLabel: {
     fontFamily: tokens.fonts.caption,

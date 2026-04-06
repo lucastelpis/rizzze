@@ -38,6 +38,7 @@ import { useUser } from '@/context/UserContext';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { SheepStage1, SheepStage2, SheepStage3, SheepStage4, SheepStage5, SheepStage6 } from '../components/sheepStages';
+import { posthog } from '@/config/posthog';
 
 // ─── COMPONENTS ───
 
@@ -760,6 +761,10 @@ export default function Onboarding() {
       // and at least one notification is enabled, request permission now.
       if (currentPage === 3 && (isNotificationsEnabled || isDailyCheckInEnabled)) {
         await requestPermission();
+        posthog.capture('notifications_setup_completed', {
+          bedtime_enabled: isNotificationsEnabled,
+          checkin_enabled: isDailyCheckInEnabled,
+        });
       }
       setCurrentPage(currentPage + 1);
     } else {
@@ -767,7 +772,10 @@ export default function Onboarding() {
       if (name) {
         await saveUserName(name);
       }
-      
+
+      posthog.capture('onboarding_completed', { user_name_set: !!name });
+      posthog.capture('paywall_shown');
+
       // Show paywall — only navigate into app if user starts trial/purchases
       const purchased = await presentPaywall();
       if (purchased) {

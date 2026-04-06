@@ -6,6 +6,7 @@ import { tokens } from '@/constants/theme';
 import { SOUND_ASSETS, useAudioPlayback } from '@/context/AudioContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
+import { posthog } from '@/config/posthog';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
@@ -143,6 +144,14 @@ export default function ReaderScreen() {
   const layoutHeight = useRef(0);
 
   const category = CATEGORIES.find(c => c.id === story.category) || CATEGORIES[1];
+
+  useEffect(() => {
+    posthog.capture('story_reading_started', {
+      story_id: story.id,
+      story_title: story.title,
+      category: story.category,
+    });
+  }, []);
 
   const narratorActive = useRef(false);
   const britishVoice = useRef<string | null>(null);

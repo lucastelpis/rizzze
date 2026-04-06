@@ -14,6 +14,7 @@ import { HeaderSheep } from '@/components/HeaderSheep';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { CATEGORIES, STORIES, Story, getCategoryStoryCount } from '@/constants/stories';
 import { getDailyPick } from '@/utils/dailyPicks';
+import { posthog } from '@/config/posthog';
 
 // Chevron Right
 const ChevronRight = ({ color = '#C4AED8' }: { color?: string }) => (
@@ -66,7 +67,10 @@ export default function StoriesScreen() {
           <TouchableOpacity 
             style={[styles.featuredCard, { backgroundColor: C.bgCard, borderTopColor: '#C8A29A', shadowColor: C.textPrimary }]}
             activeOpacity={0.9}
-            onPress={() => router.push(`/reader/${featuredStory.id}`)}
+            onPress={() => {
+              posthog.capture('story_opened', { story_id: featuredStory.id, story_title: featuredStory.title, source: 'featured' });
+              router.push(`/reader/${featuredStory.id}`);
+            }}
           >
             <View style={styles.featuredContent}>
               <View style={[styles.thumbWrap, { backgroundColor: 'rgba(240, 216, 208, 0.15)' }]}>

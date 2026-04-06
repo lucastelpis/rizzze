@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon_new.png",
     "scheme": "rizzze",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -23,7 +22,6 @@
         "backgroundColor": "#2D2B3D",
         "foregroundImage": "./assets/images/icon_new.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.RECORD_AUDIO",
@@ -51,7 +49,13 @@
           }
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#8B6DAE"
+        }
+      ],
       [
         "expo-audio",
         {
@@ -69,10 +73,6 @@
         "projectId": "9f83e2ad-cbd8-47bf-a85c-7663edcd666f"
       }
     },
-    "owner": "lucastelpis",
-    "notification": {
-      "icon": "./assets/images/notification-icon.png",
-      "color": "#8B6DAE"
-    }
+    "owner": "lucastelpis"
   }
 }

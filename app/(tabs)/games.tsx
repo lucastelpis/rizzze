@@ -19,6 +19,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { BottomNav } from '@/components/BottomNav';
 import { AwakeSheep } from '@/components/AwakeSheep';
 import { HeaderSheep } from '@/components/HeaderSheep';
+import { posthog } from '@/config/posthog';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -214,7 +215,10 @@ export default function GamesScreen() {
           <TouchableOpacity 
             style={styles.gameCard}
             activeOpacity={0.9}
-            onPress={() => router.push('/games/sheep-jumper')}
+            onPress={() => {
+              posthog.capture('game_started', { game: 'sheep-jumper' });
+              router.push('/games/sheep-jumper');
+            }}
           >
             <SheepJumperBG />
             <LinearGradient
@@ -242,7 +246,10 @@ export default function GamesScreen() {
           <TouchableOpacity 
             style={styles.gameCard}
             activeOpacity={0.9}
-            onPress={() => router.push('/games/cozy-farm')}
+            onPress={() => {
+              posthog.capture('game_started', { game: 'cozy-farm' });
+              router.push('/games/cozy-farm');
+            }}
           >
             <CozyFarmBG />
             <LinearGradient

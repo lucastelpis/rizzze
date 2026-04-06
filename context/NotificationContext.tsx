@@ -8,7 +8,6 @@ const Device = isNative ? require('expo-device') : null;
 if (Notifications && Notifications.setNotificationHandler) {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
       shouldShowBanner: true,
@@ -20,6 +19,7 @@ if (Notifications && Notifications.setNotificationHandler) {
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BEDTIME_MESSAGES, CHECKIN_MESSAGES } from '@/constants/notifications';
 
 interface BedtimeConfig {
   hour: number;
@@ -46,6 +46,10 @@ const STORAGE_KEYS = {
   CHECKIN_ENABLED: 'rizzze_checkin_enabled',
   BEDTIME: 'rizzze_bedtime_config',
   WAKEUP: 'rizzze_wakeup_config',
+};
+
+const getRandomMessage = (messages: string[]) => {
+  return messages[Math.floor(Math.random() * messages.length)];
 };
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -123,36 +127,56 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return true;
   };
 
-  const scheduleBedtimeReminder = useCallback(async (hour: number, minute: number) => {
+  // Helper to re-schedule all notifications based on current state
+  const refreshScheduledNotifications = useCallback(async () => {
     if (!isNative || !Notifications) return;
     
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    if (!isNotificationsEnabled) return;
+    // 1. Bedtime Reminder
+    if (isNotificationsEnabled) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Time to get ready for sleep 🌙",
+          body: getRandomMessage(BEDTIME_MESSAGES),
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+          hour: bedtime.hour,
+          minute: bedtime.minute,
+          repeats: true,
+        },
+      });
+    }
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Time to get ready for sleep 🌙",
-        body: "Your bedtime is approaching. Would you like to listen to a story?",
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-        hour,
-        minute,
-        repeats: true,
-      },
-    });
-  }, [isNotificationsEnabled]);
+    // 2. Morning Check-in
+    if (isDailyCheckInEnabled) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Rise and shine! 🐑",
+          body: getRandomMessage(CHECKIN_MESSAGES),
+          sound: true,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+          hour: wakeUpTime.hour,
+          minute: wakeUpTime.minute,
+          repeats: true,
+        },
+      });
+    }
+  }, [isNotificationsEnabled, isDailyCheckInEnabled, bedtime, wakeUpTime]);
+
+  // Sync scheduled notifications whenever settings change
+  useEffect(() => {
+    refreshScheduledNotifications();
+  }, [refreshScheduledNotifications]);
 
   const setBedtime = async (hour: number, minute: number) => {
     const newBedtime = { hour, minute };
     setBedtimeState(newBedtime);
     await AsyncStorage.setItem(STORAGE_KEYS.BEDTIME, JSON.stringify(newBedtime));
-    
-    if (isNotificationsEnabled) {
-      await scheduleBedtimeReminder(hour, minute);
-    }
   };
 
   const setWakeUpTime = async (hour: number, minute: number) => {
@@ -172,31 +196,26 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const toggleNotifications = async (enabled: boolean, shouldRequestPermission: boolean = true) => {
-    if (enabled) {
-      if (shouldRequestPermission) {
-        const granted = await requestPermission();
-        if (!granted) return;
-      }
-      
-      setIsNotificationsEnabled(true);
-      await AsyncStorage.setItem(STORAGE_KEYS.ENABLED, JSON.stringify(true));
-      await scheduleBedtimeReminder(bedtime.hour, bedtime.minute);
-    } else {
-      setIsNotificationsEnabled(false);
-      await AsyncStorage.setItem(STORAGE_KEYS.ENABLED, JSON.stringify(false));
-      if (isNative && Notifications) {
-        await Notifications.cancelAllScheduledNotificationsAsync();
-      }
+    if (enabled && shouldRequestPermission) {
+      const granted = await requestPermission();
+      if (!granted) return;
     }
+    
+    setIsNotificationsEnabled(enabled);
+    await AsyncStorage.setItem(STORAGE_KEYS.ENABLED, JSON.stringify(enabled));
   };
 
   const sendTestNotification = async () => {
     if (!isNative || !Notifications) return;
     
+    const isBedtimeTest = Math.random() > 0.5;
+    const testTitle = isBedtimeTest ? "Rizzze Bedtime Test 🌙" : "Rizzze Check-in Test 🐑";
+    const testBody = isBedtimeTest ? getRandomMessage(BEDTIME_MESSAGES) : getRandomMessage(CHECKIN_MESSAGES);
+
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Rizzze Test Notification 🐑",
-        body: "Look at that! Local notifications are working perfectly.",
+        title: testTitle,
+        body: testBody,
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -210,10 +229,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setIsDailyCheckInEnabled(true);
     setBedtimeState({ hour: 22, minute: 30 });
     setWakeUpTimeState({ hour: 7, minute: 0 });
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.ENABLED,
+      STORAGE_KEYS.CHECKIN_ENABLED,
+      STORAGE_KEYS.BEDTIME,
+      STORAGE_KEYS.WAKEUP
+    ]);
     if (isNative && Notifications) {
       await Notifications.cancelAllScheduledNotificationsAsync();
     }
   };
+
 
   return (
     <NotificationContext.Provider

@@ -5,6 +5,7 @@ import Purchases, {
   CustomerInfo,
 } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { posthog } from '@/config/posthog';
 
 const API_KEY = 'test_BkMJqBhiYVnpaevoizinqxOcXzI';
 
@@ -69,7 +70,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const presentPaywall = useCallback(async (): Promise<boolean> => {
     try {
       const result = await RevenueCatUI.presentPaywall();
-      return result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
+      const success = result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
+      if (success) {
+        posthog.capture('subscription_started', {
+          result: result === PAYWALL_RESULT.PURCHASED ? 'purchased' : 'restored',
+        });
+      }
+      return success;
     } catch {
       return false;
     }

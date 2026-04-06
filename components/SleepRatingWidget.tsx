@@ -7,6 +7,8 @@ import { useSleep, getDateKey } from '@/context/SleepContext';
 import { tokens } from '@/constants/theme';
 import { HeaderSheep } from './HeaderSheep';
 import { HeartAnimation } from './HeartAnimation';
+import { Sparkle } from './SheepMascot';
+import { posthog } from '@/config/posthog';
 
 // ─── CONSTANT QUALITY COLORS ──────────────────────────────────────────────────
 const QUALITY_COLORS = {
@@ -85,6 +87,11 @@ export function SleepRatingWidget() {
   const { colors: C, isDark } = useTheme();
   const { getQuality, rateSleep, hasSeenSuccessToday, markSuccessSeen } = useSleep();
   const todayKey = getDateKey();
+
+  const handleRateSleep = (key: string) => {
+    rateSleep(todayKey, key as any);
+    posthog.capture('sleep_rating_submitted', { rating: key });
+  };
   const selectedRating = getQuality(todayKey);
 
   // Mark success as seen after it renders once with animation
@@ -109,7 +116,7 @@ export function SleepRatingWidget() {
           <View style={styles.successLeft}>
             <View style={styles.successTextBlock}>
               <Text style={[styles.successHeading, { color: C.textPrimary }]}>
-                Daily check-in done! ✨
+                Daily check-in done! <Sparkle size={14} color={C.accent} />
               </Text>
               <Text style={[styles.successBody, { color: C.textMuted }]}>
                 Your routine sheep grows strong
@@ -122,7 +129,7 @@ export function SleepRatingWidget() {
                 return (
                   <TouchableOpacity 
                     key={key} 
-                    onPress={() => rateSleep(todayKey, key as any)}
+                    onPress={() => handleRateSleep(key)}
                     activeOpacity={0.6}
                     style={[
                       styles.interactiveItem,
@@ -154,7 +161,7 @@ export function SleepRatingWidget() {
             {ratingOptions.map(({ key, label, bg, faceColor, labelColor, Face }) => (
               <TouchableOpacity 
                 key={key} 
-                onPress={() => rateSleep(todayKey, key as any)}
+                onPress={() => handleRateSleep(key)}
                 style={styles.ratingItem}
                 activeOpacity={0.7}
               >
