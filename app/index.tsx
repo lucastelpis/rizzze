@@ -268,6 +268,99 @@ const PageName = ({ name, setName }: any) => {
   );
 };
 
+const PageGoal = ({ goal, setGoal }: any) => {
+  const C = useColors();
+  const goals = ["Fall asleep faster", "Stay asleep longer", "Wake up refreshed", "Reduce anxiety"];
+  
+  return (
+    <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Mascot variant="reading" />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR GOAL</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What brings you here?</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            We'll customize your experience based on your goal
+          </Text>
+          
+          <View style={styles.selectionGrid}>
+            {goals.map((g) => (
+              <GoalCard 
+                key={g} 
+                title={g} 
+                selected={goal === g} 
+                onPress={() => setGoal(g)} 
+              />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </Animated.View>
+  );
+};
+
+const PageAge = ({ ageRange, setAgeRange }: any) => {
+  const C = useColors();
+  const ranges = ["Under 18", "18-25", "26-35", "36+"];
+  
+  return (
+    <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Mascot variant="reading" />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR AGE</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            Help us understand who's part of our flock
+          </Text>
+          
+          <View style={styles.selectionGrid}>
+            {ranges.map((r) => (
+              <GoalCard 
+                key={r} 
+                title={r} 
+                selected={ageRange === r} 
+                onPress={() => setAgeRange(r)} 
+              />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </Animated.View>
+  );
+};
+
+const PageGender = ({ gender, setGender }: any) => {
+  const C = useColors();
+  const options = ["Female", "Male", "Non-binary", "Prefer not to say"];
+  
+  return (
+    <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Mascot variant="reading" />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR GENDER</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Which gender do you identify as?</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            This helps us build a more inclusive experience
+          </Text>
+          
+          <View style={styles.selectionGrid}>
+            {options.map((o) => (
+              <GoalCard 
+                key={o} 
+                title={o} 
+                selected={gender === o} 
+                onPress={() => setGender(o)} 
+              />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </Animated.View>
+  );
+};
+
 const Page3 = () => {
   const C = useColors();
   const { 
@@ -741,12 +834,20 @@ export default function Onboarding() {
   const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
+  const [goal, setGoal] = useState('');
+  const [ageRange, setAgeRange] = useState('');
+  const [gender, setGender] = useState('');
   const { height } = useWindowDimensions();
   const C = useColors();
   const { isDark } = useTheme();
   const { isNotificationsEnabled, isDailyCheckInEnabled, requestPermission } = useNotifications();
   const { isPro, isLoading: subLoading, presentPaywall } = useSubscription();
-  const { setName: saveUserName } = useUser();
+  const { 
+    setName: saveUserName,
+    setGoal: saveGoal,
+    setAgeRange: saveAgeRange,
+    setGender: saveGender
+  } = useUser();
 
   // Returning users who already have an active subscription skip onboarding
   useEffect(() => {
@@ -755,11 +856,22 @@ export default function Onboarding() {
     }
   }, [subLoading, isPro]);
 
+  // Track the start of onboarding once
+  useEffect(() => {
+    posthog.capture('onboarding_started');
+  }, []);
+
   const next = async () => {
-    if (currentPage < 4) {
-      // If we are advancing from the notification page (Page 3),
+    if (currentPage < 7) {
+      // Event tracking for specific pages
+      if (currentPage === 2) posthog.capture('onboarding_goal_selected', { goal });
+      if (currentPage === 3) posthog.capture('onboarding_name_set', { name });
+      if (currentPage === 4) posthog.capture('onboarding_age_selected', { ageRange });
+      if (currentPage === 5) posthog.capture('onboarding_gender_selected', { gender });
+
+      // If we are advancing from the notification page (Page 6),
       // and at least one notification is enabled, request permission now.
-      if (currentPage === 3 && (isNotificationsEnabled || isDailyCheckInEnabled)) {
+      if (currentPage === 6 && (isNotificationsEnabled || isDailyCheckInEnabled)) {
         await requestPermission();
         posthog.capture('notifications_setup_completed', {
           bedtime_enabled: isNotificationsEnabled,
@@ -769,11 +881,27 @@ export default function Onboarding() {
       setCurrentPage(currentPage + 1);
     } else {
       // Finalize setup
-      if (name) {
-        await saveUserName(name);
-      }
+      if (name) await saveUserName(name);
+      if (goal) await saveGoal(goal);
+      if (ageRange) await saveAgeRange(ageRange);
+      if (gender) await saveGender(gender);
 
-      posthog.capture('onboarding_completed', { user_name_set: !!name });
+      // Identify user in PostHog with all properties
+      posthog.identify(name || posthog.getDistinctId(), {
+        name,
+        goal,
+        age_range: ageRange,
+        gender,
+        onboarding_completed: true,
+        onboarding_completed_at: new Date().toISOString()
+      });
+
+      posthog.capture('onboarding_completed', { 
+        user_name_set: !!name,
+        goal_set: !!goal,
+        age_set: !!ageRange,
+        gender_set: !!gender
+      });
       posthog.capture('paywall_shown');
 
       // Show paywall — only navigate into app if user starts trial/purchases
@@ -806,7 +934,7 @@ export default function Onboarding() {
         >
           {/* Progress Dots */}
           <View style={styles.progressContainer}>
-            {[0, 1, 2, 3, 4].map(i => (
+            {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
               <View
                 key={i}
                 style={[
@@ -823,9 +951,12 @@ export default function Onboarding() {
           <View style={styles.viewPager}>
             {currentPage === 0 && <Page1 key="p1" />}
             {currentPage === 1 && <Page2 key="p2" />}
-            {currentPage === 2 && <PageName key="pn" name={name} setName={setName} />}
-            {currentPage === 3 && <Page3 key="p3" />}
-            {currentPage === 4 && <Page4 key="p4" />}
+            {currentPage === 2 && <PageGoal key="pg" goal={goal} setGoal={setGoal} />}
+            {currentPage === 3 && <PageName key="pn" name={name} setName={setName} />}
+            {currentPage === 4 && <PageAge key="pa" ageRange={ageRange} setAgeRange={setAgeRange} />}
+            {currentPage === 5 && <PageGender key="pgend" gender={gender} setGender={setGender} />}
+            {currentPage === 6 && <Page3 key="p3" />}
+            {currentPage === 7 && <Page4 key="p4" />}
           </View>
 
           {/* Navigation */}
@@ -840,15 +971,17 @@ export default function Onboarding() {
               style={[
                 styles.nextButton,
                 { backgroundColor: C.accent },
-                currentPage === 4 && { width: '100%' },
-                (currentPage === 2 && !name) && [styles.nextButtonDisabled, { backgroundColor: C.accentSoft }]
+                currentPage === 7 && { width: '100%' },
+                ((currentPage === 2 && !goal) || (currentPage === 3 && !name) || (currentPage === 4 && !ageRange) || (currentPage === 5 && !gender)) && [styles.nextButtonDisabled, { backgroundColor: C.accentSoft }]
               ]}
-              disabled={currentPage === 2 && !name}
+              disabled={(currentPage === 2 && !goal) || (currentPage === 3 && !name) || (currentPage === 4 && !ageRange) || (currentPage === 5 && !gender)}
             >
               <Text style={styles.nextButtonText}>
-                {currentPage === 2 && !name
+                {currentPage === 3 && !name
                   ? "Fill in to continue"
-                  : currentPage === 4 ? "Let's Start" : "Next"}
+                  : ((currentPage === 2 && !goal) || (currentPage === 4 && !ageRange) || (currentPage === 5 && !gender))
+                    ? "Select to continue"
+                    : currentPage === 7 ? "Let's Start" : "Next"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1287,7 +1420,7 @@ const styles = StyleSheet.create({
     height: '100%',
     fontFamily: tokens.fonts.heading,
     fontSize: 18,
-    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   charCount: {
     fontFamily: tokens.fonts.caption,

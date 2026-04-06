@@ -64,6 +64,10 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
           markActivity();
         }
       }
+      
+      // Attempt silent cloud backup
+      // Note: We don't import useBackup here to avoid circular dependencies
+      // It's better to trigger backup from the UI or a separate sync service
     } catch (e) {
       console.error('Failed to save sleep rating', e);
     }

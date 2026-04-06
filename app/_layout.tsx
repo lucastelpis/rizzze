@@ -23,6 +23,7 @@ import { SheepGrowthProvider } from '@/context/SheepGrowthContext';
 import { SleepProvider } from '@/context/SleepContext';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { UserProvider } from '@/context/UserContext';
+import { SyncObserver } from '@/components/SyncObserver';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -50,6 +51,7 @@ function RootLayoutContent() {
         <Stack.Screen name="player" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       </Stack>
       <StatusBar style={isDark ? 'light' : 'dark'} />
+      <SyncObserver />
     </>
   );
 }

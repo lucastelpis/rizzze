@@ -13,10 +13,12 @@ import RevenueCatUI from 'react-native-purchases-ui';
 import { useColors } from '@/hooks/useColors';
 import { posthog } from '@/config/posthog';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
+import { supabase } from '@/utils/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { useBackup } from '@/hooks/useBackup';
 import Animated, {
   Easing,
   interpolateColor,
@@ -26,7 +28,7 @@ import Animated, {
   withSequence,
   withTiming
 } from 'react-native-reanimated';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
 
 const CheckIcon = ({ size = 14 }: { size?: number }) => {
   const C = useColors();
@@ -73,6 +75,27 @@ const ChevronRight = () => {
 const HeartIcon = ({ size = 24, color = '#D4928A', showFill = true }: { size?: number; color?: string; showFill?: boolean }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill={showFill ? color : 'none'} stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <Path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
+  </Svg>
+);
+
+const CopyIcon = ({ size = 16, color = "currentColor" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <Path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </Svg>
+);
+
+const MailIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <Polyline points="22,6 12,13 2,6" />
+  </Svg>
+);
+
+const CloudIconSync = ({ size = 20, color = "currentColor" }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.2-3.9-4.5C17.5 6.5 14.5 4 11 4 7.7 4 5 6.7 5 10c-2.2.3-4 2.2-4 4.5C1 17 3 19 5.5 19h12z" />
+    <Path d="M9 13l2 2 4-4" />
   </Svg>
 );
 
@@ -344,7 +367,16 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   const { resetGrowthData, addDailyRatingPoint } = useSheepGrowth();
   const { resetSleepData } = useSleep();
   const { isPro, isLoading: subLoading, presentPaywall, restorePurchases } = useSubscription();
-  const { name: userName, resetUserData } = useUser();
+  const { name: userName, goal: userGoal, ageRange: userAge, gender: userGender, resetUserData } = useUser();
+  const { 
+    performBackup, 
+    sendVerificationCode, 
+    verifyAndLink, 
+    restoreFromEmail, 
+    unlinkEmail,
+    isEmailVerified, 
+    email: linkedEmail 
+  } = useBackup();
   const C = useColors();
 
   const handleSubscriptionPress = async () => {
@@ -357,13 +389,20 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
 
   useEffect(() => {
     syncSleepRatings();
-  }, []);
+  }, [syncSleepRatings]);
 
   const [infoData, setInfoData] = React.useState<{ title: string; message: string } | null>(null);
   const [showInfo, setShowInfo] = React.useState(false);
   const router = useRouter();
 
   const [showTimePicker, setShowTimePicker] = React.useState(false);
+  const [showRestoreModal, setShowRestoreModal] = React.useState(false);
+  const [showEmailModal, setShowEmailModal] = React.useState(false);
+  const [emailStep, setEmailStep] = React.useState<'input' | 'verify'>('input');
+  const [emailInput, setEmailInput] = React.useState('');
+  const [otpInput, setOtpInput] = React.useState('');
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [restoreInput, setRestoreInput] = React.useState('');
   const [pickerType, setPickerType] = React.useState<'bedtime' | 'wakeup'>('bedtime');
 
   const formatTime = (h: number, m: number) => {
@@ -376,7 +415,7 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   const handleReset = async () => {
     Alert.alert(
       "Reset App Data",
-      "Are you sure? This will permanently delete your streaks, sleep history, sheep progress, and preferences.",
+      "Are you sure? This will permanently delete your local streaks, sleep history, and progress.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -384,6 +423,10 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
           style: "destructive",
           onPress: async () => {
             try {
+              // Sign out from Supabase first to "freeze" the cloud backup
+              await supabase.auth.signOut();
+              
+              // Then clear everything locally
               await AsyncStorage.clear();
               await resetStreakData();
               await resetGrowthData();
@@ -398,6 +441,29 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         }
       ]
     );
+  };
+
+  const handleSendCode = async () => {
+    if (!emailInput.includes('@')) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+    setIsSyncing(true);
+    const success = await sendVerificationCode(emailInput.trim());
+    setIsSyncing(false);
+    if (success) setEmailStep('verify');
+  };
+
+  const handleVerifyCode = async () => {
+    if (otpInput.length < 6) return;
+    setIsSyncing(true);
+    const success = await verifyAndLink(emailInput.trim(), otpInput.trim());
+    setIsSyncing(false);
+    if (success) {
+      setShowEmailModal(false);
+      setEmailStep('input');
+      setOtpInput('');
+    }
   };
 
   return (
@@ -433,6 +499,8 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
           color={isDark ? 'rgba(255,255,255,0.05)' : C.bgMuted}
         />
       </View>
+
+      {/* User Info Section: Removed per user request */}
 
       {/* Theme Selector Section */}
       <View style={styles.section}>
@@ -504,7 +572,55 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>ACCOUNT</Text>
+        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>ACCOUNT & BACKUP</Text>
+        
+        {isEmailVerified ? (
+          <View style={[styles.settingsFlatItem, { borderBottomColor: C.border, paddingBottom: 16 }]}>
+            <View style={{ flex: 1, alignItems: 'flex-start' }}>
+              <View style={[styles.syncStatusHeader, { width: '100%', justifyContent: 'space-between' }]}>
+                <View style={[styles.syncBadge, { backgroundColor: isDark ? 'rgba(74, 139, 86, 0.15)' : '#DDF0E1' }]}>
+                  <CloudIconSync size={16} color={isDark ? '#6CC17D' : '#356B3F'} />
+                  <Text style={[styles.syncBadgeText, { color: isDark ? '#6CC17D' : '#356B3F' }]}>Cloud Sync Active</Text>
+                </View>
+                <TouchableOpacity onPress={() => {
+                  Alert.alert("Remove Cloud Sync?", "Your current data is safe, but future progress won't be backed up.", [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Remove", style: "destructive", onPress: unlinkEmail }
+                  ]);
+                }}>
+                  <Text style={{ color: '#D4928A', fontFamily: tokens.fonts.heading, fontSize: 13, fontWeight: '700' }}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.settingsLabel, { color: C.textPrimary, marginTop: 8 }]}>{linkedEmail}</Text>
+              <Text style={[styles.settingsSublabel, { color: C.textSecondary, marginTop: 4 }]}>Your progress is automatically saved.</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.settingsFlatItem, { borderBottomColor: C.border, paddingBottom: 16 }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Cloud Backup</Text>
+              <Text style={[styles.settingsSublabel, { color: C.textSecondary, marginTop: 4, marginBottom: 16 }]}>
+                Link an email to protect your progress if you lose your phone.
+              </Text>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: C.accent }]}
+                onPress={() => setShowEmailModal(true)}
+              >
+                <MailIcon color="#FFF" />
+                <Text style={styles.actionBtnText}>Link Email</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        <SettingsItem
+          label="Restore Progress"
+          onPress={() => setShowRestoreModal(true)}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>OPTIONS</Text>
         <View style={[styles.settingsFlatItem, { borderBottomColor: C.border }]}>
           <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Subscription</Text>
           <TouchableOpacity style={styles.badgeWrapper} onPress={handleSubscriptionPress} disabled={subLoading}>
@@ -529,19 +645,9 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         >
           <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Restore purchases</Text>
         </TouchableOpacity>
-        <SettingsItem label="Test notification" onPress={() => sendTestNotification()} />
-        <SettingsItem
-          label="Add points (+5)"
-          onPress={() => {
-            for (let i = 0; i < 5; i++) addDailyRatingPoint();
-          }}
-        />
-        <SettingsItem label="Support & feedback" />
+        <SettingsItem label="Support" onPress={() => router.push('/support')} />
+        <SettingsItem label="Feedback" onPress={() => router.push('/feedback')} />
       </View>
-
-      <TouchableOpacity style={styles.logoutBtn}>
-        <Text style={[styles.logoutText, { color: '#D4928A' }]}>Log out</Text>
-      </TouchableOpacity>
 
       <TouchableOpacity style={[styles.logoutBtn, { marginTop: 0, opacity: 0.6 }]} onPress={handleReset}>
         <Text style={[styles.logoutText, { color: C.textSecondary, fontSize: 13 }]}>Reset app data</Text>
@@ -606,6 +712,150 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
               <Text style={styles.confirmBtnText}>Done</Text>
             </TouchableOpacity>
           </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Restore Modal */}
+      <Modal visible={showRestoreModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setShowRestoreModal(false)} />
+          <Animated.View style={[styles.modalContent, { backgroundColor: C.bgCard }]}>
+            <Text style={[styles.modalTitle, { color: C.textPrimary }]}>Restore from Email</Text>
+            <Text style={[styles.modalSubtitle, { color: C.textSecondary }]}>
+              Enter your email to receive a recovery code. This will overwrite current data.
+            </Text>
+
+            <TextInput
+              style={[
+                styles.restoreInput,
+                {
+                  backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : C.bgMuted,
+                  color: C.textPrimary,
+                  borderColor: C.border
+                }
+              ]}
+              placeholder="Email..."
+              placeholderTextColor={C.textMuted}
+              value={restoreInput}
+              onChangeText={setRestoreInput}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F0EDE8' }]}
+                onPress={() => {
+                  setShowRestoreModal(false);
+                  setRestoreInput('');
+                }}
+              >
+                <Text style={[styles.modalBtnText, { color: C.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: C.accent }]}
+                onPress={async () => {
+                  const val = restoreInput.trim();
+                  if (!val || !val.includes('@')) {
+                    Alert.alert("Invalid Email", "Please enter a valid email address.");
+                    return;
+                  }
+                  
+                  // Start email restore flow
+                  setShowRestoreModal(false);
+                  setEmailStep('verify');
+                  setEmailInput(val);
+                  const success = await sendVerificationCode(val);
+                  if (success) setShowEmailModal(true);
+                  setRestoreInput('');
+                }}
+              >
+                <Text style={[styles.modalBtnText, { color: '#FFF' }]}>Continue</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Email Link Modal */}
+      <Modal visible={showEmailModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setShowEmailModal(false)} />
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%' }}>
+            <Animated.View style={[styles.modalContent, { backgroundColor: C.bgCard }]}>
+              {emailStep === 'input' ? (
+                <>
+                  <Text style={[styles.modalTitle, { color: C.textPrimary }]}>Secure with Email</Text>
+                  <Text style={[styles.modalSubtitle, { color: C.textSecondary }]}>
+                    Receive a secure code to link your account.
+                  </Text>
+                  <TextInput
+                    style={[styles.restoreInput, { backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : C.bgMuted, color: C.textPrimary, borderColor: C.border }]}
+                    placeholder="Enter your email"
+                    placeholderTextColor={C.textMuted}
+                    value={emailInput}
+                    onChangeText={setEmailInput}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={[styles.confirmBtn, { backgroundColor: C.accent }]}
+                    onPress={handleSendCode}
+                    disabled={isSyncing}
+                  >
+                    {isSyncing ? <ActivityIndicator color="#FFF" /> : <Text style={styles.confirmBtnText}>Send Code</Text>}
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.modalTitle, { color: C.textPrimary }]}>Check your email</Text>
+                  <Text style={[styles.modalSubtitle, { color: C.textSecondary }]}>
+                    We sent a secure code to {emailInput}
+                  </Text>
+                  <TextInput
+                    style={[styles.restoreInput, { 
+                      backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : C.bgMuted, 
+                      color: C.textPrimary, 
+                      borderColor: C.border,
+                      textAlign: 'center',
+                      fontSize: 24,
+                      letterSpacing: 4
+                    }]}
+                    placeholder="00000000"
+                    placeholderTextColor={C.textMuted}
+                    value={otpInput}
+                    onChangeText={setOtpInput}
+                    keyboardType="number-pad"
+                    maxLength={8}
+                  />
+                  <TouchableOpacity
+                    style={[styles.confirmBtn, { backgroundColor: C.accent }]}
+                    onPress={async () => {
+                      if (showRestoreModal || restoreInput) { // If coming from restore flow
+                        const success = await restoreFromEmail(emailInput, otpInput);
+                        if (success) {
+                          setShowEmailModal(false);
+                          setOtpInput('');
+                        }
+                      } else {
+                        handleVerifyCode();
+                      }
+                    }}
+                    disabled={isSyncing || otpInput.length < 6}
+                  >
+                    {isSyncing ? <ActivityIndicator color="#FFF" /> : <Text style={styles.confirmBtnText}>Verify & Continue</Text>}
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => setEmailStep('input')}
+                    style={{ marginTop: 16 }}
+                  >
+                    <Text style={{ color: C.accent, textAlign: 'center', fontSize: 13 }}>Change email</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </Animated.View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </ScrollView>
@@ -890,10 +1140,96 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
   },
-  tpBadgeText: {
-    fontFamily: tokens.fonts.caption,
+  tpBadgeText: { fontFamily: tokens.fonts.caption, fontSize: 13, fontWeight: '700' },
+
+  // Backup Styles
+  codeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  codeText: {
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace' }),
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    flex: 1,
+  },
+  copyBtn: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  restoreInput: {
+    width: '100%',
+    height: 50,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace' }),
     fontSize: 14,
-    fontWeight: '900',
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  modalSubtitle: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBtnText: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 16,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    height: 48,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    ...tokens.shadows.card,
+  },
+  actionBtnText: {
+    color: '#FFF',
+    fontFamily: tokens.fonts.heading,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  syncStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  syncBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  syncBadgeText: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 12,
+    fontWeight: '800',
   },
   infoModalContent: {
     width: '85%',

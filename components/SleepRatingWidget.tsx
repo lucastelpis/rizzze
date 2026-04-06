@@ -7,7 +7,6 @@ import { useSleep, getDateKey } from '@/context/SleepContext';
 import { tokens } from '@/constants/theme';
 import { HeaderSheep } from './HeaderSheep';
 import { HeartAnimation } from './HeartAnimation';
-import { Sparkle } from './SheepMascot';
 import { posthog } from '@/config/posthog';
 
 // ─── CONSTANT QUALITY COLORS ──────────────────────────────────────────────────
@@ -116,7 +115,7 @@ export function SleepRatingWidget() {
           <View style={styles.successLeft}>
             <View style={styles.successTextBlock}>
               <Text style={[styles.successHeading, { color: C.textPrimary }]}>
-                Daily check-in done! <Sparkle size={14} color={C.accent} />
+                Daily check-in done! ✨
               </Text>
               <Text style={[styles.successBody, { color: C.textMuted }]}>
                 Your routine sheep grows strong
