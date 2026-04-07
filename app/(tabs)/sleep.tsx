@@ -7,6 +7,8 @@ import {
   ScrollView,
   Modal,
   Pressable,
+  TextInput,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -20,6 +22,7 @@ import { tokens } from '@/constants/theme';
 import { HeaderSheep } from '@/components/HeaderSheep';
 import { useSleep } from '@/context/SleepContext';
 import { SleepRatingWidget } from '@/components/SleepRatingWidget';
+import { CommentModal } from '@/components/CommentModal';
 
 // ─── CONSTANT QUALITY COLORS ──────────────────────────────────────────────────
 const QUALITY_COLORS = {
@@ -156,18 +159,32 @@ export default function SleepScreen() {
   const [currentMonth, setCurrentMonth] = useState(ACTUAL_MONTH);
   const [currentYear, setCurrentYear] = useState(ACTUAL_YEAR);
   const [tipIndex, setTipIndex] = useState(0);
+
+  // States for the history evaluation modal
   const [evalTarget, setEvalTarget] = useState<{ day: number, month: number, year: number, dateKey: string } | null>(null);
-  const [activeEval, setActiveEval] = useState<typeof evalTarget>(null);
+  const [activeEval, setActiveEval] = useState<{ day: number, month: number, year: number, dateKey: string, pendingNote?: string } | null>(null);
+  const [modalView, setModalView] = useState<'rating' | 'note'>('rating');
+
   const { activeSound } = useAudio();
   const router = useRouter();
 
   useEffect(() => {
-    if (evalTarget) setActiveEval(evalTarget);
+    if (evalTarget) {
+      setActiveEval(evalTarget);
+      setModalView('rating');
+    }
   }, [evalTarget]);
 
   const handleRateDate = async (dateKey: string, quality: SleepQuality) => {
     await rateSleep(dateKey, quality);
-    setEvalTarget(null);
+  };
+
+  const handleSaveNoteInline = async (text: string) => {
+    if (activeEval) {
+      const quality = sleepData[activeEval.dateKey]?.quality || null;
+      await rateSleep(activeEval.dateKey, quality, text);
+      setModalView('rating');
+    }
   };
 
   const changeMonth = (dir: 'prev' | 'next') => {
@@ -230,122 +247,202 @@ export default function SleepScreen() {
             contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
             showsVerticalScrollIndicator={false}
           >
+            <SleepRatingWidget />
 
-          {/* RATING */}
-          <SleepRatingWidget />
-
-          {/* TIP */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.overline, { color: C.textSecondary }]}>SLEEP TIP</Text>
-              <TouchableOpacity style={styles.nextTip} onPress={() => setTipIndex((tipIndex + 1) % SLEEP_TIPS.length)}>
-                <Text style={{ color: C.accent, fontFamily: tokens.fonts.caption, fontSize: 11 }}>Next tip</Text>
-                <ArrowRight color={C.accent} />
+            {/* TIP */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.overline, { color: C.textSecondary }]}>SLEEP TIP</Text>
+                <TouchableOpacity style={styles.nextTip} onPress={() => setTipIndex((tipIndex + 1) % SLEEP_TIPS.length)}>
+                  <Text style={{ color: C.accent, fontFamily: tokens.fonts.caption, fontSize: 11 }}>Next tip</Text>
+                  <ArrowRight color={C.accent} />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity 
+                style={[styles.tipCard, { backgroundColor: C.accentLight }]} 
+                onPress={() => setTipIndex((tipIndex + 1) % SLEEP_TIPS.length)}
+              >
+                <View style={[styles.tipBadge, { backgroundColor: C.white }]}>
+                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                    <Path d="M12 22a10 10 0 100-20 10 10 0 000 20zM12 16v-4M12 8h.01" stroke={C.accent} strokeWidth={2} strokeLinecap="round" />
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.tipTitle, { color: C.accent }]}>{SLEEP_TIPS[tipIndex].title}</Text>
+                  <Text style={[styles.tipText, { color: C.textSecondary }]}>{SLEEP_TIPS[tipIndex].text}</Text>
+                </View>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              style={[styles.tipCard, { backgroundColor: C.accentLight }]} 
-              onPress={() => setTipIndex((tipIndex + 1) % SLEEP_TIPS.length)}
-            >
-              <View style={[styles.tipBadge, { backgroundColor: C.white }]}>
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                  <Path d="M12 22a10 10 0 100-20 10 10 0 000 20zM12 16v-4M12 8h.01" stroke={C.accent} strokeWidth={2} strokeLinecap="round" />
-                </Svg>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.tipTitle, { color: C.accent }]}>{SLEEP_TIPS[tipIndex].title}</Text>
-                <Text style={[styles.tipText, { color: C.textSecondary }]}>{SLEEP_TIPS[tipIndex].text}</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
 
-          {/* CALENDAR */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.overline, { color: C.textSecondary }]}>{MONTH_NAMES[currentMonth]} {currentYear}</Text>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity onPress={() => changeMonth('prev')}><ChevronLeft color={C.textSecondary} /></TouchableOpacity>
-                <TouchableOpacity onPress={() => changeMonth('next')}><ChevronRight color={C.textSecondary} /></TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.calGrid}>
-              <View style={styles.calRow}>
-                {DAY_LABELS.map((l, i) => <Text key={i} style={[styles.calDayHeader, { color: C.textMuted }]}>{l}</Text>)}
-              </View>
-              {Array.from({ length: Math.ceil(gridCells.length / 7) }).map((_, rIdx) => (
-                <View key={rIdx} style={styles.calRow}>
-                  {gridCells.slice(rIdx * 7, rIdx * 7 + 7).map((d, cIdx) => {
-                    if (d === 0) return <View key={cIdx} style={styles.calCellEmpty} />;
-                    const key = `${currentYear}-${currentMonth + 1}-${d}`;
-                    const quality = sleepData[key];
-                    const { bg, text } = getCellColor(quality);
-                    const isToday = d === TODAY_DAY && currentMonth === ACTUAL_MONTH && currentYear === ACTUAL_YEAR;
-                    const isPast = new Date(currentYear, currentMonth, d) < new Date(ACTUAL_YEAR, ACTUAL_MONTH, TODAY_DAY);
-                    
-                    return (
-                      <TouchableOpacity 
-                        key={cIdx} 
-                        style={[styles.calCell, { backgroundColor: bg }, isToday && { borderWidth: 2, borderColor: C.textPrimary }, !isToday && !isPast && { opacity: 0.3 }]}
-                        disabled={!isPast}
-                        onPress={() => setEvalTarget({ day: d, month: currentMonth, year: currentYear, dateKey: key })}
-                      >
-                        <Text style={[styles.calCellText, { color: text }, quality === null && { color: C.textMuted }]}>{d}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+            {/* CALENDAR */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.overline, { color: C.textSecondary }]}>{MONTH_NAMES[currentMonth]} {currentYear}</Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <TouchableOpacity onPress={() => changeMonth('prev')}><ChevronLeft color={C.textSecondary} /></TouchableOpacity>
+                  <TouchableOpacity onPress={() => changeMonth('next')}><ChevronRight color={C.textSecondary} /></TouchableOpacity>
                 </View>
-              ))}
-            </View>
-
-            <View style={styles.legend}>
-              {['bad', 'okay', 'good', 'great', 'perfect'].map(k => (
-                <View key={k} style={styles.legendItem}>
-                  <View style={[styles.legendSwatch, { backgroundColor: (QUALITY_COLORS as any)[k] }]} />
-                  <Text style={[styles.legendLabel, { color: C.textSecondary }]}>{k.charAt(0).toUpperCase() + k.slice(1)}</Text>
-                </View>
-              ))}
-              <View style={styles.legendItem}>
-                <View style={[styles.legendSwatch, { backgroundColor: C.bgMuted }]} />
-                <Text style={[styles.legendLabel, { color: C.textSecondary }]}>No data</Text>
               </View>
-            </View>
+
+              <View style={styles.calGrid}>
+                <View style={styles.calRow}>
+                  {DAY_LABELS.map((l, i) => <Text key={i} style={[styles.calDayHeader, { color: C.textMuted }]}>{l}</Text>)}
+                </View>
+                {Array.from({ length: Math.ceil(gridCells.length / 7) }).map((_, rIdx) => (
+                  <View key={rIdx} style={styles.calRow}>
+                    {gridCells.slice(rIdx * 7, rIdx * 7 + 7).map((d, cIdx) => {
+                      if (d === 0) return <View key={cIdx} style={styles.calCellEmpty} />;
+                      const key = `${currentYear}-${currentMonth + 1}-${d}`;
+                      const entry = sleepData[key];
+                      const quality = entry?.quality || null;
+                      const { bg, text } = getCellColor(quality);
+                      const isToday = d === TODAY_DAY && currentMonth === ACTUAL_MONTH && currentYear === ACTUAL_YEAR;
+                      const isPast = new Date(currentYear, currentMonth, d) < new Date(ACTUAL_YEAR, ACTUAL_MONTH, TODAY_DAY);
+                      
+                      return (
+                        <TouchableOpacity 
+                          key={cIdx} 
+                          style={[
+                            styles.calCell, 
+                            { backgroundColor: bg }, 
+                            isToday && { borderWidth: 2, borderColor: C.textPrimary }, 
+                            !isToday && !isPast && { opacity: 0.3 }
+                          ]}
+                          disabled={!isPast && !isToday}
+                          onPress={() => setEvalTarget({ day: d, month: currentMonth, year: currentYear, dateKey: key })}
+                        >
+                          <Text style={[styles.calCellText, { color: text }, quality === null && { color: C.textMuted }]}>{d}</Text>
+                          {sleepData[key]?.note && (
+                            <View style={[styles.noteDot, { backgroundColor: text === '#FFF' ? '#FFF' : C.accent }]} />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.legend}>
+                {['bad', 'okay', 'good', 'great', 'perfect'].map(k => (
+                  <View key={k} style={styles.legendItem}>
+                    <View style={[styles.legendSwatch, { backgroundColor: (QUALITY_COLORS as any)[k] }]} />
+                    <Text style={[styles.legendLabel, { color: C.textSecondary }]}>{k.charAt(0).toUpperCase() + k.slice(1)}</Text>
+                  </View>
+                ))}
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendSwatch, { backgroundColor: C.bgMuted }]} />
+                  <Text style={[styles.legendLabel, { color: C.textSecondary }]}>No data</Text>
+                </View>
+              </View>
             </View>
           </ScrollView>
         </Animated.View>
-
 
         {/* MODAL */}
         <Modal visible={!!evalTarget} transparent animationType="fade" onRequestClose={() => setEvalTarget(null)}>
           <View style={styles.modalOverlay}>
             <Pressable style={[styles.modalBg, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(45,43,61,0.4)' }]} onPress={() => setEvalTarget(null)} />
             <View style={[styles.modalContent, { backgroundColor: C.bgCard }]}>
-              <Text style={[styles.modalTitle, { color: C.textPrimary }]}>How did you sleep?</Text>
-              <Text style={[styles.modalSubtitle, { color: C.textSecondary }]}>{activeEval?.day} {MONTH_NAMES[activeEval?.month || 0]} {activeEval?.year}</Text>
-              <View style={styles.modalRatingRow}>
-                {ratingOptions.map(({ key, bg, faceColor, Face }) => (
+              {modalView === 'rating' ? (
+                <>
+                  <Text style={[styles.modalTitle, { color: C.textPrimary }]}>How did you sleep?</Text>
+                  <Text style={[styles.modalSubtitle, { color: C.textSecondary }]}>{activeEval?.day} {MONTH_NAMES[activeEval?.month || 0]} {activeEval?.year}</Text>
+                  
+                  <View style={styles.modalRatingRow}>
+                    {ratingOptions.map(({ key, bg, faceColor, Face }) => {
+                      const isSelected = activeEval && sleepData[activeEval.dateKey]?.quality === key;
+                      return (
+                        <TouchableOpacity 
+                          key={key} 
+                          style={[
+                            styles.modalRatingIcon, 
+                            { backgroundColor: bg },
+                            isSelected && { borderWidth: 2, borderColor: faceColor, transform: [{ scale: 1.1 }] },
+                            activeEval && sleepData[activeEval.dateKey]?.quality && !isSelected && { opacity: 0.4 }
+                          ]}
+                          onPress={() => activeEval && handleRateDate(activeEval.dateKey, key as SleepQuality)}
+                          activeOpacity={0.7}
+                        >
+                          <Face color={faceColor} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
                   <TouchableOpacity 
-                    key={key} 
-                    style={[styles.modalRatingIcon, { backgroundColor: bg }]}
-                    onPress={() => activeEval && handleRateDate(activeEval.dateKey, key as SleepQuality)}
+                    style={[
+                      styles.modalNoteTrigger, 
+                      { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
+                      activeEval && sleepData[activeEval.dateKey]?.note && { borderColor: C.accent + '30', borderWidth: 1 }
+                    ]}
+                    onPress={() => setModalView('note')}
                   >
-                    <Face color={faceColor} />
+                    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                      <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke={C.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                      <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke={C.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                    </Svg>
+                    <Text style={[styles.modalNoteTriggerText, { color: activeEval && sleepData[activeEval.dateKey]?.note ? C.textPrimary : C.textSecondary }]}>
+                      {activeEval && sleepData[activeEval.dateKey]?.note ? 'View / Edit Note' : 'Add Note'}
+                    </Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-              <View style={styles.modalFooterActions}>
-                {activeEval && sleepData[activeEval.dateKey] && (
-                  <TouchableOpacity 
-                    style={styles.clearButton}
-                    onPress={() => activeEval && handleRateDate(activeEval.dateKey, null)}
-                  >
-                    <Text style={[styles.clearButtonText, { color: C.danger || '#FF6B6B' }]}>Clear Rating</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity onPress={() => setEvalTarget(null)}>
-                  <Text style={[styles.cancelButtonText, { color: C.textMuted }]}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
+
+                  <View style={styles.modalFooterActions}>
+                    <TouchableOpacity 
+                      style={[styles.doneButton, { backgroundColor: C.accent }]} 
+                      onPress={() => setEvalTarget(null)}
+                    >
+                      <Text style={styles.doneButtonText}>Done</Text>
+                    </TouchableOpacity>
+                    {activeEval && sleepData[activeEval.dateKey] && (
+                      <TouchableOpacity 
+                        style={styles.clearButton}
+                        onPress={() => activeEval && handleRateDate(activeEval.dateKey, null)}
+                      >
+                        <Text style={[styles.clearButtonText, { color: '#FF6B6B' }]}>Clear Rating</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={() => setEvalTarget(null)} style={{ marginTop: 8 }}>
+                      <Text style={[styles.cancelButtonText, { color: C.textMuted }]}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.inlineNoteContainer}>
+                  <Text style={[styles.modalTitle, { color: C.textPrimary, marginBottom: 16 }]}>Diary Note</Text>
+                  <View style={[styles.modalNoteInputWrap, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                    <TextInput
+                      style={[styles.modalNoteInput, { color: C.textPrimary }]}
+                      placeholder="How was your sleep?"
+                      placeholderTextColor={C.textMuted}
+                      multiline
+                      maxLength={280}
+                      defaultValue={activeEval ? (sleepData[activeEval.dateKey]?.note || '') : ''}
+                      autoFocus
+                      textAlignVertical="top"
+                      onChangeText={(t) => {
+                        if (activeEval) activeEval.pendingNote = t;
+                      }}
+                    />
+                  </View>
+                  <View style={styles.modalActionsRow}>
+                    <TouchableOpacity 
+                      style={[styles.modalHalfBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}
+                      onPress={() => setModalView('rating')}
+                    >
+                      <Text style={[styles.modalHalfBtnText, { color: C.textMuted }]}>Back</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.modalHalfBtn, { backgroundColor: C.accent }]} 
+                      onPress={() => {
+                        const text = activeEval?.pendingNote ?? (activeEval ? (sleepData[activeEval.dateKey]?.note || '') : '');
+                        handleSaveNoteInline(text);
+                      }}
+                    >
+                      <Text style={[styles.modalHalfBtnText, { color: '#FFF' }]}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
         </Modal>
@@ -369,20 +466,11 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: tokens.fonts.heading, fontSize: 28 },
   headerSubtitle: { fontFamily: 'Nunito_600SemiBold', fontSize: 15, marginTop: -2 },
   sheepButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  headerDivider: {
-    height: 1,
-    width: '100%',
-  },
-  section: { marginTop: 0, gap: 12 },
+  headerDivider: { height: 1, width: '100%' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24, gap: 24 },
+  section: { gap: 12 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   overline: { fontFamily: tokens.fonts.caption, fontSize: 11, letterSpacing: 1.1 },
-  accentLabel: { fontFamily: tokens.fonts.caption, fontSize: 12 },
-  helperText: { fontFamily: tokens.fonts.body, fontSize: 12, marginTop: -8 },
-  ratingRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  ratingItem: { alignItems: 'center', gap: 6 },
-  ratingIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  ratingLabel: { fontFamily: tokens.fonts.caption, fontSize: 10 },
   nextTip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   tipCard: { borderRadius: 20, padding: 16, flexDirection: 'row', gap: 12, alignItems: 'center' },
   tipBadge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
@@ -394,6 +482,7 @@ const styles = StyleSheet.create({
   calCell: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   calCellEmpty: { width: 40, height: 40 },
   calCellText: { fontFamily: tokens.fonts.caption, fontSize: 12 },
+  noteDot: { width: 4, height: 4, borderRadius: 2, position: 'absolute', top: 6, right: 6 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendSwatch: { width: 10, height: 10, borderRadius: 3 },
@@ -405,8 +494,41 @@ const styles = StyleSheet.create({
   modalSubtitle: { fontFamily: 'Nunito_600SemiBold', fontSize: 13, marginTop: 4, marginBottom: 20 },
   modalRatingRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 24 },
   modalRatingIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  modalFooterActions: { width: '100%', alignItems: 'center', gap: 12 },
-  clearButton: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 12 },
+  modalFooterActions: { width: '100%', alignItems: 'center', gap: 8 },
+  clearButton: { paddingVertical: 8, paddingHorizontal: 20 },
   clearButtonText: { fontFamily: 'Nunito_700Bold', fontSize: 14 },
   cancelButtonText: { fontFamily: tokens.fonts.body, fontSize: 14 },
+  modalActionsRow: { flexDirection: 'row', gap: 12, marginBottom: 20, width: '100%' },
+  modalHalfBtn: { 
+    flex: 1, 
+    height: 48, 
+    borderRadius: 14, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    ...tokens.shadows.elevated 
+  },
+  modalHalfBtnText: { fontFamily: tokens.fonts.heading, fontSize: 15 },
+  modalNoteTrigger: {
+    width: '100%',
+    padding: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  modalNoteTriggerText: { fontFamily: tokens.fonts.heading, fontSize: 15 },
+  inlineNoteContainer: { width: '100%', alignItems: 'center' },
+  modalNoteInputWrap: { width: '100%', borderRadius: 16, padding: 16, marginBottom: 20, height: 140 },
+  modalNoteInput: { fontFamily: tokens.fonts.body, fontSize: 15, textAlignVertical: 'top', height: '100%' },
+  doneButton: { 
+    width: '100%', 
+    height: 48, 
+    borderRadius: 14, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    ...tokens.shadows.elevated 
+  },
+  doneButtonText: { color: '#FFF', fontFamily: tokens.fonts.heading, fontSize: 16, fontWeight: '800' },
 });

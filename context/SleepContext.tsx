@@ -3,12 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStreak } from './StreakContext';
 
 export type SleepQuality = 'bad' | 'okay' | 'good' | 'great' | 'perfect' | null;
+export type SleepEntry = {
+  quality: SleepQuality;
+  note?: string;
+};
 
 type SleepContextType = {
-  sleepData: Record<string, SleepQuality>;
+  sleepData: Record<string, SleepEntry>;
   hasRatedToday: boolean;
-  rateSleep: (dateKey: string, quality: SleepQuality) => Promise<void>;
+  rateSleep: (dateKey: string, quality: SleepQuality, note?: string) => Promise<void>;
   getQuality: (dateKey: string) => SleepQuality;
+  getNote: (dateKey: string) => string | undefined;
   hasSeenSuccessToday: boolean;
   markSuccessSeen: () => void;
   resetSleepData: () => Promise<void>;
@@ -26,9 +31,22 @@ export const getDateKey = (date: Date = new Date()) => {
 };
 
 export function SleepProvider({ children }: { children: React.ReactNode }) {
-  const [sleepData, setSleepData] = useState<Record<string, SleepQuality>>({});
+  const [sleepData, setSleepData] = useState<Record<string, SleepEntry>>({});
   const [hasSeenSuccessToday, setHasSeenSuccessToday] = useState(false);
   const { markActivity, reportSleepRating } = useStreak();
+
+  const normalizeData = (data: Record<string, any>): Record<string, SleepEntry> => {
+    const normalized: Record<string, SleepEntry> = {};
+    Object.keys(data).forEach((key) => {
+      const val = data[key];
+      if (typeof val === 'string') {
+        normalized[key] = { quality: val as SleepQuality };
+      } else if (val && typeof val === 'object') {
+        normalized[key] = val;
+      }
+    });
+    return normalized;
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,9 +54,10 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
         const val = await AsyncStorage.getItem(STORAGE_KEY);
         if (val) {
           const parsed = JSON.parse(val);
-          setSleepData(parsed);
+          const normalized = normalizeData(parsed);
+          setSleepData(normalized);
           // If already rated today at startup, consider it "seen"
-          if (parsed[getDateKey()]) {
+          if (normalized[getDateKey()]) {
             setHasSeenSuccessToday(true);
           }
         }
@@ -49,8 +68,14 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
     loadData();
   }, []);
 
-  const rateSleep = async (dateKey: string, quality: SleepQuality) => {
-    const newData = { ...sleepData, [dateKey]: quality };
+  const rateSleep = async (dateKey: string, quality: SleepQuality, note?: string) => {
+    const currentEntry = sleepData[dateKey] || {};
+    const newEntry: SleepEntry = { 
+      quality: quality !== undefined ? quality : currentEntry.quality, 
+      note: note !== undefined ? note : currentEntry.note 
+    };
+    
+    const newData = { ...sleepData, [dateKey]: newEntry };
     setSleepData(newData);
 
     try {
@@ -64,17 +89,17 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
           markActivity();
         }
       }
-      
-      // Attempt silent cloud backup
-      // Note: We don't import useBackup here to avoid circular dependencies
-      // It's better to trigger backup from the UI or a separate sync service
     } catch (e) {
       console.error('Failed to save sleep rating', e);
     }
   };
 
   const getQuality = (dateKey: string) => {
-    return sleepData[dateKey] || null;
+    return sleepData[dateKey]?.quality || null;
+  };
+
+  const getNote = (dateKey: string) => {
+    return sleepData[dateKey]?.note;
   };
 
   const markSuccessSeen = () => setHasSeenSuccessToday(true);
@@ -93,6 +118,7 @@ export function SleepProvider({ children }: { children: React.ReactNode }) {
         hasRatedToday,
         rateSleep,
         getQuality,
+        getNote,
         hasSeenSuccessToday,
         markSuccessSeen,
         resetSleepData,

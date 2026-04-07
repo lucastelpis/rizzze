@@ -64,7 +64,7 @@ const FloatingHeart = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-export const HeartAnimation = () => {
+export const HeartAnimation = ({ opacity = 1 }: { opacity?: number }) => {
   const [hearts, setHearts] = useState<number[]>([]);
   const [counter, setCounter] = useState(0);
 

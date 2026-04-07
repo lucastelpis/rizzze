@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -19,8 +19,10 @@ import {
   useSharedValue, 
   useAnimatedStyle, 
   withSpring, 
-  withTiming
+  withTiming,
+  withSequence
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useStreak } from '@/context/StreakContext';
 import * as SoundGraphics from '@/components/SoundGraphics';
 import { BottomNav } from '@/components/BottomNav';
@@ -106,7 +108,7 @@ const PlayIcon = ({ size = 16 }: { size?: number }) => {
   );
 };
 
-const StreakSection = () => {
+const StreakSection = ({ onTodayPress }: { onTodayPress?: () => void }) => {
   const { streakCount, lastSevenDays, todayIndex } = useStreak();
   const C = useColors();
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -120,30 +122,64 @@ const StreakSection = () => {
       </View>
       {/* Bars */}
       <View style={styles.barsRow}>
-        {days.map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.streakBar,
-              { backgroundColor: lastSevenDays[i] ? C.accent : C.border },
-            ]}
-          />
-        ))}
+        {days.map((_, i) => {
+          const isToday = i === todayIndex;
+          const barStyle = [
+            styles.streakBar,
+            { backgroundColor: lastSevenDays[i] ? C.accent : C.border },
+            isToday && { backgroundColor: lastSevenDays[i] ? C.accent : (C.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)') }
+          ];
+
+          if (isToday && onTodayPress) {
+            return (
+              <TouchableOpacity 
+                key={i} 
+                onPress={onTodayPress} 
+                style={{ flex: 1, height: 20, marginTop: -7, justifyContent: 'center', paddingHorizontal: 2 }} // Larger tap target
+                activeOpacity={0.6}
+              >
+                <View style={[barStyle, { flex: 1 }]} />
+              </TouchableOpacity>
+            );
+          }
+          return <View key={i} style={barStyle} />;
+        })}
       </View>
       {/* Day labels */}
       <View style={styles.daysRow}>
-        {days.map((d, i) => (
-          <Text
-            key={i}
-            style={[
-              styles.dayLabel,
-              { color: C.textMuted },
-              i === todayIndex && { color: C.accent, fontFamily: 'Nunito_800ExtraBold' },
-            ]}
-          >
-            {d}
-          </Text>
-        ))}
+        {days.map((d, i) => {
+          const isToday = i === todayIndex;
+          if (isToday && onTodayPress) {
+            return (
+              <TouchableOpacity 
+                key={i} 
+                onPress={onTodayPress} 
+                style={{ flex: 1, alignItems: 'center', paddingVertical: 4 }} 
+                activeOpacity={0.6}
+              >
+                <Text
+                  style={[
+                    styles.dayLabel,
+                    { color: C.accent, fontFamily: 'Nunito_800ExtraBold' },
+                  ]}
+                >
+                  {d}
+                </Text>
+              </TouchableOpacity>
+            );
+          }
+          return (
+            <Text
+              key={i}
+              style={[
+                styles.dayLabel,
+                { color: C.textMuted },
+              ]}
+            >
+              {d}
+            </Text>
+          );
+        })}
       </View>
     </View>
   );
@@ -224,6 +260,18 @@ export default function HomeScreen() {
   const { greeting, subtitle } = useMemo(() => getGreeting(), []);
   const router = useRouter();
   const { activeSound } = useAudioStatus();
+  const scrollRef = useRef<ScrollView>(null);
+
+  const handleTodayPress = async () => {
+    if (hasRatedToday) {
+      // Celebratory "already done" haptic
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      // Guide back to the rating widget
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
@@ -249,6 +297,7 @@ export default function HomeScreen() {
           style={{ flex: 1 }}
         >
             <ScrollView
+              ref={scrollRef}
               style={styles.scroll}
               contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
               showsVerticalScrollIndicator={false}
@@ -258,7 +307,7 @@ export default function HomeScreen() {
               </Animated.View>
 
           {/* ── STREAK ── */}
-          <StreakSection />
+          <StreakSection onTodayPress={handleTodayPress} />
 
           {/* ── EXPLORE GRID ── */}
           <View style={styles.exploreSection}>
