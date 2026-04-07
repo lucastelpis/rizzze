@@ -9,11 +9,13 @@ interface UserContextType {
   goal: string;
   ageRange: string;
   gender: string;
+  readStoryIds: string[]; // New
   setName: (name: string) => Promise<void>;
   setEmail: (email: string, verified: boolean) => Promise<void>; // New
   setGoal: (goal: string) => Promise<void>;
   setAgeRange: (ageRange: string) => Promise<void>;
   setGender: (gender: string) => Promise<void>;
+  markStoryAsRead: (storyId: string) => Promise<void>; // New
   resetUserData: () => Promise<void>;
   isLoading: boolean;
 }
@@ -27,6 +29,7 @@ const EMAIL_VERIFIED_KEY = 'rizzze_email_verified';
 const GOAL_STORAGE_KEY = 'rizzze_user_goal';
 const AGE_STORAGE_KEY = 'rizzze_user_age';
 const GENDER_STORAGE_KEY = 'rizzze_user_gender';
+const READ_STORIES_STORAGE_KEY = 'rizzze_read_story_ids'; // New
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userId, setUserIdState] = useState<string>('');
@@ -36,13 +39,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [goal, setGoalState] = useState<string>('');
   const [ageRange, setAgeRangeState] = useState<string>('');
   const [gender, setGenderState] = useState<string>('');
+  const [readStoryIds, setReadStoryIdsState] = useState<string[]>([]); // New
   const [isLoading, setIsLoading] = useState(true);
 
   // Load from storage on mount
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [savedUserId, savedName, savedEmail, savedVerified, savedGoal, savedAge, savedGender] = await Promise.all([
+        const [savedUserId, savedName, savedEmail, savedVerified, savedGoal, savedAge, savedGender, savedReadStories] = await Promise.all([
           AsyncStorage.getItem(USER_ID_STORAGE_KEY),
           AsyncStorage.getItem(NAME_STORAGE_KEY),
           AsyncStorage.getItem(EMAIL_STORAGE_KEY),
@@ -50,6 +54,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           AsyncStorage.getItem(GOAL_STORAGE_KEY),
           AsyncStorage.getItem(AGE_STORAGE_KEY),
           AsyncStorage.getItem(GENDER_STORAGE_KEY),
+          AsyncStorage.getItem(READ_STORIES_STORAGE_KEY), // New
         ]);
 
         if (savedUserId) {
@@ -67,6 +72,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (savedGoal) setGoalState(savedGoal);
         if (savedAge) setAgeRangeState(savedAge);
         if (savedGender) setGenderState(savedGender);
+        if (savedReadStories) setReadStoryIdsState(JSON.parse(savedReadStories)); // New
       } catch (e) {
         console.error('Failed to load user data', e);
       } finally {
@@ -123,6 +129,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const markStoryAsRead = async (storyId: string) => {
+    if (readStoryIds.includes(storyId)) return;
+    
+    const newReadStories = [...readStoryIds, storyId];
+    setReadStoryIdsState(newReadStories);
+    try {
+      await AsyncStorage.setItem(READ_STORIES_STORAGE_KEY, JSON.stringify(newReadStories));
+    } catch (e) {
+      console.error('Failed to save read stories', e);
+    }
+  };
+
   const resetUserData = async () => {
     setNameState('Guest');
     setEmailState('');
@@ -130,6 +148,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGoalState('');
     setAgeRangeState('');
     setGenderState('');
+    setReadStoryIdsState([]); // New
     try {
       await AsyncStorage.multiRemove([
         NAME_STORAGE_KEY, 
@@ -137,7 +156,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         EMAIL_VERIFIED_KEY,
         GOAL_STORAGE_KEY, 
         AGE_STORAGE_KEY, 
-        GENDER_STORAGE_KEY
+        GENDER_STORAGE_KEY,
+        READ_STORIES_STORAGE_KEY, // New
       ]);
     } catch (e) {
       console.error('Failed to clear user data', e);
@@ -152,6 +172,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       goal, setGoal,
       ageRange, setAgeRange,
       gender, setGender,
+      readStoryIds, markStoryAsRead, // New
       resetUserData, isLoading 
     }}>
       {children}

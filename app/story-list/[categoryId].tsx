@@ -6,6 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { tokens } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
+import { useUser } from '@/context/UserContext';
 import { BottomNav } from '@/components/BottomNav';
 import * as StoryGraphics from '@/components/StoryGraphics';
 import { CATEGORIES, STORIES, Story, getCategoryStoryCount } from '@/constants/stories';
@@ -32,6 +33,7 @@ export default function StoryListScreen() {
   const { isDark } = useTheme();
   const C = useColors();
   const router = useRouter();
+  const { readStoryIds } = useUser();
 
   const category = CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[1]; // Default to folklore for mockup
   const categoryStories = STORIES.filter(s => s.category === category.id);
@@ -52,7 +54,14 @@ export default function StoryListScreen() {
             {ThumbGraphic ? <ThumbGraphic size={56} /> : <View style={[styles.placeholderThumb, { backgroundColor: C.bgMuted }]} />}
           </View>
           <View style={styles.storyMeta}>
-            <Text style={[styles.storyTitle, { color: C.textPrimary }]}>{item.title}</Text>
+            <View style={styles.titleRow}>
+              <Text style={[styles.storyTitle, { color: C.textPrimary }]}>{item.title}</Text>
+              {readStoryIds.includes(item.id) && (
+                <View style={[styles.readBadgeList, { backgroundColor: isDark ? 'rgba(139, 109, 174, 0.35)' : '#EDE5F5' }]}>
+                  <Text style={[styles.readBadgeTextList, { color: isDark ? '#D6C8E5' : C.accent }]}>READ</Text>
+                </View>
+              )}
+            </View>
             <View style={styles.metaLine}>
               <Text style={[styles.originTag, { color: C.textSecondary }]}>{item.origin}</Text>
               <Text style={[styles.dot, { color: '#E8E2D8' }]}>·</Text>
@@ -117,6 +126,11 @@ export default function StoryListScreen() {
                 <View style={[styles.pill, { backgroundColor: 'rgba(245,240,232,0.12)' }]}>
                   <Text style={[styles.pillTextTime, { color: '#C4AED8' }]}>{featuredStory.readTime}</Text>
                 </View>
+                {readStoryIds.includes(featuredStory.id) && (
+                  <View style={[styles.pill, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                    <Text style={[styles.pillTextFeatured, { color: '#FFFFFF' }]}>READ</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.featuredStoryTitle}>{featuredStory.title}</Text>
               <Text style={[styles.featuredStorySubtitle, { color: '#C4AED8' }]}>
@@ -193,6 +207,18 @@ const styles = StyleSheet.create({
   listThumb: { width: 56, height: 56, borderRadius: 14, overflow: 'hidden' },
   placeholderThumb: { width: 56, height: 56, borderRadius: 14 },
   storyMeta: { flex: 1, marginLeft: 14 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  readBadgeList: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  readBadgeTextList: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   storyTitle: { fontFamily: 'Nunito_700Bold', fontSize: 15, fontWeight: '700' },
   metaLine: { flexDirection: 'row', alignItems: 'center', marginTop: 3 },
   originTag: { fontFamily: 'Nunito_600SemiBold', fontSize: 11, fontWeight: '600' },

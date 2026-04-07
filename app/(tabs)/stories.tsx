@@ -8,6 +8,7 @@ import { tokens } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { useAudio } from '@/context/AudioContext';
+import { useUser } from '@/context/UserContext';
 import { BottomNav } from '@/components/BottomNav';
 import { AwakeSheep } from '@/components/AwakeSheep';
 import { HeaderSheep } from '@/components/HeaderSheep';
@@ -28,6 +29,7 @@ export default function StoriesScreen() {
   const C = useColors();
   const router = useRouter();
   const { activeSound } = useAudio();
+  const { readStoryIds } = useUser();
 
   // Use deterministic daily pick for stories
   const featuredStory = React.useMemo(() => getDailyPick(STORIES), []);
@@ -78,7 +80,14 @@ export default function StoriesScreen() {
               </View>
               
               <View style={styles.featuredText}>
-                <Text style={[styles.overline, { color: '#8B4A40', marginBottom: 2 }]}>TONIGHT'S READ</Text>
+                <View style={styles.featuredRow}>
+                  <Text style={[styles.overline, { color: '#8B4A40' }]}>TONIGHT'S READ</Text>
+                  {readStoryIds.includes(featuredStory.id) && (
+                    <View style={[styles.readBadge, { backgroundColor: isDark ? 'rgba(139, 109, 174, 0.3)' : 'rgba(139, 109, 174, 0.12)' }]}>
+                      <Text style={[styles.readBadgeText, { color: isDark ? '#C4AED8' : '#8B4A40' }]}>READ</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={[styles.featuredTitle, { color: C.textPrimary }]}>{featuredStory.title}</Text>
                 <Text style={[styles.featuredSubtitle, { color: '#9E7E78' }]} numberOfLines={2}>
                   {featuredStory.subtitle}
@@ -203,6 +212,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   featuredText: { flex: 1, gap: 2 },
+  featuredRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  readBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  readBadgeText: {
+    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   featuredTitle: { fontFamily: tokens.fonts.caption, fontSize: 15, fontWeight: '800' },
   featuredSubtitle: { fontFamily: tokens.fonts.body, fontSize: 12, fontWeight: '500' },
   playButton: {

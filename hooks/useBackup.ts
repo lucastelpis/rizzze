@@ -38,7 +38,8 @@ export function useBackup() {
         'rizzze_notifications_enabled',
         'rizzze_checkin_enabled',
         'rizzze_bedtime_config',
-        'rizzze_wakeup_config'
+        'rizzze_wakeup_config',
+        'rizzze_read_story_ids' // New
       ];
 
       const storageData = await AsyncStorage.multiGet(keys);

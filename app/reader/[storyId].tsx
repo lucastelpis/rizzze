@@ -8,6 +8,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { posthog } from '@/config/posthog';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useUser } from '@/context/UserContext';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useEffect, useRef, useState } from 'react';
@@ -93,6 +94,7 @@ export default function ReaderScreen() {
   const C = useColors();
   const router = useRouter();
   const { stopSound } = useAudioPlayback();
+  const { markStoryAsRead } = useUser();
 
   // Dedicated local player for fireplace ambiance
   const localFireplacePlayer = useAudioPlayer(SOUND_ASSETS['fireplace.m4a']);
@@ -135,8 +137,13 @@ export default function ReaderScreen() {
       if (estimatedPara !== currentPara) {
         setCurrentPara(estimatedPara);
       }
+
+      // Mark as read if narration is near the end
+      if (progress > 0.95) {
+        markStoryAsRead(story.id);
+      }
     }
-  }, [proStatus.currentTime, isNarrating, story.audioFile]);
+  }, [proStatus.currentTime, isNarrating, story.audioFile, story.id]);
 
   const scrollRef = useRef<ScrollView>(null);
   const scrollY = useRef(0);
@@ -262,8 +269,14 @@ export default function ReaderScreen() {
       pitch: 0.8, // Deeper, more grounded tone for narration
       onDone: () => {
         if (narratorActive.current) {
-          setCurrentPara(index + 1);
-          speakParagraph(index + 1);
+          if (index + 1 >= story.content.length) {
+            markStoryAsRead(story.id);
+            setCurrentPara(0);
+            setIsNarrating(false);
+          } else {
+            setCurrentPara(index + 1);
+            speakParagraph(index + 1);
+          }
         }
       },
       onError: (e) => {
@@ -291,6 +304,11 @@ export default function ReaderScreen() {
       1
     );
     setProgress(currentProgress);
+
+    // Mark as read if user scrolls to the end
+    if (currentProgress > 0.95) {
+      markStoryAsRead(story.id);
+    }
   };
 
   const handleToggleListen = () => {
