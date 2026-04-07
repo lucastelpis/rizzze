@@ -46,12 +46,12 @@ const StaffIcon = ({ color }: { color: string }) => (
 );
 
 // --- CATEGORIES ---
-const CATEGORIES: { id: TicketCategory; label: string; icon: string }[] = [
-  { id: 'question', label: 'Question', icon: '❓' },
-  { id: 'bug', label: 'Bug Report', icon: '🐛' },
-  { id: 'feature', label: 'Idea', icon: '💡' },
-  { id: 'billing', label: 'Billing/Pro', icon: '💳' },
-  { id: 'other', label: 'Other', icon: '✨' },
+const CATEGORIES: { id: TicketCategory; label: string }[] = [
+  { id: 'question', label: 'Question' },
+  { id: 'bug', label: 'Bug Report' },
+  { id: 'feature', label: 'Idea' },
+  { id: 'billing', label: 'Billing/Pro' },
+  { id: 'other', label: 'Other' },
 ];
 
 const SupportTicketCard = ({ ticket }: { ticket: SupportTicket }) => {
@@ -223,7 +223,7 @@ export default function SupportCenterScreen() {
                     onPress={() => setSelectedCategory(cat.id)}
                   >
                     <Text style={[styles.catBtnText, { color: selectedCategory === cat.id ? '#FFF' : C.textSecondary }]}>
-                      {cat.icon} {cat.label}
+                      {cat.label}
                     </Text>
                   </TouchableOpacity>
                 ))}

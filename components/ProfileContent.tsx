@@ -619,8 +619,8 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         />
       </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>OPTIONS</Text>
+      <View style={[styles.section, { marginBottom: 16 }]}>
+        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>SUBSCRIPTION, SUPPORT & FEEDBACK</Text>
         <View style={[styles.settingsFlatItem, { borderBottomColor: C.border }]}>
           <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Subscription</Text>
           <TouchableOpacity style={styles.badgeWrapper} onPress={handleSubscriptionPress} disabled={subLoading}>
