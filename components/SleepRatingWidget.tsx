@@ -185,7 +185,7 @@ export function SleepRatingWidget() {
                         activeOpacity={0.6}
                         style={[
                           styles.interactiveItem,
-                          isSelected && [styles.interactiveItemSelected, { backgroundColor: bg, borderWidth: 1.5, borderColor: faceColor }],
+                          isSelected && [styles.interactiveItemSelected, { backgroundColor: bg, borderWidth: 2, borderColor: faceColor, overflow: 'hidden' }],
                           selectedRating && !isSelected && { opacity: 0.5 }
                         ]}
                       >

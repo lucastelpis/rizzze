@@ -111,6 +111,7 @@ const PlayIcon = ({ size = 16 }: { size?: number }) => {
 const StreakSection = ({ onTodayPress }: { onTodayPress?: () => void }) => {
   const { streakCount, lastSevenDays, todayIndex } = useStreak();
   const C = useColors();
+  const { isDark } = useTheme();
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   return (
@@ -120,66 +121,69 @@ const StreakSection = ({ onTodayPress }: { onTodayPress?: () => void }) => {
         <Text style={[styles.overline, { color: C.textMuted }]}>YOUR DAILY STREAK</Text>
         <Text style={[styles.streakCount, { color: C.accent }]}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
       </View>
-      {/* Bars */}
-      <View style={styles.barsRow}>
-        {days.map((_, i) => {
-          const isToday = i === todayIndex;
-          const barStyle = [
-            styles.streakBar,
-            { backgroundColor: lastSevenDays[i] ? C.accent : C.border },
-            isToday && { backgroundColor: lastSevenDays[i] ? C.accent : (C.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)') }
-          ];
+      {/* Bars & Labels Group */}
+      <View style={{ gap: 6 }}>
+        {/* Bars */}
+        <View style={styles.barsRow}>
+          {days.map((_, i) => {
+            const isToday = i === todayIndex;
+            const barStyle = [
+              styles.streakBar,
+              { backgroundColor: lastSevenDays[i] ? C.accent : C.border },
+              isToday && { backgroundColor: lastSevenDays[i] ? C.accent : (isDark ? 'rgba(196, 174, 216, 0.35)' : 'rgba(0, 0, 0, 0.12)') }
+            ];
 
-          if (isToday && onTodayPress) {
-            return (
-              <TouchableOpacity 
-                key={i} 
-                onPress={onTodayPress} 
-                style={{ flex: 1, height: 20, marginTop: -7, justifyContent: 'center', paddingHorizontal: 2 }} // Larger tap target
-                activeOpacity={0.6}
-              >
-                <View style={[barStyle, { flex: 1 }]} />
-              </TouchableOpacity>
-            );
-          }
-          return <View key={i} style={barStyle} />;
-        })}
-      </View>
-      {/* Day labels */}
-      <View style={styles.daysRow}>
-        {days.map((d, i) => {
-          const isToday = i === todayIndex;
-          if (isToday && onTodayPress) {
-            return (
-              <TouchableOpacity 
-                key={i} 
-                onPress={onTodayPress} 
-                style={{ flex: 1, alignItems: 'center', paddingVertical: 4 }} 
-                activeOpacity={0.6}
-              >
-                <Text
-                  style={[
-                    styles.dayLabel,
-                    { color: C.accent, fontFamily: 'Nunito_800ExtraBold' },
-                  ]}
+            if (isToday && onTodayPress) {
+              return (
+                <TouchableOpacity 
+                  key={i} 
+                  onPress={onTodayPress} 
+                  style={{ flex: 1, height: 32, justifyContent: 'center' }} // Centered touch area
+                  activeOpacity={0.6}
                 >
-                  {d}
-                </Text>
-              </TouchableOpacity>
+                  <View style={[barStyle, { height: 12, flex: 0, width: '100%' }]} />
+                </TouchableOpacity>
+              );
+            }
+            return <View key={i} style={barStyle} />;
+          })}
+        </View>
+        {/* Day labels */}
+        <View style={styles.daysRow}>
+          {days.map((d, i) => {
+            const isToday = i === todayIndex;
+            if (isToday && onTodayPress) {
+              return (
+                <TouchableOpacity 
+                  key={i} 
+                  onPress={onTodayPress} 
+                  style={{ flex: 1, alignItems: 'center' }} 
+                  activeOpacity={0.6}
+                >
+                  <Text
+                    style={[
+                      styles.dayLabel,
+                      { color: C.accent, fontFamily: 'Nunito_800ExtraBold' },
+                    ]}
+                  >
+                    {d}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }
+            return (
+              <Text
+                key={i}
+                style={[
+                  styles.dayLabel,
+                  { color: C.textMuted },
+                ]}
+              >
+                {d}
+              </Text>
             );
-          }
-          return (
-            <Text
-              key={i}
-              style={[
-                styles.dayLabel,
-                { color: C.textMuted },
-              ]}
-            >
-              {d}
-            </Text>
-          );
-        })}
+          })}
+        </View>
       </View>
     </View>
   );
@@ -423,9 +427,10 @@ const styles = StyleSheet.create({
 
   // Streak
   streakSection: {
-    gap: 10,
+    gap: 16,
   },
   streakHeader: {
+    paddingBottom: 2,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -438,6 +443,8 @@ const styles = StyleSheet.create({
   barsRow: {
     flexDirection: 'row',
     gap: 5,
+    alignItems: 'center',
+    height: 32,
   },
   streakBar: {
     flex: 1,
@@ -447,6 +454,7 @@ const styles = StyleSheet.create({
   daysRow: {
     flexDirection: 'row',
     gap: 5,
+    alignItems: 'center',
   },
   dayLabel: {
     flex: 1,
