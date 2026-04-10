@@ -1,132 +1,88 @@
-# CLAUDE.md
+# CLAUDE.md — Rizzze
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+**Rizzze** is a React Native (Expo) sleep/relaxation app targeting iOS & Android.
 
 ## Commands
-
 ```bash
-# Start development server
-npx expo start
+npx expo start          # Dev server
+npx expo lint           # Lint
+node ./scripts/generate-narrations.mjs  # Rebuild narration asset map
+```
+No test suite. Verify by running on device/simulator.
 
-# Platform-specific
-npx expo start --ios
-npx expo start --android
-npx expo start --web
-
-# Lint
-npx expo lint
-
-# Reset project to template defaults
-node ./scripts/reset-project.js
-
-# Generate narration asset mappings
-node ./scripts/generate-narrations.mjs
+## Routing (`expo-router`, file-based)
+```
+app/index.tsx                   → Onboarding (8-screen flow)
+app/(tabs)/index.tsx            → Home hub
+app/(tabs)/sounds.tsx           → Sound library
+app/(tabs)/sleep.tsx            → Sleep tracking dashboard
+app/(tabs)/stories.tsx          → Stories by category
+app/(tabs)/games.tsx            → Games hub
+app/player.tsx                  → Full-screen audio player (fullScreenModal)
+app/profile.tsx                 → Profile (delegates to ProfileContent.tsx)
+app/feedback.tsx                → Community ideas/voting board
+app/support.tsx                 → Support ticket submission
+app/games/cozy-farm.tsx         → Cozy Farm puzzle game
+app/games/sheep-jumper.tsx      → Sheep Jumper endless runner
+app/reader/[storyId].tsx        → Story reader with narration
+app/story-list/[categoryId].tsx → Stories filtered by category
 ```
 
-There is no test suite configured. Verify changes by running the dev server and testing on device/simulator.
+## State Management (8 Context Providers)
+All in `context/`, persisted via `AsyncStorage`. Registered in `app/_layout.tsx`.
 
-## Architecture Overview
-
-**Rizzze** is a React Native sleep/relaxation app built with Expo. It targets iOS, Android, and Web from a single codebase.
-
-### Routing (expo-router, file-based)
-
-```
-app/index.tsx                    → Onboarding (4-screen welcome flow)
-app/(tabs)/_layout.tsx           → Tab navigation wrapper; hosts MiniPlayer
-app/(tabs)/index.tsx             → Home hub (featured scenes + quick play)
-app/(tabs)/sounds.tsx            → Full sound library browser
-app/(tabs)/sleep.tsx             → Sleep quality tracking dashboard
-app/(tabs)/stories.tsx           → Stories listing by category
-app/(tabs)/games.tsx             → Games hub
-app/player.tsx                   → Full-screen player modal (fullScreenModal)
-app/profile.tsx                  → User profile page
-app/games/cozy-farm.tsx          → Interactive farm game (~47KB)
-app/games/sheep-jumper.tsx       → Sheep jumping game (~22KB)
-app/reader/[storyId].tsx         → Story detail reader with narration
-app/story-list/[categoryId].tsx  → Stories filtered by category
-```
-
-Navigation: Onboarding → Tab navigator. Full-screen player is opened via `router.push('/player?title=...&file=...&graphicId=...')`.
-
-### State Management (6 Context Providers)
-
-All contexts live in `context/` and persist data via `AsyncStorage`. Providers are registered in `app/_layout.tsx`.
-
-| Context | Key Responsibility |
+| Context | Responsibility |
 |---|---|
-| `AudioContext.tsx` | Dual-player audio looping, playback control, virtual progress |
-| `SheepGrowthContext.tsx` | Mascot growth stages, point accumulation, cooldowns |
-| `SleepContext.tsx` | Daily sleep quality ratings |
-| `StreakContext.tsx` | Activity streaks, last-7-days tracking |
-| `ThemeContext.tsx` | Dark/light mode preference |
-| `NotificationContext.tsx` | Push notifications, bedtime/wake-up scheduling |
+| `UserContext` | Identity: name, email, goal, age, gender, readStoryIds |
+| `AudioContext` | Dual-player looping, virtual progress timer, playback state |
+| `SheepGrowthContext` | Mascot stages, points, pet/feed cooldowns |
+| `SleepContext` | Daily quality ratings keyed by date |
+| `StreakContext` | Active streak + last-7-days display |
+| `ThemeContext` | Dark/light mode (persisted) |
+| `NotificationContext` | Bedtime/wake-up push notifications, permission handling |
+| `SubscriptionContext` | RevenueCat `isPro` state, paywall presentation |
 
-### Audio System (`context/AudioContext.tsx`)
+Provider order: `PostHogProvider → ThemeProvider → UserProvider → SubscriptionProvider → NavigationThemeProvider → SheepGrowthProvider → StreakProvider → SleepProvider → AudioProvider → NotificationProvider`
 
-The most complex part of the app. Key points:
-- **Dual-player ping-pong looping**: Two `expo-audio` players cross-fade at loop boundaries for seamless looping. When player A nears its end (within 1.2s), player B loads and starts; they alternate on each loop.
-- **Virtual progress timer**: A `setInterval` at 50ms updates visual progress independently from native audio position queries. This is intentional — polling native position caused jank.
-- **Sound durations**: `simple_*` sounds are 60s; all others are 300s. Hardcoded in `SOUND_DURATIONS`.
-- All audio state (current sound, playing/paused, loop enabled, progress) is managed here and consumed via `useAudio()`.
+## Onboarding (`app/index.tsx`)
+8 pages, Next/Back nav. Pages: Welcome → Features → Goal (4 options) → Name (15 char) → Age (4 ranges) → Gender (4 options) → Sleep schedule + notification toggles → Meet your sheep. On finish: saves to `UserContext`, calls `posthog.identify()`, presents RevenueCat paywall. Pro users skip onboarding.
 
-### Sounds (`constants/sounds.ts`)
+## Audio System (`context/AudioContext.tsx`)
+- **Dual-player ping-pong**: Two `expo-audio` players alternate to achieve seamless looping. When player A is ~1.2s from end, player B loads and starts.
+- **Virtual progress**: `setInterval` at 50ms drives UI — native position polling caused jank.
+- **Durations**: `simple_*` sounds = 60s, all others = 300s (hardcoded in `SOUND_DURATIONS`).
 
-6 ambient scenes: Forest, Ocean, Rain, Fireplace, Birdsong, Café. Each has a color/gradient used for theming the player UI.
+## Content
 
-### Stories System
+**Sounds** (`constants/sounds.ts`): 6 scenes — Forest night, Ocean shore, City rain, Fireplace, Birdsong fields, Cozy café. Each has a `bgColor`/`gradient` used to theme the full-screen player.
 
-- 40 narrated stories across 4 mood categories: Cozy, Folklore, Reflective, Wonder.
-- Story metadata is in `constants/stories.ts`.
-- Narration audio files (MP3) are mapped by story ID in `constants/narrationAssets.ts`.
-- Audio files live in `assets/audio/narration/<category>/`.
-- Story content reference: `assets/others/rizzze-40-complete-unique-stories.md`.
+**Stories**: 40 narrated stories across 4 categories (Cozy, Folklore, Reflective, Wonder). Metadata in `constants/stories.ts`. MP3 files mapped in `constants/narrationAssets.ts` under `assets/audio/narration/<category>/`. Read tracking: `markStoryAsRead(storyId)` fires at 95% progress or narration end; a READ badge shows on story cards.
 
-### Sheep Growth System (`context/SheepGrowthContext.tsx`)
+**Games**: Hub loads personal bests on focus from AsyncStorage. Both games stop ambient audio and play their own looping MP3 track. High scores persisted in AsyncStorage.
+- **Sheep Jumper** (endless runner): Tap to jump a fence. `requestAnimationFrame` physics loop (not React state). Score +1/fence, speed increases every 10. Key: `rizzze_highscore_sheepjumper`.
+- **Cozy Farm** (tap puzzle): 5×5/5×6 grid. Match tool to obstacle (Pick→Stone, Axe→Tree, Trimmer→Grass). 3 obstacle tiers (1/2/3 taps) unlock on levels 5 and 8. Infinite levels. Key: `rizzze_highscore_cozyfarm`.
 
-Central engagement mechanic. Key points:
-- 6 growth stages defined in `constants/sheepGrowth.ts`: Tiny Lamb (0) → Golden Sheep (130 pts).
-- Points are earned from: daily sleep ratings, streaks, petting, feeding.
-- Pet and feed actions have 12-hour cooldowns.
-- Stage transitions trigger an `EvolutionToast` notification (`components/EvolutionToast.tsx`).
-- Sheep visuals: `components/SheepMascot.tsx` + stage components in `components/sheepStages/`.
+## Sheep Growth System (`context/SheepGrowthContext.tsx`)
+6 stages: Tiny Lamb (0 pts) → Small Lamb (7) → Young Sheep (21) → Adult Sheep (45) → Fluffy Elder (80) → Golden Sheep (130). Points: sleep rating +1, streak day +2, pet +1 (12h cooldown), feed +1 (12h cooldown). Stage change triggers `EvolutionToast`.
 
-### Sleep & Streak System
+## Other Systems
+- **Subscription** (`SubscriptionContext`): RevenueCat, entitlement `"Rizzze Pro"`. `presentPaywall()` uses native RevenueCat UI.
+- **Cloud backup** (`hooks/useBackup.ts`): Supabase `user_profiles` table. Auth via Supabase OTP email. Backs up: name, goal, age, gender, sheep data, streak, sleep, notifications, readStoryIds. Guest→authed data migration on email link. `SyncObserver.tsx` triggers silent background syncs.
+- **Notifications** (`NotificationContext`): Two toggles — Bedtime nudge & Morning check-in. Messages randomized from `constants/notifications.ts`. Permission only requested when leaving onboarding page 6 with a toggle enabled.
+- **Community**: Feedback board (`feedback.tsx`, `useFeedback.ts`) + support tickets (`support.tsx`, `useSupport.ts`), both backed by Supabase.
 
-- `SleepContext`: stores daily quality ratings (bad → perfect scale).
-- `StreakContext`: tracks active dates and last-7-days display. Sleep ratings feed into streak count.
-- Utility: `utils/sleepDuration.ts` for duration math, `utils/dailyPicks.ts` for "pick of the day" logic.
+## Analytics (PostHog)
+Config in `config/posthog.ts` via `expo-constants`. `PostHogProvider` wraps entire app with session replay. Screen tracking via `posthog.screen(pathname)` in `_layout.tsx`. Key events: `onboarding_started/completed`, `onboarding_goal/name/age/gender_selected`, `notifications_setup_completed`, `paywall_shown`, `subscription_started`, `sound_played`, `story_opened`, `story_reading_started`, `sleep_rating_submitted`, `sheep_petted/fed/evolved`, `game_started`, `data_backed_up`, `email_linked/unlinked`.
 
-### Notifications (`context/NotificationContext.tsx`)
+## Design System
+- **Font**: Nunito (400–900) via `@expo-google-fonts/nunito`
+- **Accent**: `#8B6DAE` (lavender/purple), cream backgrounds
+- **Tokens**: `constants/theme.ts` — always use these, never hardcode values
+- **Colors**: `useColors()` hook for theme-aware color resolution
+- **TypeScript**: strict mode, path alias `@/*` → repo root
 
-- Schedules bedtime and wake-up push notifications.
-- Handles daily check-in prompts.
-- Manages device notification permissions via `expo-notifications` + `expo-device`.
+## Key Components
+`MiniPlayer` (persistent audio bar) · `ProfileContent` (full profile UI, ~45KB) · `SoundGraphics` / `StoryGraphics` (SVG art) · `SleepRatingWidget` · `EvolutionToast` · `ScreenLoader` · `SyncObserver` · `HeartAnimation` · `BottomNav`
 
-### Key Components
-
-- **`components/MiniPlayer.tsx`**: Persistent bottom bar visible across all tabs. Tapping it pushes `/player`.
-- **`components/SoundGraphics.tsx`**: Each sound has a unique SVG scene graphic. `graphicId` strings map to specific SVG components.
-- **`components/StoryGraphics.tsx`**: SVG graphics for story categories.
-- **`components/SleepRatingWidget.tsx`**: Daily sleep quality rating UI.
-- **`components/EvolutionToast.tsx`**: Toast shown on sheep stage evolution.
-- **`components/ScreenLoader.tsx`**: Premium loading indicator to eliminate flicker.
-- **`constants/theme.ts`**: All design tokens (colors, spacing, radii, shadows, typography). Use these — don't hardcode values.
-
-### Design System
-
-Fonts are Nunito (weights: 400, 500, 700, 800, 900) loaded via `@expo-google-fonts/nunito`. Colors are soft pastels: cream backgrounds, lavender/purple accents (`#8B6DAE`). All token names are in `constants/theme.ts`.
-
-Use `components/themed-text.tsx` and `components/themed-view.tsx` for dark/light mode aware UI. `hooks/use-theme-color.ts` provides per-token color resolution. `hooks/useColors.ts` is a convenience wrapper.
-
-### TypeScript
-
-Strict mode enabled. Path alias `@/*` maps to the repo root (e.g. `@/components/MiniPlayer`).
-
-### Key Dependencies
-
-- `expo ~54` / `expo-router ~6` / `react 19` / `react-native 0.81`
-- Audio: `expo-audio`, `expo-av`, `expo-speech`
-- Storage: `@react-native-async-storage/async-storage`
-- UI: `expo-linear-gradient`, `react-native-reanimated`, `react-native-svg`
-- Notifications: `expo-notifications`, `expo-device`, `expo-haptics`
+## Key Dependencies
+`expo ~54` · `expo-router ~6` · `react 19.1` · `react-native 0.81` · `expo-audio` · `expo-av` · `react-native-reanimated ~4` · `react-native-svg` · `expo-linear-gradient` · `expo-image` · `expo-notifications` · `react-native-purchases` (RevenueCat) · `@supabase/supabase-js` · `posthog-react-native`

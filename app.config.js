@@ -60,8 +60,12 @@ module.exports = {
     ],
     experiments: {
       typedRoutes: true,
-      reactCompiler: true,
+      reactCompiler: false,
     },
+    updates: {
+      enabled: true,
+    },
+
     extra: {
       router: {},
       eas: {

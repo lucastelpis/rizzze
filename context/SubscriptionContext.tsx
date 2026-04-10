@@ -7,7 +7,7 @@ import Purchases, {
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { posthog } from '@/config/posthog';
 
-const API_KEY = 'test_BkMJqBhiYVnpaevoizinqxOcXzI';
+const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_KEY || 'test_BkMJqBhiYVnpaevoizinqxOcXzI';
 
 const ENTITLEMENT_ID = 'Rizzze Pro';
 

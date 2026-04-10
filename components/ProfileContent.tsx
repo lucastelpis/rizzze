@@ -444,7 +444,7 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
   };
 
   const handleSendCode = async () => {
-    if (!emailInput.includes('@')) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.trim())) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
@@ -757,7 +757,7 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
                 style={[styles.modalBtn, { backgroundColor: C.accent }]}
                 onPress={async () => {
                   const val = restoreInput.trim();
-                  if (!val || !val.includes('@')) {
+                  if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
                     Alert.alert("Invalid Email", "Please enter a valid email address.");
                     return;
                   }

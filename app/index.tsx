@@ -909,6 +909,8 @@ export default function Onboarding() {
       if (purchased) {
         router.replace('/(tabs)');
       }
+
+
     }
   };
 
