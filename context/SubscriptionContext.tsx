@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { } from 'react-native';
+import { Platform } from 'react-native';
 import Purchases, {
   LOG_LEVEL,
   CustomerInfo,
@@ -7,7 +7,11 @@ import Purchases, {
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { posthog } from '@/config/posthog';
 
-const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_KEY || 'test_BkMJqBhiYVnpaevoizinqxOcXzI';
+const API_KEY = Platform.select({
+  ios: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY || 'appl_waXPQUDiYzWHVWHJqvugZjgpqnP',
+  android: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || '',
+  default: ''
+});
 
 const ENTITLEMENT_ID = 'Rizzze Pro';
 
@@ -42,20 +46,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       })
       .catch(() => {})
       .finally(() => setIsLoading(false));
-
-    // Debug: Check if offerings are actually available
-    Purchases.getOfferings()
-      .then((offerings) => {
-        console.log("Subscription Debug - Offerings Found:", Object.keys(offerings.all));
-        if (offerings.current) {
-          console.log("Subscription Debug - Current Offering Packages:", offerings.current.availablePackages.map(p => p.identifier));
-        } else {
-          console.warn("Subscription Debug - No 'current' offering set in RevenueCat dashboard!");
-        }
-      })
-      .catch((err) => {
-        console.error("Subscription Debug - Offerings Error:", err);
-      });
 
     Purchases.addCustomerInfoUpdateListener((info) => {
       setCustomerInfo(info);

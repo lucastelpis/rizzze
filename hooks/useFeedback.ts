@@ -145,29 +145,6 @@ export function useFeedback() {
     }
   };
 
-  const deleteFeedback = async (id: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('feedbacks')
-        .delete()
-        .match({ id, user_id: userId })
-        .select();
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        throw new Error('Not deleted by database. Likely missing DELETE RLS policy.');
-      }
-
-      setFeedbacks(prev => prev.filter(fb => fb.id !== id));
-      return { success: true };
-    } catch (err) {
-      console.error('Error deleting feedback:', err);
-      // Wait to notify user or handle error state
-      return { success: false, error: err };
-    }
-  };
-
   return {
     feedbacks,
     loading,
@@ -175,7 +152,6 @@ export function useFeedback() {
     fetchFeedbacks,
     submitFeedback,
     voteFeedback,
-    deleteFeedback,
     currentUserId: userId,
   };
 }

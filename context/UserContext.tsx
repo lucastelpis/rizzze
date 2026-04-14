@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/utils/supabase';
 
 interface UserContextType {
   userId: string;
@@ -46,24 +47,38 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [savedUserId, savedName, savedEmail, savedVerified, savedGoal, savedAge, savedGender, savedReadStories] = await Promise.all([
-          AsyncStorage.getItem(USER_ID_STORAGE_KEY),
+        const [savedName, savedEmail, savedVerified, savedGoal, savedAge, savedGender, savedReadStories] = await Promise.all([
           AsyncStorage.getItem(NAME_STORAGE_KEY),
           AsyncStorage.getItem(EMAIL_STORAGE_KEY),
           AsyncStorage.getItem(EMAIL_VERIFIED_KEY),
           AsyncStorage.getItem(GOAL_STORAGE_KEY),
           AsyncStorage.getItem(AGE_STORAGE_KEY),
           AsyncStorage.getItem(GENDER_STORAGE_KEY),
-          AsyncStorage.getItem(READ_STORIES_STORAGE_KEY), // New
+          AsyncStorage.getItem(READ_STORIES_STORAGE_KEY),
         ]);
 
-        if (savedUserId) {
-          setUserIdState(savedUserId);
+        // Supabase Auth Source of Truth
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          setUserIdState(session.user.id);
         } else {
-          // Generate new anonymous ID
-          const newId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-          setUserIdState(newId);
-          await AsyncStorage.setItem(USER_ID_STORAGE_KEY, newId);
+          // Attempt anonymous sign-in
+          const { data, error } = await supabase.auth.signInAnonymously();
+          if (error) {
+            console.error('Failed to sign in anonymously', error);
+            // Fallback to local ID if Supabase is down (legacy compatibility)
+            const savedLegacyId = await AsyncStorage.getItem(USER_ID_STORAGE_KEY);
+            if (savedLegacyId) {
+              setUserIdState(savedLegacyId);
+            } else {
+              const newId = Math.random().toString(36).substring(2, 15);
+              setUserIdState(newId);
+              await AsyncStorage.setItem(USER_ID_STORAGE_KEY, newId);
+            }
+          } else if (data.user) {
+            setUserIdState(data.user.id);
+          }
         }
 
         if (savedName) setNameState(savedName);
@@ -72,7 +87,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (savedGoal) setGoalState(savedGoal);
         if (savedAge) setAgeRangeState(savedAge);
         if (savedGender) setGenderState(savedGender);
-        if (savedReadStories) setReadStoryIdsState(JSON.parse(savedReadStories)); // New
+        if (savedReadStories) setReadStoryIdsState(JSON.parse(savedReadStories));
       } catch (e) {
         console.error('Failed to load user data', e);
       } finally {
@@ -80,6 +95,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     loadData();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserIdState(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const setName = async (newName: string) => {
