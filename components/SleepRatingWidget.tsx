@@ -211,7 +211,7 @@ export function SleepRatingWidget() {
                     numberOfLines={1} 
                     style={[styles.notePreviewText, { color: currentNote ? C.textPrimary : C.textSecondary }]}
                   >
-                    {currentNote ? 'View / Edit thought' : 'Add a thought...'}
+                    {currentNote ? 'View / Edit note' : 'Add a note'}
                   </Text>
                 </TouchableOpacity>
               </View>

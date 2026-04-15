@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -34,6 +34,8 @@ import { SleepRatingWidget } from '@/components/SleepRatingWidget';
 import { useSleep } from '@/context/SleepContext';
 import { useSheepGrowth } from '@/context/SheepGrowthContext';
 import { EvolutionToast } from '@/components/EvolutionToast';
+import { TourOverlay } from '@/components/TourOverlay';
+import { useTourContext } from '@/context/TourContext';
 
 // ─── GREETING ─────────────────────────────────────────────────────────────────
 function getGreeting(): { greeting: string; subtitle: string } {
@@ -266,6 +268,38 @@ export default function HomeScreen() {
   const { activeSound } = useAudioStatus();
   const scrollRef = useRef<ScrollView>(null);
 
+  // ── TOUR ──
+  const sleepWidgetRef = useRef<View>(null);
+  const sheepButtonRef = useRef<View>(null);
+  const streakRef = useRef<View>(null);
+  const categoryGridRef = useRef<View>(null);
+  const bottomNavRef = useRef<View>(null);
+  const { 
+    isVisible: tourVisible, 
+    displaying: tourDisplaying, 
+    currentStep, 
+    reduceMotion, 
+    goToNext, 
+    goToBack,
+    dismiss: dismissTour 
+  } = useTourContext();
+
+  // Scroll to show the current tour target before measuring
+  const handleBeforeStep = useCallback((step: number) => {
+    if (step <= 2) {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    } else if (step >= 3) {
+      scrollRef.current?.scrollToEnd({ animated: false });
+    }
+  }, []);
+
+  // Ensure check-in card is visible when tour opens
+  useEffect(() => {
+    if (tourVisible) {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }
+  }, [tourVisible]);
+
   const handleTodayPress = async () => {
     if (hasRatedToday) {
       // Celebratory "already done" haptic
@@ -286,13 +320,15 @@ export default function HomeScreen() {
               <Text style={[styles.headerTitle, { color: C.textPrimary }]}>{greeting}</Text>
               <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>{subtitle}</Text>
             </View>
-            <TouchableOpacity 
-              style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
-              onPress={() => router.push('/profile')}
-              activeOpacity={0.8}
-            >
-              <HeaderSheep size={34} />
-            </TouchableOpacity>
+            <View ref={sheepButtonRef} collapsable={false}>
+              <TouchableOpacity
+                style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
+                onPress={() => router.push('/profile')}
+                activeOpacity={0.8}
+              >
+                <HeaderSheep size={34} />
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
@@ -306,12 +342,14 @@ export default function HomeScreen() {
               contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
               showsVerticalScrollIndicator={false}
             >
-              <Animated.View entering={FadeIn.duration(600)}>
+              <Animated.View ref={sleepWidgetRef} collapsable={false} entering={FadeIn.duration(600)}>
                 <SleepRatingWidget />
               </Animated.View>
 
           {/* ── STREAK ── */}
-          <StreakSection onTodayPress={handleTodayPress} />
+          <View ref={streakRef} collapsable={false}>
+            <StreakSection onTodayPress={handleTodayPress} />
+          </View>
 
           {/* ── EXPLORE GRID ── */}
           <View style={styles.exploreSection}>
@@ -320,7 +358,7 @@ export default function HomeScreen() {
               <View style={[styles.overlineDot, { backgroundColor: C.accentSoft }]} />
             </View>
             
-            <View style={styles.categoryGrid}>
+            <View ref={categoryGridRef} collapsable={false} style={styles.categoryGrid}>
               <CategoryCard
                 title="Sleep"
                 subtitle="Track and improve"
@@ -362,15 +400,35 @@ export default function HomeScreen() {
         </ScrollView>
       </Animated.View>
 
-      <BottomNav active="home" />
+      <View ref={bottomNavRef} collapsable={false}>
+        <BottomNav active="home" />
+      </View>
 
       {evolutionReward && (
-        <EvolutionToast 
-          stageName={evolutionReward} 
-          onDismiss={clearEvolutionReward} 
+        <EvolutionToast
+          stageName={evolutionReward}
+          onDismiss={clearEvolutionReward}
         />
       )}
       </SafeAreaView>
+
+      {/* Tour overlay — outside SafeAreaView so its coords match measureInWindow */}
+      {tourDisplaying && (
+        <TourOverlay
+          isVisible={tourVisible}
+          currentStep={currentStep}
+          reduceMotion={reduceMotion}
+          sleepWidgetRef={sleepWidgetRef}
+          sheepButtonRef={sheepButtonRef}
+          streakRef={streakRef}
+          categoryGridRef={categoryGridRef}
+          bottomNavRef={bottomNavRef}
+          onNext={goToNext}
+          onBack={goToBack}
+          onDismiss={dismissTour}
+          onBeforeStep={handleBeforeStep}
+        />
+      )}
     </View>
   );
 }

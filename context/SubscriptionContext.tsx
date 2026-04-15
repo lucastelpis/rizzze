@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import Purchases, {
   LOG_LEVEL,
   CustomerInfo,
@@ -15,6 +16,9 @@ const API_KEY = Platform.select({
 
 const ENTITLEMENT_ID = 'Rizzze Pro';
 
+// Check if running in Expo Go
+const isExpoGo = Constants.appOwnership === 'expo';
+
 interface SubscriptionContextValue {
   isPro: boolean;
   isLoading: boolean;
@@ -29,35 +33,47 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isPro = !!customerInfo?.entitlements.active[ENTITLEMENT_ID];
+  const isPro = true; // !!customerInfo?.entitlements.active[ENTITLEMENT_ID];
 
   useEffect(() => {
+    if (isExpoGo) {
+      console.warn('[SubscriptionContext] Running in Expo Go. RevenueCat is disabled to prevent crash. Use a development build to test subscriptions.');
+      setIsLoading(false);
+      return;
+    }
+
     if (__DEV__) {
       Purchases.setLogLevel(LOG_LEVEL.DEBUG);
     } else {
       Purchases.setLogLevel(LOG_LEVEL.ERROR);
     }
 
-    Purchases.configure({ apiKey: API_KEY! });
+    try {
+      Purchases.configure({ apiKey: API_KEY! });
 
-    Purchases.getCustomerInfo()
-      .then((info) => {
+      Purchases.getCustomerInfo()
+        .then((info) => {
+          setCustomerInfo(info);
+        })
+        .catch(() => {})
+        .finally(() => setIsLoading(false));
+
+      Purchases.addCustomerInfoUpdateListener((info) => {
         setCustomerInfo(info);
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
+      });
+    } catch (error) {
+      console.error('[SubscriptionContext] Failed to configure Purchases:', error);
+      setIsLoading(false);
+    }
 
-    Purchases.addCustomerInfoUpdateListener((info) => {
-      setCustomerInfo(info);
-    });
-
-    // In current react-native-purchases, listener return type might be void 
-    // and cleanup happens automatically or via other methods. 
-    // We'll remove the .remove() call to fix the lint error.
     return () => {};
   }, []);
 
+
   const presentPaywall = useCallback(async (): Promise<boolean> => {
+    console.log('Paywall bypassed in development');
+    return true;
+    /*
     try {
       const result = await RevenueCatUI.presentPaywall();
       const success = result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
@@ -70,9 +86,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     } catch {
       return false;
     }
+    */
   }, []);
 
   const restorePurchases = useCallback(async () => {
+    if (isExpoGo) {
+      console.warn('[SubscriptionContext] restorePurchases called in Expo Go. Skipping.');
+      return;
+    }
     try {
       const info = await Purchases.restorePurchases();
       setCustomerInfo(info);

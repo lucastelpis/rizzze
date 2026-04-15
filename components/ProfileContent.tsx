@@ -352,7 +352,13 @@ const SheepGamificationWidget = () => {
   );
 };
 
-export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
+export const ProfileContent = ({
+  isModal = false,
+  onReplayTour,
+}: {
+  isModal?: boolean;
+  onReplayTour?: () => void;
+}) => {
   const { activeSound } = useAudio();
   const { themeMode, setThemeMode, isDark } = useTheme();
   const { streakCount, sleepRatingCount, syncSleepRatings, resetStreakData } = useStreak();
@@ -647,6 +653,14 @@ export const ProfileContent = ({ isModal = false }: { isModal?: boolean }) => {
         </TouchableOpacity>
         <SettingsItem label="Support" onPress={() => router.push('/support')} />
         <SettingsItem label="Feedback" onPress={() => router.push('/feedback')} />
+        {onReplayTour && (
+          <SettingsItem
+            label="Replay app tour"
+            showChevron={false}
+            last
+            onPress={onReplayTour}
+          />
+        )}
       </View>
 
       <TouchableOpacity style={[styles.logoutBtn, { marginTop: 0, opacity: 0.6 }]} onPress={handleReset}>

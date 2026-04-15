@@ -23,6 +23,7 @@ import { SheepGrowthProvider } from '@/context/SheepGrowthContext';
 import { SleepProvider } from '@/context/SleepContext';
 import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { UserProvider } from '@/context/UserContext';
+import { TourProvider } from '@/context/TourContext';
 import { SyncObserver } from '@/components/SyncObserver';
 
 SplashScreen.preventAutoHideAsync();
@@ -99,7 +100,9 @@ export default function RootLayout() {
               <SleepProvider>
                 <AudioProvider>
                   <NotificationProvider>
-                    <RootLayoutContent />
+                    <TourProvider>
+                      <RootLayoutContent />
+                    </TourProvider>
                   </NotificationProvider>
                 </AudioProvider>
               </SleepProvider>

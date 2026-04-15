@@ -7,6 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { ProfileContent } from '@/components/ProfileContent';
+import { useTourContext } from '@/context/TourContext';
 
 // Back Chevron Icon
 const BackChevron = ({ color = '#7A7589' }) => (
@@ -19,6 +20,7 @@ export default function ProfileScreen() {
   const { isDark } = useTheme();
   const C = useColors();
   const router = useRouter();
+  const { replay: replayTour } = useTourContext();
 
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
@@ -34,7 +36,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <ProfileContent isModal={true} />
+        <ProfileContent isModal={true} onReplayTour={replayTour} />
       </SafeAreaView>
     </View>
   );

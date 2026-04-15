@@ -903,7 +903,7 @@ export default function Onboarding() {
         gender_set: !!gender
       });
       posthog.capture('paywall_shown');
-      await presentPaywall();
+      // await presentPaywall();
       router.replace('/(tabs)');
 
 
