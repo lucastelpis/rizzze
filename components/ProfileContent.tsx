@@ -667,6 +667,24 @@ export const ProfileContent = ({
         <Text style={[styles.logoutText, { color: C.textSecondary, fontSize: 13 }]}>Reset app data</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity 
+        style={[styles.logoutBtn, { 
+          marginTop: 12, 
+          backgroundColor: isDark ? 'rgba(139, 109, 174, 0.15)' : '#EDE5F5',
+          borderRadius: 12,
+          paddingVertical: 12,
+          marginHorizontal: 32,
+        }]} 
+        onPress={async () => {
+          await resetUserData();
+          router.replace('/');
+        }}
+      >
+        <Text style={[styles.logoutText, { color: '#8B6DAE', fontSize: 13, fontWeight: '800' }]}>
+          DEV: RETURN TO ONBOARDING
+        </Text>
+      </TouchableOpacity>
+
       {/* Info Popup Modal */}
       <Modal
         visible={showInfo}

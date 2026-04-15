@@ -49,10 +49,10 @@ const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welco
   const bob = useSharedValue(0);
   
   // Responsive sizing based on screen height
-  const baseSize = height < 700 ? 80 : 110;
-  const imageSize = height < 700 ? 64 : 86;
-  const mascotPadding = height < 700 ? 8 : 12;
-  const containerRadius = height < 700 ? 18 : 24;
+  const baseSize = height < 700 ? 110 : 140;
+  const imageSize = height < 700 ? 100 : 130;
+  const mascotPadding = 0;
+  const containerRadius = 0;
 
   useEffect(() => {
     if (variant === 'welcome') {
@@ -74,7 +74,7 @@ const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welco
   const images: Record<string, any> = {
     welcome: require('../assets/images/mascot_welcome.png'),
     features: require('../assets/images/mascot_features.png'),
-    teaching: require('../assets/images/mascot_teaching.png'),
+    teaching: require('../assets/images/mascot_resting.png'),
     reading: require('../assets/images/mascot_reading.png'),
     name: require('../assets/images/mascot_name.png'),
     age: require('../assets/images/mascot_age.png'),
@@ -86,13 +86,12 @@ const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welco
       <View style={[
         styles.mascotBgBox, 
         { 
-          backgroundColor: isDark ? 'rgba(139, 107, 174, 0.15)' : 'rgba(139, 107, 174, 0.1)',
+          backgroundColor: 'transparent',
           width: baseSize,
           height: baseSize,
           borderRadius: containerRadius,
           padding: mascotPadding,
         }, 
-        variant === 'goal' && { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(45, 43, 61, 0.03)' }
       ]}>
         <Animated.View style={animatedStyle}>
           <Image
@@ -122,7 +121,7 @@ const FeatureItem = ({ title, description, bgColor, Icon, isLast }: any) => {
     <View>
       <View style={styles.featureContent}>
         <View style={[styles.iconCircle, { backgroundColor: bgColor }]}>
-          <Icon size={24} color={iconColor} />
+          <Icon size={20} color={iconColor} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.featureTitle, { color: C.textPrimary }]}>{title}</Text>
@@ -134,26 +133,31 @@ const FeatureItem = ({ title, description, bgColor, Icon, isLast }: any) => {
   );
 };
 
-const GoalCard = ({ title, selected, onPress }: any) => {
+const SelectionCard = ({ title, selected, onPress, isCompact, dynamicPadding, dynamicFontSize }: any) => {
   const C = useColors();
+  const padding = dynamicPadding !== undefined ? dynamicPadding : (isCompact ? 9 : 13);
+  const fontSize = dynamicFontSize !== undefined ? dynamicFontSize : (isCompact ? 15 : 16);
+
   return (
     <Pressable
       onPress={onPress}
       style={[
-        styles.goalCard,
+        styles.selectionCard,
         { backgroundColor: C.bgCard, shadowColor: C.accentSoft },
-        selected && [styles.goalCardSelected, { borderColor: C.accent, backgroundColor: C.mode === 'dark' ? 'rgba(139, 107, 174, 0.15)' : '#F8F6FB' }]
+        { paddingVertical: padding },
+        selected && [styles.selectionCardSelected, { borderColor: C.accent, backgroundColor: C.mode === 'dark' ? 'rgba(139, 107, 174, 0.15)' : '#F8F6FB' }]
       ]}
     >
       <Text style={[
-        styles.goalText,
+        styles.selectionText,
         { color: C.textPrimary },
+        { fontSize: fontSize },
         selected && { color: C.accent, fontWeight: '800' }
       ]}>
         {title}
       </Text>
       {selected && (
-        <View style={[styles.goalCheck, { backgroundColor: C.accent }]}>
+        <View style={[styles.selectionCheck, { backgroundColor: C.accent }]}>
           <Text style={{ color: '#FFF', fontSize: 10 }}>✓</Text>
         </View>
       )}
@@ -169,7 +173,7 @@ const Page1 = () => {
   return (
     <Animated.View exiting={FadeOutLeft} style={[styles.page, { paddingHorizontal: 0 }]}>
       <ScrollView 
-        contentContainerStyle={[styles.scrollContent, { paddingTop: height * 0.02 }]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <Mascot variant="welcome" />
@@ -178,7 +182,7 @@ const Page1 = () => {
             Welcome to <Text style={{ color: C.accent }}>Rizzze</Text>!
           </Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Settle in for a cozy night with sleep-inducing sounds, soft-read stories, and peaceful puzzles
+            The all-in-one sleep companion: a peaceful space to slow down and rest your mind
           </Text>
         </View>
       </ScrollView>
@@ -194,30 +198,30 @@ const Page2 = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Mascot variant="teaching" />
         <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>HOW WE HELP</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Designed for deep rest</Text>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>LEAVE THE STRESS BEHIND</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Craft your cozy night routine</Text>
           <View style={styles.featureList}>
             <FeatureItem
-              title="Sleep tracking"
-              description="Track your sleep quality over time and receive thoughtful sleep tips"
+              title="Sleep Diary"
+              description="Empty your thoughts before bed and rate your rest each morning to see your progress."
               bgColor={isDark ? 'rgba(125, 176, 219, 0.2)' : '#E5F0F8'}
               Icon={TrackerIcon}
             />
             <FeatureItem
-              title="Sleep sounds"
-              description="Elaborated scenes & simple ambient sounds crafted to help you drift off"
+              title="Calming Sounds"
+              description="Block out the world with calming white noise and immersive natural and urban scenes."
               bgColor={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
               Icon={CloudIcon}
             />
             <FeatureItem
-              title="Stories"
-              description="Soft-read tales for a gentle wind-down"
+              title="Soft Stories"
+              description="Travel to distant lands with peaceful tales designed to help your mind wander and relax."
               bgColor={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
               Icon={StoriesIcon}
             />
             <FeatureItem
-              title="Games"
-              description="Cozy mini-games designed to quiet a busy mind"
+              title="Relaxing Games"
+              description="Quiet a busy mind with simple, gentle minigames that help you slow down."
               bgColor={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
               Icon={GamesIcon}
               isLast
@@ -285,7 +289,7 @@ const PageGoal = ({ goal, setGoal }: any) => {
           
           <View style={styles.selectionGrid}>
             {goals.map((g) => (
-              <GoalCard 
+              <SelectionCard 
                 key={g} 
                 title={g} 
                 selected={goal === g} 
@@ -301,31 +305,47 @@ const PageGoal = ({ goal, setGoal }: any) => {
 
 const PageAge = ({ ageRange, setAgeRange }: any) => {
   const C = useColors();
-  const ranges = ["Under 18", "18-25", "26-35", "36+"];
+  const { height } = useWindowDimensions();
+  const ranges = ["Under 18", "18–24", "25–34", "35–44", "45–54", "55+"];
   
+  // Interpolation logic to scale layout dynamically between iPhone SE and Pro Max
+  const progress = Math.max(0, Math.min(1, (height - 667) / 265));
+  const vPad = 6 + (progress * 7);      // 6px to 13px
+  const fontS = 13.5 + (progress * 2.5); // 13.5px to 16px
+  const gapS = 5 + (progress * 7);      // 5px to 12px
+  const topM = progress * 12;           // 0px to 12px
+
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <View style={[styles.pageContent, { flex: 1 }]}>
         <Mascot variant="reading" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR AGE</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Help us understand who's part of our flock
-          </Text>
-          
-          <View style={styles.selectionGrid}>
-            {ranges.map((r) => (
-              <GoalCard 
-                key={r} 
-                title={r} 
-                selected={ageRange === r} 
-                onPress={() => setAgeRange(r)} 
-              />
-            ))}
-          </View>
+        <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR AGE</Text>
+        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
+        <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+          Help us understand who's part of our flock
+        </Text>
+        
+        <View style={{ flex: 1, width: '100%', marginTop: topM }}>
+          <ScrollView 
+            style={{ flex: 1 }} 
+            contentContainerStyle={{ paddingBottom: 20 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
+              {ranges.map((r) => (
+                <SelectionCard 
+                  key={r} 
+                  title={r} 
+                  selected={ageRange === r} 
+                  onPress={() => setAgeRange(r)} 
+                  dynamicPadding={vPad}
+                  dynamicFontSize={fontS}
+                />
+              ))}
+            </View>
+          </ScrollView>
         </View>
-      </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -347,7 +367,7 @@ const PageGender = ({ gender, setGender }: any) => {
           
           <View style={styles.selectionGrid}>
             {options.map((o) => (
-              <GoalCard 
+              <SelectionCard 
                 key={o} 
                 title={o} 
                 selected={gender === o} 
@@ -849,12 +869,14 @@ export default function Onboarding() {
     setGender: saveGender
   } = useUser();
 
-  // Returning users who already have an active subscription skip onboarding
+  // Temporarily disabled for verification
+  /*
   useEffect(() => {
     if (!subLoading && isPro) {
       router.replace('/(tabs)');
     }
   }, [subLoading, isPro]);
+  */
 
   // Track the start of onboarding once
   useEffect(() => {
@@ -1035,7 +1057,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: tokens.spacing.xl,
+    paddingTop: 0,
+    paddingBottom: tokens.spacing.xl,
   },
 
   mascotBgBox: {
@@ -1054,7 +1077,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 28,
+    marginBottom: 12,
   },
   sparkle1: { position: 'absolute', top: -10, right: -10 },
   sparkle2: { position: 'absolute', bottom: 20, left: -20 },
@@ -1101,42 +1124,44 @@ const styles = StyleSheet.create({
   },
   featureList: {
     width: '100%',
-    alignSelf: 'stretch',
-    marginTop: 20,
+    maxWidth: 420,
+    alignSelf: 'center',
+    marginTop: 12,
   },
   featureContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    gap: 16,
+    paddingVertical: 10,
+    gap: 12,
   },
   featureDivider: {
     height: 1,
   },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   featureTitle: {
     fontFamily: tokens.fonts.heading,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   featureDescription: {
     fontFamily: tokens.fonts.body,
-    fontSize: 13,
+    fontSize: 12,
   },
   selectionGrid: {
     width: '100%',
-    alignSelf: 'stretch',
+    maxWidth: 420,
+    alignSelf: 'center',
     gap: 12,
     marginTop: 20,
   },
-  goalCard: {
+  selectionCard: {
     width: '100%',
     borderRadius: 16,
     borderWidth: 2,
@@ -1151,14 +1176,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  goalCardSelected: {
+  selectionCardSelected: {
     shadowOpacity: 0.12,
   },
-  goalText: {
+  selectionText: {
     fontFamily: tokens.fonts.body,
     fontSize: 16,
   },
-  goalCheck: {
+  selectionCheck: {
     position: 'absolute',
     right: 14,
     width: 20,
@@ -1168,6 +1193,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navigation: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
     flexDirection: 'row',
     padding: tokens.spacing.xl,
     gap: 12,
@@ -1405,6 +1433,8 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
     height: 60,
     borderRadius: 16,
     borderWidth: 1,
@@ -1412,7 +1442,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 20,
+    marginTop: 12,
   },
   nameInput: {
     flex: 1,
@@ -1426,4 +1456,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+
 });
