@@ -903,12 +903,9 @@ export default function Onboarding() {
         gender_set: !!gender
       });
       posthog.capture('paywall_shown');
+      await presentPaywall();
+      router.replace('/(tabs)');
 
-      // Show paywall — only navigate into app if user starts trial/purchases
-      const purchased = await presentPaywall();
-      if (purchased) {
-        router.replace('/(tabs)');
-      }
 
 
     }
