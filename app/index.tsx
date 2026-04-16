@@ -184,7 +184,7 @@ const Page1 = () => {
             Welcome to <Text style={{ color: C.accent }}>Rizzze</Text>!
           </Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            The all-in-one sleep companion: a peaceful space to slow down and rest your mind
+            The all-in-one sleep companion: a peaceful space to slow down and rest your mind.
           </Text>
         </View>
       </ScrollView>
@@ -246,7 +246,7 @@ const PageName = ({ name, setName }: any) => {
           <Text style={[styles.overtitle, { color: C.overtitle }]}>LET'S GET ACQUAINTED</Text>
           <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What should I call you?</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            This name will appear on your profile screen
+            This name will appear on your profile screen.
           </Text>
           
           <View style={[styles.inputWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: C.border }]}>
@@ -303,7 +303,7 @@ const PageGoal = ({ goal, setGoal }: any) => {
           <Text style={[styles.overtitle, { color: C.overtitle }]}>STARTING YOUR JOURNEY</Text>
           <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What is your biggest challenge?</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Let’s find the best way to help you sleep soundly
+            Let’s find the best way to help you sleep soundly.
           </Text>
           
           <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
@@ -347,7 +347,7 @@ const PageAge = ({ ageRange, setAgeRange }: any) => {
           <Text style={[styles.overtitle, { color: C.overtitle }]}>MORE ABOUT YOU</Text>
           <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            I will gather the best sleep tips for your life stage
+            I will gather the best sleep tips for your life stage.
           </Text>
           
           <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
@@ -391,7 +391,7 @@ const PageGender = ({ gender, setGender }: any) => {
           <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
           <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How do you identify?</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Knowing our community helps us create better stories and sounds for you
+            Knowing our community helps us create better stories and sounds for you.
           </Text>
           
           <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
@@ -458,10 +458,10 @@ const Page3 = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Mascot variant="goal" />
         <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>CONSISTENCY IS KEY</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Set your sleep schedule</Text>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR DAILY ROUTINE</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Customize your reminders</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Wind down at night. Rise with a boost.
+            We’ll send notifications to help you stay on track.
           </Text>
 
           <View style={[styles.pickerRow, { marginHorizontal: -8 }]}>
@@ -507,14 +507,14 @@ const Page3 = () => {
 
           <View style={styles.togglesContainer}>
             <ToggleRow
-              title="Bedtime nudge"
-              description="Soft wind-down reminders"
+              title="Bedtime reminder"
+              description="A gentle reminder to start your nightly routine."
               isEnabled={isNotificationsEnabled}
               onToggle={(enabled: boolean) => toggleNotifications(enabled, false)}
             />
             <ToggleRow
               title="Morning check-in"
-              description="Rate your sleep & rise with a cozy nudge"
+              description="A soft reminder to log your sleep and start your day."
               isEnabled={isDailyCheckInEnabled}
               onToggle={(enabled: boolean) => toggleDailyCheckIn(enabled, false)}
             />
@@ -634,7 +634,7 @@ const Page4 = () => {
               }
               iconBg={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
               title="Rate your sleep daily"
-              description="Each check-in helps your sheep grow"
+              description="Each check-in helps your sheep grow."
             />
             <CompanionBenefitRow
               icon={
@@ -644,7 +644,7 @@ const Page4 = () => {
               }
               iconBg={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
               title="6 unique stages"
-              description="Each one a surprise to discover"
+              description="Each one a surprise to discover."
             />
             <CompanionBenefitRow
               icon={
@@ -655,7 +655,7 @@ const Page4 = () => {
               }
               iconBg={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
               title="No pressure, just progress"
-              description="Missed a day? Your sheep waits patiently"
+              description="Missed a day? Your sheep waits patiently."
               isLast
             />
           </View>
