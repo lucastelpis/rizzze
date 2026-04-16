@@ -900,14 +900,11 @@ export default function Onboarding() {
     setGender: saveGender
   } = useUser();
 
-  // Temporarily disabled for verification
-  /*
   useEffect(() => {
     if (!subLoading && isPro) {
       router.replace('/(tabs)');
     }
   }, [subLoading, isPro]);
-  */
 
   // Track the start of onboarding once
   useEffect(() => {
@@ -956,8 +953,10 @@ export default function Onboarding() {
         gender_set: !!gender
       });
       posthog.capture('paywall_shown');
-      // await presentPaywall();
-      router.replace('/(tabs)');
+      const success = await presentPaywall();
+      if (success || isPro) {
+        router.replace('/(tabs)');
+      }
 
 
 

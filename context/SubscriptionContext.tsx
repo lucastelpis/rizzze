@@ -33,7 +33,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isPro = true; // !!customerInfo?.entitlements.active[ENTITLEMENT_ID];
+  const isPro = !!customerInfo?.entitlements.active[ENTITLEMENT_ID];
 
   useEffect(() => {
     if (isExpoGo) {
@@ -71,9 +71,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
 
   const presentPaywall = useCallback(async (): Promise<boolean> => {
-    console.log('Paywall bypassed in development');
-    return true;
-    /*
     try {
       const result = await RevenueCatUI.presentPaywall();
       const success = result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
@@ -86,7 +83,6 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     } catch {
       return false;
     }
-    */
   }, []);
 
   const restorePurchases = useCallback(async () => {
