@@ -42,16 +42,16 @@ import { posthog } from '@/config/posthog';
 
 // ─── COMPONENTS ───
 
-const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welcome' | 'features' | 'teaching' | 'reading' | 'age' | 'goal' | 'name', size?: number, hideSparkles?: boolean }) => {
+const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welcome' | 'features' | 'teaching' | 'reading' | 'age' | 'goal' | 'name' | 'greeting' | 'gender', size?: number, hideSparkles?: boolean }) => {
   const C = useColors();
   const { isDark } = useTheme();
   const { height } = useWindowDimensions();
   const bob = useSharedValue(0);
   
   // Responsive sizing based on screen height
-  const baseSize = height < 700 ? 110 : 140;
-  const imageSize = height < 700 ? 100 : 130;
-  const mascotPadding = 0;
+  const baseSize = height < 700 ? 100 : 120;
+  const imageSize = height < 700 ? 90 : 110;
+  const mascotPadding = 5;
   const containerRadius = 0;
 
   useEffect(() => {
@@ -79,6 +79,8 @@ const Mascot = ({ variant, size = 200, hideSparkles = false }: { variant: 'welco
     name: require('../assets/images/mascot_name.png'),
     age: require('../assets/images/mascot_age.png'),
     goal: require('../assets/images/mascot_goal.png'),
+    greeting: require('../assets/images/mascot_greeting.png'),
+    gender: require('../assets/images/mascot_gender.png'),
   };
 
   return (
@@ -239,10 +241,10 @@ const PageName = ({ name, setName }: any) => {
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="name" />
+        <Mascot variant="greeting" />
         <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What should we call you?</Text>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>LET'S GET ACQUAINTED</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What should I call you?</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
             This name will appear on your profile screen
           </Text>
@@ -274,26 +276,45 @@ const PageName = ({ name, setName }: any) => {
 
 const PageGoal = ({ goal, setGoal }: any) => {
   const C = useColors();
-  const goals = ["Fall asleep faster", "Stay asleep longer", "Wake up refreshed", "Reduce anxiety"];
+  const { height } = useWindowDimensions();
+  const goals = [
+    "I can't quiet my mind",
+    "I struggle to fall asleep",
+    "I keep waking up at night",
+    "I wake up feeling tired",
+    "I'm just exploring for now"
+  ];
   
+  // Interpolation logic to scale layout dynamically between iPhone SE and Pro Max
+  const progress = Math.max(0, Math.min(1, (height - 667) / 265));
+  const vPad = 6 + (progress * 7);      // 6px to 13px
+  const fontS = 13.5 + (progress * 2.5); // 13.5px to 16px
+  const gapS = 5 + (progress * 7);      // 5px to 12px
+  const topM = progress * 12;           // 0px to 12px
+
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
         <Mascot variant="reading" />
         <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR GOAL</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What brings you here?</Text>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>STARTING YOUR JOURNEY</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What is your biggest challenge?</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            We'll customize your experience based on your goal
+            Let’s find the best way to help you sleep soundly
           </Text>
           
-          <View style={styles.selectionGrid}>
+          <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
             {goals.map((g) => (
               <SelectionCard 
                 key={g} 
                 title={g} 
                 selected={goal === g} 
                 onPress={() => setGoal(g)} 
+                dynamicPadding={vPad}
+                dynamicFontSize={fontS}
               />
             ))}
           </View>
@@ -306,7 +327,7 @@ const PageGoal = ({ goal, setGoal }: any) => {
 const PageAge = ({ ageRange, setAgeRange }: any) => {
   const C = useColors();
   const { height } = useWindowDimensions();
-  const ranges = ["Under 18", "18–24", "25–34", "35–44", "45–54", "55+"];
+  const ranges = ["Under 18", "18–24", "25–34", "35–44", "45+", "I'd rather not say"];
   
   // Interpolation logic to scale layout dynamically between iPhone SE and Pro Max
   const progress = Math.max(0, Math.min(1, (height - 667) / 265));
@@ -317,61 +338,71 @@ const PageAge = ({ ageRange, setAgeRange }: any) => {
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <View style={[styles.pageContent, { flex: 1 }]}>
-        <Mascot variant="reading" />
-        <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR AGE</Text>
-        <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
-        <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-          Help us understand who's part of our flock
-        </Text>
-        
-        <View style={{ flex: 1, width: '100%', marginTop: topM }}>
-          <ScrollView 
-            style={{ flex: 1 }} 
-            contentContainerStyle={{ paddingBottom: 20 }}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
-              {ranges.map((r) => (
-                <SelectionCard 
-                  key={r} 
-                  title={r} 
-                  selected={ageRange === r} 
-                  onPress={() => setAgeRange(r)} 
-                  dynamicPadding={vPad}
-                  dynamicFontSize={fontS}
-                />
-              ))}
-            </View>
-          </ScrollView>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
+        <Mascot variant="age" />
+        <View style={styles.pageContent}>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>MORE ABOUT YOU</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
+          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+            I will gather the best sleep tips for your life stage
+          </Text>
+          
+          <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
+            {ranges.map((r) => (
+              <SelectionCard 
+                key={r} 
+                title={r} 
+                selected={ageRange === r} 
+                onPress={() => setAgeRange(r)} 
+                dynamicPadding={vPad}
+                dynamicFontSize={fontS}
+              />
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
 
 const PageGender = ({ gender, setGender }: any) => {
   const C = useColors();
-  const options = ["Female", "Male", "Non-binary", "Prefer not to say"];
+  const { height } = useWindowDimensions();
+  const options = ["Woman", "Man", "Non-binary", "Prefer not to say"];
   
+  // Interpolation logic to scale layout dynamically between iPhone SE and Pro Max
+  const progress = Math.max(0, Math.min(1, (height - 667) / 265));
+  const vPad = 6 + (progress * 7);      // 6px to 13px
+  const fontS = 13.5 + (progress * 2.5); // 13.5px to 16px
+  const gapS = 5 + (progress * 7);      // 5px to 12px
+  const topM = progress * 12;           // 0px to 12px
+
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="reading" />
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
+        <Mascot variant="gender" />
         <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR GENDER</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Which gender do you identify as?</Text>
+          <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
+          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How do you identify?</Text>
           <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            This helps us build a more inclusive experience
+            Knowing our community helps us create better stories and sounds for you
           </Text>
           
-          <View style={styles.selectionGrid}>
+          <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
             {options.map((o) => (
               <SelectionCard 
                 key={o} 
                 title={o} 
                 selected={gender === o} 
                 onPress={() => setGender(o)} 
+                dynamicPadding={vPad}
+                dynamicFontSize={fontS}
               />
             ))}
           </View>
@@ -1077,7 +1108,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sparkle1: { position: 'absolute', top: -10, right: -10 },
   sparkle2: { position: 'absolute', bottom: 20, left: -20 },
