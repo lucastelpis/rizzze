@@ -533,8 +533,8 @@ const Page3 = () => {
 // ─── PAGE 6 — MEET YOUR COMPANION ───
 
 const STAGE_LABELS = ['Tiny', 'Small', 'Young', 'Adult', 'Elder', '???'];
-const STAGE_SIZES = [24, 32, 42, 56, 52, 36];
-const STAGE_OPACITIES = [0.35, 0.5, 0.7, 1, 0.55, 0.35];
+const STAGE_SIZES = [28, 36, 44, 44, 44, 44];
+const STAGE_OPACITIES = [0.4, 0.5, 0.7, 1, 0.7, 0.5];
 
 const CompanionBenefitRow = ({ icon, title, description, isLast, iconBg }: any) => {
   const C = useColors();

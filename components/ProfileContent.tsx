@@ -262,8 +262,8 @@ const SheepGamificationWidget = () => {
 
   const SheepComponent = getSheepComponent(currentStageIndex);
 
-  // Early stages have smaller pixel art in the viewBox, so render them larger
-  const STAGE_RENDER_SIZES = [140, 120, 105, 90, 90, 90];
+  // Slightly smaller again to increase perceived padding
+  const STAGE_RENDER_SIZES = [56, 72, 82, 82, 82, 82];
   const sheepRenderSize = STAGE_RENDER_SIZES[currentStageIndex] ?? 90;
 
   // Heart Animation setup
@@ -669,6 +669,40 @@ export const ProfileContent = ({
 
       <TouchableOpacity 
         style={[styles.logoutBtn, { 
+          marginTop: 24, 
+          backgroundColor: isDark ? 'rgba(107, 154, 96, 0.15)' : '#E5F0E0',
+          borderRadius: 12,
+          paddingVertical: 12,
+          marginHorizontal: 32,
+        }]} 
+        onPress={() => {
+          for (let i = 0; i < 5; i++) addDailyRatingPoint();
+        }}
+      >
+        <Text style={[styles.logoutText, { color: '#6B9A60', fontSize: 13, fontWeight: '800' }]}>
+          DEBUG: ADD +5 CHECK-IN POINTS
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={[styles.logoutBtn, { 
+          marginTop: 12, 
+          backgroundColor: isDark ? 'rgba(235, 87, 87, 0.15)' : '#FDEAEA',
+          borderRadius: 12,
+          paddingVertical: 12,
+          marginHorizontal: 32,
+        }]} 
+        onPress={async () => {
+          await resetGrowthData();
+        }}
+      >
+        <Text style={[styles.logoutText, { color: '#EB5757', fontSize: 13, fontWeight: '800' }]}>
+          DEBUG: RESET GROWTH DATA
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={[styles.logoutBtn, { 
           marginTop: 12, 
           backgroundColor: isDark ? 'rgba(139, 109, 174, 0.15)' : '#EDE5F5',
           borderRadius: 12,
@@ -989,6 +1023,7 @@ const styles = StyleSheet.create({
     borderRadius: 55,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: 6, // Slight bottom offset for visual balance
     overflow: 'hidden',
     ...tokens.shadows.elevated
   },

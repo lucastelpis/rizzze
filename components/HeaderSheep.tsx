@@ -4,7 +4,7 @@ import { useSheepGrowth } from '@/context/SheepGrowthContext';
 import { getSheepComponent } from '@/components/sheepStages';
 
 // Early stages have smaller pixel art, so we scale them up to fill the header button
-const HEADER_SCALE_FACTORS = [1.7, 1.5, 1.3, 1.0, 1.0, 1.0];
+const HEADER_SCALE_FACTORS = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
 
 /**
  * Renders the current sheep evolution stage at the given size.
