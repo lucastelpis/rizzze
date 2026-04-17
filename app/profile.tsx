@@ -9,6 +9,8 @@ import { useColors } from '@/hooks/useColors';
 import { ProfileContent } from '@/components/ProfileContent';
 import { useTourContext } from '@/context/TourContext';
 
+import { tokens } from '@/constants/theme';
+
 // Back Chevron Icon
 const BackChevron = ({ color = '#7A7589' }) => (
   <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
@@ -26,17 +28,19 @@ export default function ProfileScreen() {
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Top Bar - Always visible in the stack version */}
-        <View style={styles.topBar}>
-          <TouchableOpacity 
-            style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
-            onPress={() => router.back()}
-          >
-            <BackChevron color={isDark ? C.white : '#7A7589'} />
-          </TouchableOpacity>
-        </View>
+        <View style={styles.maxWidthWrapper}>
+          {/* Top Bar - Always visible in the stack version */}
+          <View style={styles.topBar}>
+            <TouchableOpacity 
+              style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
+              onPress={() => router.back()}
+            >
+              <BackChevron color={isDark ? C.white : '#7A7589'} />
+            </TouchableOpacity>
+          </View>
 
-        <ProfileContent isModal={true} onReplayTour={replayTour} />
+          <ProfileContent isModal={true} onReplayTour={replayTour} />
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -44,6 +48,12 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
+  },
   safeArea: { flex: 1 },
   topBar: {
     paddingHorizontal: 24,

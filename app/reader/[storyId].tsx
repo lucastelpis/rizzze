@@ -372,191 +372,193 @@ export default function ReaderScreen() {
           requestAnimationFrame(() => setIsLoading(false));
         }}
       >
-        {/* TOP BAR */}
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            style={[styles.circleButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
-            onPress={handleBack}
-          >
-            <BackChevron color={isDark ? C.white : '#7A7589'} />
-          </TouchableOpacity>
-
-          <View style={styles.topBarCenter}>
-            <Text style={[styles.headerCategory, { color: C.textSecondary }]}>
-              {category.title.toUpperCase()}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
-            onPress={handleProfile}
-            activeOpacity={0.8}
-          >
-            <HeaderSheep size={34} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          ref={scrollRef}
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          scrollEventThrottle={16}
-          onScroll={handleScroll}
-          onContentSizeChange={(w, h) => { contentHeight.current = h; }}
-          onLayout={(e) => { layoutHeight.current = e.nativeEvent.layout.height; }}
-        >
-          {/* STORY HEADER */}
-          <View style={styles.storyHeader}>
-            <Text style={[styles.storyTitle, { color: C.textPrimary }]}>{story.title}</Text>
-            <Text style={[styles.storyMeta, { color: C.textSecondary }]}>
-              {story.origin ? `${story.origin} · ` : ''}{story.readTime}
-            </Text>
-            <View style={[styles.divider, { backgroundColor: '#E8E2D8' }]} />
-          </View>
-
-          {/* STORY BODY */}
-          <View style={styles.bodyContainer}>
-            {React.useMemo(() => story.content.map((para, idx) => {
-              const isItalic = story.italicParagraphs?.includes(idx);
-              // Disable paragraph tracking for Studio Narration tracks as the timing estimation can be unreliable
-              const isActive = isNarrating && idx === currentPara && !story.audioFile;
-
-              return (
-                <Text
-                  key={idx}
-                  style={[
-                    styles.paragraph,
-                    {
-                      color: isActive ? C.accent : (isItalic ? C.textSecondary : C.textPrimary),
-                      fontSize: fontSize,
-                      lineHeight: Math.floor(fontSize * 1.9), // Use integer for stable line measurement
-                      backgroundColor: isActive ? 'rgba(139, 109, 174, 0.05)' : 'transparent',
-                      marginBottom: 24,
-                      paddingVertical: 4, // More breathing room for fonts to avoid clipping
-                    },
-                    isItalic && styles.italicPara
-                  ]}
-                >
-                  {para}
-                </Text>
-              );
-            }), [story.content, isNarrating, currentPara, story.audioFile, story.italicParagraphs, C, fontSize])}
-          </View>
-        </ScrollView>
-
-        {/* FONT SETTINGS OVERLAY */}
-        {showFontSettings && (
-          <View style={[styles.fontOverlay, { backgroundColor: C.bgCard, shadowColor: '#000' }]}>
+        <View style={styles.maxWidthWrapper}>
+          {/* TOP BAR */}
+          <View style={styles.topBar}>
             <TouchableOpacity
-              style={styles.closeOverlayBtn}
-              onPress={() => setShowFontSettings(false)}
+              style={[styles.circleButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
+              onPress={handleBack}
             >
-              <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 20, color: C.textMuted }}>×</Text>
+              <BackChevron color={isDark ? C.white : '#7A7589'} />
             </TouchableOpacity>
 
-            <Text style={[styles.overlayLabel, { color: C.textSecondary }]}>Line Height: 1.9x</Text>
-            <View style={styles.controlRow}>
-              <TouchableOpacity
-                style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
-                onPress={() => changeFontSize(-1)}
-              >
-                <MinusIcon color={C.textPrimary} />
-              </TouchableOpacity>
-              <Text style={[styles.fontSizeLabel, { color: C.textPrimary }]}>{fontSize}px</Text>
-              <TouchableOpacity
-                style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
-                onPress={() => changeFontSize(1)}
-              >
-                <PlusIcon color={C.textPrimary} />
-              </TouchableOpacity>
+            <View style={styles.topBarCenter}>
+              <Text style={[styles.headerCategory, { color: C.textSecondary }]}>
+                {category.title.toUpperCase()}
+              </Text>
             </View>
-          </View>
-        )}
 
-        {/* FOOTER */}
-        <View style={[styles.footer, { backgroundColor: C.bgPrimary, borderTopColor: '#E8E2D8' }]}>
-          {/* Progress Section */}
-          <View style={styles.progressRow}>
-            <View style={[styles.progressBarBase, { backgroundColor: '#E8E2D8' }]}>
-              <View style={[styles.progressBarFill, { backgroundColor: C.accent, width: `${progress * 100}%` }]} />
-            </View>
-            <Text style={[styles.progressLabel, { color: C.textMuted }]}>{Math.round(progress * 100)}%</Text>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionsRow}>
             <TouchableOpacity
-              style={[
-                styles.actionBtn,
-                { backgroundColor: isAutoScroll ? '#EDE5F5' : '#F0EBE3' }
-              ]}
-              onPress={() => setIsAutoScroll(!isAutoScroll)}
+              style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
+              onPress={handleProfile}
               activeOpacity={0.8}
             >
-              <ArrowDownIcon color={isAutoScroll ? C.accent : '#6B5A8E'} />
-              <Text style={[
-                styles.actionLabel,
-                { color: isAutoScroll ? C.accent : '#6B5A8E' }
-              ]}>{isAutoScroll ? 'Scrolling' : 'Auto-scroll'}</Text>
+              <HeaderSheep size={34} />
             </TouchableOpacity>
+          </View>
 
-            {isNarrating ? (
-              <View style={[styles.actionBtn, styles.playbackContainer]}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onScroll={handleScroll}
+            onContentSizeChange={(w, h) => { contentHeight.current = h; }}
+            onLayout={(e) => { layoutHeight.current = e.nativeEvent.layout.height; }}
+          >
+            {/* STORY HEADER */}
+            <View style={styles.storyHeader}>
+              <Text style={[styles.storyTitle, { color: C.textPrimary }]}>{story.title}</Text>
+              <Text style={[styles.storyMeta, { color: C.textSecondary }]}>
+                {story.origin ? `${story.origin} · ` : ''}{story.readTime}
+              </Text>
+              <View style={[styles.divider, { backgroundColor: '#E8E2D8' }]} />
+            </View>
+
+            {/* STORY BODY */}
+            <View style={styles.bodyContainer}>
+              {React.useMemo(() => story.content.map((para, idx) => {
+                const isItalic = story.italicParagraphs?.includes(idx);
+                // Disable paragraph tracking for Studio Narration tracks as the timing estimation can be unreliable
+                const isActive = isNarrating && idx === currentPara && !story.audioFile;
+
+                return (
+                  <Text
+                    key={idx}
+                    style={[
+                      styles.paragraph,
+                      {
+                        color: isActive ? C.accent : (isItalic ? C.textSecondary : C.textPrimary),
+                        fontSize: fontSize,
+                        lineHeight: Math.floor(fontSize * 1.9), // Use integer for stable line measurement
+                        backgroundColor: isActive ? 'rgba(139, 109, 174, 0.05)' : 'transparent',
+                        marginBottom: 24,
+                        paddingVertical: 4, // More breathing room for fonts to avoid clipping
+                      },
+                      isItalic && styles.italicPara
+                    ]}
+                  >
+                    {para}
+                  </Text>
+                );
+              }), [story.content, isNarrating, currentPara, story.audioFile, story.italicParagraphs, C, fontSize])}
+            </View>
+          </ScrollView>
+
+          {/* FONT SETTINGS OVERLAY */}
+          {showFontSettings && (
+            <View style={[styles.fontOverlay, { backgroundColor: C.bgCard, shadowColor: '#000' }]}>
+              <TouchableOpacity
+                style={styles.closeOverlayBtn}
+                onPress={() => setShowFontSettings(false)}
+              >
+                <Text style={{ fontFamily: 'Nunito_700Bold', fontSize: 20, color: C.textMuted }}>×</Text>
+              </TouchableOpacity>
+
+              <Text style={[styles.overlayLabel, { color: C.textSecondary }]}>Line Height: 1.9x</Text>
+              <View style={styles.controlRow}>
                 <TouchableOpacity
-                  style={styles.playbackSubBtn}
-                  onPress={handleSeekToStart}
-                  activeOpacity={0.7}
+                  style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
+                  onPress={() => changeFontSize(-1)}
                 >
-                  <SeekToStartIcon color={C.accent} />
+                  <MinusIcon color={C.textPrimary} />
                 </TouchableOpacity>
-
-                <View style={styles.playbackDivider} />
-
+                <Text style={[styles.fontSizeLabel, { color: C.textPrimary }]}>{fontSize}px</Text>
                 <TouchableOpacity
-                  style={styles.playbackSubBtn}
-                  onPress={handleTogglePlayPause}
-                  activeOpacity={0.7}
+                  style={[styles.fontAdjBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
+                  onPress={() => changeFontSize(1)}
                 >
-                  {isPaused ? <PlayIcon color={C.accent} /> : <PauseIcon color={C.accent} />}
-                </TouchableOpacity>
-
-                <View style={styles.playbackDivider} />
-
-                <TouchableOpacity
-                  style={styles.playbackSubBtn}
-                  onPress={handleToggleListen}
-                  activeOpacity={0.7}
-                >
-                  <StopIcon color={C.accent} />
+                  <PlusIcon color={C.textPrimary} />
                 </TouchableOpacity>
               </View>
-            ) : (
+            </View>
+          )}
+
+          {/* FOOTER */}
+          <View style={[styles.footer, { backgroundColor: C.bgPrimary, borderTopColor: '#E8E2D8' }]}>
+            {/* Progress Section */}
+            <View style={styles.progressRow}>
+              <View style={[styles.progressBarBase, { backgroundColor: '#E8E2D8' }]}>
+                <View style={[styles.progressBarFill, { backgroundColor: C.accent, width: `${progress * 100}%` }]} />
+              </View>
+              <Text style={[styles.progressLabel, { color: C.textMuted }]}>{Math.round(progress * 100)}%</Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.actionsRow}>
               <TouchableOpacity
                 style={[
                   styles.actionBtn,
-                  { backgroundColor: '#F0EBE3' }
+                  { backgroundColor: isAutoScroll ? '#EDE5F5' : '#F0EBE3' }
+                ]}
+                onPress={() => setIsAutoScroll(!isAutoScroll)}
+                activeOpacity={0.8}
+              >
+                <ArrowDownIcon color={isAutoScroll ? C.accent : '#6B5A8E'} />
+                <Text style={[
+                  styles.actionLabel,
+                  { color: isAutoScroll ? C.accent : '#6B5A8E' }
+                ]}>{isAutoScroll ? 'Scrolling' : 'Auto-scroll'}</Text>
+              </TouchableOpacity>
+
+              {isNarrating ? (
+                <View style={[styles.actionBtn, styles.playbackContainer]}>
+                  <TouchableOpacity
+                    style={styles.playbackSubBtn}
+                    onPress={handleSeekToStart}
+                    activeOpacity={0.7}
+                  >
+                    <SeekToStartIcon color={C.accent} />
+                  </TouchableOpacity>
+
+                  <View style={styles.playbackDivider} />
+
+                  <TouchableOpacity
+                    style={styles.playbackSubBtn}
+                    onPress={handleTogglePlayPause}
+                    activeOpacity={0.7}
+                  >
+                    {isPaused ? <PlayIcon color={C.accent} /> : <PauseIcon color={C.accent} />}
+                  </TouchableOpacity>
+
+                  <View style={styles.playbackDivider} />
+
+                  <TouchableOpacity
+                    style={styles.playbackSubBtn}
+                    onPress={handleToggleListen}
+                    activeOpacity={0.7}
+                  >
+                    <StopIcon color={C.accent} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.actionBtn,
+                    { backgroundColor: '#F0EBE3' }
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={handleToggleListen}
+                >
+                  <MusicIcon color={'#6B5A8E'} />
+                  <Text style={[styles.actionLabel, { color: '#6B5A8E' }]}>
+                    Listen
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.fontBtn,
+                  { backgroundColor: showFontSettings ? '#EDE5F5' : '#F0EBE3' }
                 ]}
                 activeOpacity={0.8}
-                onPress={handleToggleListen}
+                onPress={() => setShowFontSettings(!showFontSettings)}
               >
-                <MusicIcon color={'#6B5A8E'} />
-                <Text style={[styles.actionLabel, { color: '#6B5A8E' }]}>
-                  Listen
-                </Text>
+                <FontIcon color={showFontSettings ? C.accent : '#6B5A8E'} />
               </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={[
-                styles.fontBtn,
-                { backgroundColor: showFontSettings ? '#EDE5F5' : '#F0EBE3' }
-              ]}
-              activeOpacity={0.8}
-              onPress={() => setShowFontSettings(!showFontSettings)}
-            >
-              <FontIcon color={showFontSettings ? C.accent : '#6B5A8E'} />
-            </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -570,6 +572,12 @@ export default function ReaderScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
+  },
   safeArea: { flex: 1 },
   topBar: {
     flexDirection: 'row',

@@ -33,7 +33,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isPro = !!customerInfo?.entitlements.active[ENTITLEMENT_ID];
+  // BYPASS FOR SCREENSHOTS: Set this to false for production
+  const BYPASS_FOR_SCREENSHOTS = false; 
+  const isPro = BYPASS_FOR_SCREENSHOTS || !!customerInfo?.entitlements.active[ENTITLEMENT_ID];
 
   useEffect(() => {
     if (isExpoGo) {

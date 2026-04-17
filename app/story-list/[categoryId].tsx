@@ -80,81 +80,83 @@ export default function StoryListScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* TOP BAR */}
-        <View style={styles.topBar}>
-          <TouchableOpacity 
-            style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
-            onPress={() => router.back()}
-          >
-            <BackChevron color={isDark ? C.white : '#7A7589'} />
-          </TouchableOpacity>
-          <View style={styles.topBarText}>
-            <Text style={[styles.categoryTitle, { color: C.textPrimary }]}>{category.title}</Text>
-            <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>
-              {category.subtitle} · {getCategoryStoryCount(category.id)}
-            </Text>
-          </View>
-          <TouchableOpacity 
-            style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#EDE5F5' }]}
-            onPress={() => router.push('/profile')}
-            activeOpacity={0.8}
-          >
-            <HeaderSheep size={34} />
-          </TouchableOpacity>
-        </View>
-        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
-
-        <ScrollView 
-          style={styles.scroll} 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* FEATURED STORY CARD */}
-          <TouchableOpacity 
-            style={styles.featuredCard}
-            activeOpacity={0.9}
-            onPress={() => router.push(`/reader/${featuredStory.id}`)}
-          >
-            <View style={styles.featuredGraphicWrap}>
-              {CategoryGraphic && <CategoryGraphic />}
-            </View>
-            <View style={styles.featuredInfo}>
-              <View style={styles.badgeRow}>
-                <View style={[styles.pill, { backgroundColor: 'rgba(139,109,174,0.7)' }]}>
-                  <Text style={styles.pillTextFeatured}>Featured</Text>
-                </View>
-                <View style={[styles.pill, { backgroundColor: 'rgba(245,240,232,0.12)' }]}>
-                  <Text style={[styles.pillTextTime, { color: '#C4AED8' }]}>{featuredStory.readTime}</Text>
-                </View>
-                {readStoryIds.includes(featuredStory.id) && (
-                  <View style={[styles.pill, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
-                    <Text style={[styles.pillTextFeatured, { color: '#FFFFFF' }]}>READ</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.featuredStoryTitle}>{featuredStory.title}</Text>
-              <Text style={[styles.featuredStorySubtitle, { color: '#C4AED8' }]}>
-                {featuredStory.origin} · {featuredStory.subtitle}
+        <View style={styles.maxWidthWrapper}>
+          {/* TOP BAR */}
+          <View style={styles.topBar}>
+            <TouchableOpacity 
+              style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
+              onPress={() => router.back()}
+            >
+              <BackChevron color={isDark ? C.white : '#7A7589'} />
+            </TouchableOpacity>
+            <View style={styles.topBarText}>
+              <Text style={[styles.categoryTitle, { color: C.textPrimary }]}>{category.title}</Text>
+              <Text style={[styles.categorySubtitle, { color: C.textSecondary }]}>
+                {category.subtitle} · {getCategoryStoryCount(category.id)}
               </Text>
             </View>
-          </TouchableOpacity>
-
-          {/* ALL STORIES LIST */}
-          <View style={styles.listHeader}>
-            <Text style={[styles.overline, { color: C.textSecondary }]}>ALL STORIES</Text>
+            <TouchableOpacity 
+              style={[styles.sheepBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#EDE5F5' }]}
+              onPress={() => router.push('/profile')}
+              activeOpacity={0.8}
+            >
+              <HeaderSheep size={34} />
+            </TouchableOpacity>
           </View>
+          <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-          <View style={styles.flatListContainer}>
-            {categoryStories.map((item, index) => (
-              <React.Fragment key={item.id}>
-                {renderStoryItem({ item, index })}
-              </React.Fragment>
-            ))}
-          </View>
-        </ScrollView>
+          <ScrollView 
+            style={styles.scroll} 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* FEATURED STORY CARD */}
+            <TouchableOpacity 
+              style={styles.featuredCard}
+              activeOpacity={0.9}
+              onPress={() => router.push(`/reader/${featuredStory.id}`)}
+            >
+              <View style={styles.featuredGraphicWrap}>
+                {CategoryGraphic && <CategoryGraphic />}
+              </View>
+              <View style={styles.featuredInfo}>
+                <View style={styles.badgeRow}>
+                  <View style={[styles.pill, { backgroundColor: 'rgba(139,109,174,0.7)' }]}>
+                    <Text style={styles.pillTextFeatured}>Featured</Text>
+                  </View>
+                  <View style={[styles.pill, { backgroundColor: 'rgba(245,240,232,0.12)' }]}>
+                    <Text style={[styles.pillTextTime, { color: '#C4AED8' }]}>{featuredStory.readTime}</Text>
+                  </View>
+                  {readStoryIds.includes(featuredStory.id) && (
+                    <View style={[styles.pill, { backgroundColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                      <Text style={[styles.pillTextFeatured, { color: '#FFFFFF' }]}>READ</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.featuredStoryTitle}>{featuredStory.title}</Text>
+                <Text style={[styles.featuredStorySubtitle, { color: '#C4AED8' }]}>
+                  {featuredStory.origin} · {featuredStory.subtitle}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
-        <BottomNav active="stories" />
-        <MiniPlayer />
+            {/* ALL STORIES LIST */}
+            <View style={styles.listHeader}>
+              <Text style={[styles.overline, { color: C.textSecondary }]}>ALL STORIES</Text>
+            </View>
+
+            <View style={styles.flatListContainer}>
+              {categoryStories.map((item, index) => (
+                <React.Fragment key={item.id}>
+                  {renderStoryItem({ item, index })}
+                </React.Fragment>
+              ))}
+            </View>
+          </ScrollView>
+
+          <BottomNav active="stories" />
+          <MiniPlayer />
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -162,6 +164,12 @@ export default function StoryListScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
+  },
   safeArea: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24 },

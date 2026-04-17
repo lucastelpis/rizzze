@@ -39,7 +39,8 @@ import { posthog } from '@/config/posthog';
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 const SceneCard = ({ title, subtitle, tag, bgColor, BgGraphic, gradientOverlay, soundFile, graphicId }: any) => {
   const { width: screenW } = useWindowDimensions();
-  const cardW = Math.floor((screenW - 48 - 12) / 2); // 24px padding each side + 12px gap
+  const effectiveW = Math.min(screenW, tokens.layout.contentMaxWidth);
+  const cardW = Math.floor((effectiveW - 48 - 12) / 2); // 24px padding each side + 12px gap
   const cardH = 120;
   const router = useRouter();
   const { playSelectedSound } = useAudioPlayback();
@@ -75,7 +76,8 @@ const SceneCard = ({ title, subtitle, tag, bgColor, BgGraphic, gradientOverlay, 
 
 const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
   const { width: screenW } = useWindowDimensions();
-  const cardW = Math.floor((screenW - 48 - 10) / 2); // 24px padding each side + 10px gap
+  const effectiveW = Math.min(screenW, tokens.layout.contentMaxWidth);
+  const cardW = Math.floor((effectiveW - 48 - 10) / 2); // 24px padding each side + 10px gap
   const cardH = 60;
   const router = useRouter();
   const { playSelectedSound } = useAudioPlayback();
@@ -118,31 +120,32 @@ export default function SoundsScreen() {
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <StatusBar style={C.mode === 'dark' ? 'light' : 'dark'} />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Sounds</Text>
-            <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Immerse yourself</Text>
+        <View style={styles.maxWidthWrapper}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <View>
+              <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Sounds</Text>
+              <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Immerse yourself</Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
+              activeOpacity={0.8}
+              onPress={() => router.push('/profile')}
+            >
+              <HeaderSheep size={34} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
-            activeOpacity={0.8}
-            onPress={() => router.push('/profile')}
-          >
-            <HeaderSheep size={34} />
-          </TouchableOpacity>
-        </View>
-        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
+          <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <Animated.View 
-          entering={FadeIn.duration(400)}
-          style={{ flex: 1 }}
-        >
-          <ScrollView 
-            style={styles.scroll} 
-            contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
-            showsVerticalScrollIndicator={false}
+          <Animated.View 
+            entering={FadeIn.duration(400)}
+            style={{ flex: 1 }}
           >
+            <ScrollView 
+              style={styles.scroll} 
+              contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
+              showsVerticalScrollIndicator={false}
+            >
 
           {/* TONIGHT'S SOUND */}
           <View>
@@ -259,7 +262,8 @@ export default function SoundsScreen() {
           </ScrollView>
         </Animated.View>
 
-        <BottomNav active="sounds" />
+          <BottomNav active="sounds" />
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -272,6 +276,12 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 24,

@@ -314,6 +314,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.maxWidthWrapper}>
           {/* ── HEADER ── */}
           <View style={styles.header}>
             <View>
@@ -332,84 +333,85 @@ export default function HomeScreen() {
           </View>
           <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <Animated.View 
-          entering={FadeIn.duration(400)}
-          style={{ flex: 1 }}
-        >
-            <ScrollView
-              ref={scrollRef}
-              style={styles.scroll}
-              contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
-              showsVerticalScrollIndicator={false}
-            >
-              <Animated.View ref={sleepWidgetRef} collapsable={false} entering={FadeIn.duration(600)}>
-                <SleepRatingWidget />
-              </Animated.View>
+          <Animated.View 
+            entering={FadeIn.duration(400)}
+            style={{ flex: 1 }}
+          >
+              <ScrollView
+                ref={scrollRef}
+                style={styles.scroll}
+                contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
+                showsVerticalScrollIndicator={false}
+              >
+                <Animated.View ref={sleepWidgetRef} collapsable={false} entering={FadeIn.duration(600)}>
+                  <SleepRatingWidget />
+                </Animated.View>
 
-          {/* ── STREAK ── */}
-          <View ref={streakRef} collapsable={false}>
-            <StreakSection onTodayPress={handleTodayPress} />
-          </View>
-
-          {/* ── EXPLORE GRID ── */}
-          <View style={styles.exploreSection}>
-            <View style={styles.exploreHeader}>
-              <Text style={[styles.overline, { color: C.textMuted }]}>EXPLORE</Text>
-              <View style={[styles.overlineDot, { backgroundColor: C.accentSoft }]} />
+            {/* ── STREAK ── */}
+            <View ref={streakRef} collapsable={false}>
+              <StreakSection onTodayPress={handleTodayPress} />
             </View>
-            
-            <View ref={categoryGridRef} collapsable={false} style={styles.categoryGrid}>
-              <CategoryCard
-                title="Sleep"
-                subtitle="Track and improve"
-                gradient={isDark ? ['#3D344B', '#2D2B3D'] : ['#F0E5F5', '#E0D0F0']}
-                accentColor={C.accent}
-                Icon={MoonIcon}
-                iconColor={C.sleepIcon}
-                onPress={() => router.push('/(tabs)/sleep')}
-              />
-              <CategoryCard
-                title="Sounds"
-                subtitle="Calming soundscapes"
-                gradient={isDark ? ['#2D3B4A', '#2D2B3D'] : ['#DCEBF5', '#BAD2E8']}
-                accentColor="#5391C8"
-                Icon={CloudRainIcon}
-                iconColor={C.soundsIcon}
-                onPress={() => router.push('/(tabs)/sounds')}
-              />
-              <CategoryCard
-                title="Stories"
-                subtitle="Bedtime tales"
-                gradient={isDark ? ['#423232', '#2D2B3D'] : ['#F7E6DF', '#E8C6B8']}
-                accentColor="#C88E84"
-                Icon={StoriesIcon}
-                iconColor={C.storiesIcon}
-                onPress={() => router.push('/(tabs)/stories')}
-              />
-              <CategoryCard
-                title="Games"
-                subtitle="Focus and unwind"
-                gradient={isDark ? ['#3D3D3D', '#2D2B3D'] : ['#FBF6EF', '#E3D7CC']}
-                accentColor="#8A8A8A"
-                Icon={GamesIcon}
-                iconColor={C.gamesIcon}
-                onPress={() => router.push('/(tabs)/games')}
-              />
+
+            {/* ── EXPLORE GRID ── */}
+            <View style={styles.exploreSection}>
+              <View style={styles.exploreHeader}>
+                <Text style={[styles.overline, { color: C.textMuted }]}>EXPLORE</Text>
+                <View style={[styles.overlineDot, { backgroundColor: C.accentSoft }]} />
+              </View>
+              
+              <View ref={categoryGridRef} collapsable={false} style={styles.categoryGrid}>
+                <CategoryCard
+                  title="Sleep"
+                  subtitle="Track and improve"
+                  gradient={isDark ? ['#3D344B', '#2D2B3D'] : ['#F0E5F5', '#E0D0F0']}
+                  accentColor={C.accent}
+                  Icon={MoonIcon}
+                  iconColor={C.sleepIcon}
+                  onPress={() => router.push('/(tabs)/sleep')}
+                />
+                <CategoryCard
+                  title="Sounds"
+                  subtitle="Calming soundscapes"
+                  gradient={isDark ? ['#2D3B4A', '#2D2B3D'] : ['#DCEBF5', '#BAD2E8']}
+                  accentColor="#5391C8"
+                  Icon={CloudRainIcon}
+                  iconColor={C.soundsIcon}
+                  onPress={() => router.push('/(tabs)/sounds')}
+                />
+                <CategoryCard
+                  title="Stories"
+                  subtitle="Bedtime tales"
+                  gradient={isDark ? ['#423232', '#2D2B3D'] : ['#F7E6DF', '#E8C6B8']}
+                  accentColor="#C88E84"
+                  Icon={StoriesIcon}
+                  iconColor={C.storiesIcon}
+                  onPress={() => router.push('/(tabs)/stories')}
+                />
+                <CategoryCard
+                  title="Games"
+                  subtitle="Focus and unwind"
+                  gradient={isDark ? ['#3D3D3D', '#2D2B3D'] : ['#FBF6EF', '#E3D7CC']}
+                  accentColor="#8A8A8A"
+                  Icon={GamesIcon}
+                  iconColor={C.gamesIcon}
+                  onPress={() => router.push('/(tabs)/games')}
+                />
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </Animated.View>
+          </ScrollView>
+        </Animated.View>
 
-      <View ref={bottomNavRef} collapsable={false}>
-        <BottomNav active="home" />
-      </View>
+        <View ref={bottomNavRef} collapsable={false}>
+          <BottomNav active="home" />
+        </View>
 
-      {evolutionReward && (
-        <EvolutionToast
-          stageName={evolutionReward}
-          onDismiss={clearEvolutionReward}
-        />
-      )}
+        {evolutionReward && (
+          <EvolutionToast
+            stageName={evolutionReward}
+            onDismiss={clearEvolutionReward}
+          />
+        )}
+        </View>
       </SafeAreaView>
 
       {/* Tour overlay — outside SafeAreaView so its coords match measureInWindow */}
@@ -440,6 +442,12 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
   },
   scroll: {
     flex: 1,

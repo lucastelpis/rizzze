@@ -39,108 +39,110 @@ export default function StoriesScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.title, { color: C.textPrimary }]}>Stories</Text>
-            <Text style={[styles.subtitle, { color: C.textSecondary }]}>Short reads to quiet your mind</Text>
+        <View style={styles.maxWidthWrapper}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <View>
+              <Text style={[styles.title, { color: C.textPrimary }]}>Stories</Text>
+              <Text style={[styles.subtitle, { color: C.textSecondary }]}>Short reads to quiet your mind</Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
+              onPress={() => router.push('/profile')}
+              activeOpacity={0.8}
+            >
+              <HeaderSheep size={34} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
-            onPress={() => router.push('/profile')}
-            activeOpacity={0.8}
-          >
-            <HeaderSheep size={34} />
-          </TouchableOpacity>
-        </View>
-        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
+          <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <Animated.View 
-          entering={FadeIn.duration(400)}
-          style={{ flex: 1 }}
-        >
-          <ScrollView 
-            style={styles.scroll} 
-            contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
-            showsVerticalScrollIndicator={false}
+          <Animated.View 
+            entering={FadeIn.duration(400)}
+            style={{ flex: 1 }}
           >
+            <ScrollView 
+              style={styles.scroll} 
+              contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
+              showsVerticalScrollIndicator={false}
+            >
 
-          
-          <TouchableOpacity 
-            style={[styles.featuredCard, { backgroundColor: C.bgCard, borderTopColor: '#C8A29A', shadowColor: C.textPrimary }]}
-            activeOpacity={0.9}
-            onPress={() => {
-              posthog.capture('story_opened', { story_id: featuredStory.id, story_title: featuredStory.title, source: 'featured' });
-              router.push(`/reader/${featuredStory.id}`);
-            }}
-          >
-            <View style={styles.featuredContent}>
-              <View style={[styles.thumbWrap, { backgroundColor: 'rgba(240, 216, 208, 0.15)' }]}>
-                {StoryThumb ? <StoryThumb size={52} /> : <AwakeSheep size={42} />}
-              </View>
-              
-              <View style={styles.featuredText}>
-                <View style={styles.featuredRow}>
-                  <Text style={[styles.overline, { color: '#8B4A40' }]}>TONIGHT'S READ</Text>
-                  {readStoryIds.includes(featuredStory.id) && (
-                    <View style={[styles.readBadge, { backgroundColor: isDark ? 'rgba(139, 109, 174, 0.3)' : 'rgba(139, 109, 174, 0.12)' }]}>
-                      <Text style={[styles.readBadgeText, { color: isDark ? '#C4AED8' : '#8B4A40' }]}>READ</Text>
-                    </View>
-                  )}
+            
+            <TouchableOpacity 
+              style={[styles.featuredCard, { backgroundColor: C.bgCard, borderTopColor: '#C8A29A', shadowColor: C.textPrimary }]}
+              activeOpacity={0.9}
+              onPress={() => {
+                posthog.capture('story_opened', { story_id: featuredStory.id, story_title: featuredStory.title, source: 'featured' });
+                router.push(`/reader/${featuredStory.id}`);
+              }}
+            >
+              <View style={styles.featuredContent}>
+                <View style={[styles.thumbWrap, { backgroundColor: 'rgba(240, 216, 208, 0.15)' }]}>
+                  {StoryThumb ? <StoryThumb size={52} /> : <AwakeSheep size={42} />}
                 </View>
-                <Text style={[styles.featuredTitle, { color: C.textPrimary }]}>{featuredStory.title}</Text>
-                <Text style={[styles.featuredSubtitle, { color: '#9E7E78' }]} numberOfLines={2}>
-                  {featuredStory.subtitle}
-                </Text>
+                
+                <View style={styles.featuredText}>
+                  <View style={styles.featuredRow}>
+                    <Text style={[styles.overline, { color: '#8B4A40' }]}>TONIGHT'S READ</Text>
+                    {readStoryIds.includes(featuredStory.id) && (
+                      <View style={[styles.readBadge, { backgroundColor: isDark ? 'rgba(139, 109, 174, 0.3)' : 'rgba(139, 109, 174, 0.12)' }]}>
+                        <Text style={[styles.readBadgeText, { color: isDark ? '#C4AED8' : '#8B4A40' }]}>READ</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.featuredTitle, { color: C.textPrimary }]}>{featuredStory.title}</Text>
+                  <Text style={[styles.featuredSubtitle, { color: '#9E7E78' }]} numberOfLines={2}>
+                    {featuredStory.subtitle}
+                  </Text>
+                </View>
+                
+                <View style={[styles.playButton, { backgroundColor: '#8B4A40' }]}>
+                  <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+                    <Path d="M4 2.5L13 8L4 13.5V2.5Z" fill="#FFFFFF" />
+                  </Svg>
+                </View>
               </View>
-              
-              <View style={[styles.playButton, { backgroundColor: '#8B4A40' }]}>
-                <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
-                  <Path d="M4 2.5L13 8L4 13.5V2.5Z" fill="#FFFFFF" />
-                </Svg>
+            </TouchableOpacity>
+
+            {/* CATEGORIES SECTION */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.overline, { color: C.textSecondary }]}>CATEGORIES</Text>
               </View>
-            </View>
-          </TouchableOpacity>
 
-          {/* CATEGORIES SECTION */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.overline, { color: C.textSecondary }]}>CATEGORIES</Text>
-            </View>
-
-            <View style={styles.categoryGrid}>
-              {CATEGORIES.map((cat) => {
-                const Graphic = (StoryGraphics as any)[`${cat.id.charAt(0).toUpperCase() + cat.id.slice(1)}CategoryBg`];
-                return (
-                  <TouchableOpacity 
-                    key={cat.id} 
-                    style={styles.categoryCard}
-                    activeOpacity={0.8}
-                    onPress={() => router.push(`/story-list/${cat.id}`)}
-                  >
-                    <View style={styles.graphicWrap}>
-                      {Graphic && <Graphic />}
-                    </View>
-                    <View style={styles.categoryInfo}>
-                      <Text style={styles.catTitle}>{cat.title}</Text>
-                      <Text 
-                        style={[styles.catSubtitle, { color: cat.accentColor }]}
-                        numberOfLines={2}
-                      >
-                        {cat.subtitle}
-                      </Text>
-                      {/* Story count removed per user request */}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            </View>
-          </ScrollView>
-        </Animated.View>
+              <View style={styles.categoryGrid}>
+                {CATEGORIES.map((cat) => {
+                  const Graphic = (StoryGraphics as any)[`${cat.id.charAt(0).toUpperCase() + cat.id.slice(1)}CategoryBg`];
+                  return (
+                    <TouchableOpacity 
+                      key={cat.id} 
+                      style={styles.categoryCard}
+                      activeOpacity={0.8}
+                      onPress={() => router.push(`/story-list/${cat.id}`)}
+                    >
+                      <View style={styles.graphicWrap}>
+                        {Graphic && <Graphic />}
+                      </View>
+                      <View style={styles.categoryInfo}>
+                        <Text style={styles.catTitle}>{cat.title}</Text>
+                        <Text 
+                          style={[styles.catSubtitle, { color: cat.accentColor }]}
+                          numberOfLines={2}
+                        >
+                          {cat.subtitle}
+                        </Text>
+                        {/* Story count removed per user request */}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              </View>
+            </ScrollView>
+          </Animated.View>
 
 
-        <BottomNav active="stories" />
+          <BottomNav active="stories" />
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -148,6 +150,12 @@ export default function StoriesScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
+  },
   safeArea: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24, gap: 24 },

@@ -223,126 +223,130 @@ export default function SleepScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Sleep</Text>
-            <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Track, plan, and improve</Text>
+        <View style={styles.maxWidthWrapper}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <View>
+              <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Sleep</Text>
+              <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Track, plan, and improve</Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]} 
+              onPress={() => router.push('/profile')}
+              activeOpacity={0.8}
+            >
+              <HeaderSheep size={34} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]} 
-            onPress={() => router.push('/profile')}
-            activeOpacity={0.8}
-          >
-            <HeaderSheep size={34} />
-          </TouchableOpacity>
-        </View>
-        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
+          <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
 
-        <Animated.View 
-          entering={FadeIn.duration(400)}
-          style={{ flex: 1 }}
-        >
-          <ScrollView 
-            contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
-            showsVerticalScrollIndicator={false}
+          <Animated.View 
+            entering={FadeIn.duration(400)}
+            style={{ flex: 1 }}
           >
-            <SleepRatingWidget />
+            <ScrollView 
+              contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]} 
+              showsVerticalScrollIndicator={false}
+            >
+              <SleepRatingWidget />
 
-            {/* TIP */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.overline, { color: C.textSecondary }]}>SLEEP TIP</Text>
-                <TouchableOpacity style={styles.nextTip} onPress={() => setTipIndex((tipIndex + 1) % SLEEP_TIPS.length)}>
-                  <Text style={{ color: C.accent, fontFamily: tokens.fonts.caption, fontSize: 11 }}>Next tip</Text>
-                  <ArrowRight color={C.accent} />
+              {/* TIP */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={[styles.overline, { color: C.textSecondary }]}>SLEEP TIP</Text>
+                  <TouchableOpacity style={styles.nextTip} onPress={() => setTipIndex((tipIndex + 1) % SLEEP_TIPS.length)}>
+                    <Text style={{ color: C.accent, fontFamily: tokens.fonts.caption, fontSize: 11 }}>Next tip</Text>
+                    <ArrowRight color={C.accent} />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.tipCard, { backgroundColor: C.accentLight }]} 
+                  onPress={() => setTipIndex((tipIndex + 1) % SLEEP_TIPS.length)}
+                >
+                  <View style={[styles.tipBadge, { backgroundColor: C.white }]}>
+                    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                      <Path d="M12 22a10 10 0 100-20 10 10 0 000 20zM12 16v-4M12 8h.01" stroke={C.accent} strokeWidth={2} strokeLinecap="round" />
+                    </Svg>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.tipTitle, { color: C.accent }]}>{SLEEP_TIPS[tipIndex].title}</Text>
+                    <Text style={[styles.tipText, { color: C.textSecondary }]}>{SLEEP_TIPS[tipIndex].text}</Text>
+                  </View>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity 
-                style={[styles.tipCard, { backgroundColor: C.accentLight }]} 
-                onPress={() => setTipIndex((tipIndex + 1) % SLEEP_TIPS.length)}
-              >
-                <View style={[styles.tipBadge, { backgroundColor: C.white }]}>
-                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                    <Path d="M12 22a10 10 0 100-20 10 10 0 000 20zM12 16v-4M12 8h.01" stroke={C.accent} strokeWidth={2} strokeLinecap="round" />
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.tipTitle, { color: C.accent }]}>{SLEEP_TIPS[tipIndex].title}</Text>
-                  <Text style={[styles.tipText, { color: C.textSecondary }]}>{SLEEP_TIPS[tipIndex].text}</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
 
-            {/* CALENDAR */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.overline, { color: C.textSecondary }]}>{MONTH_NAMES[currentMonth]} {currentYear}</Text>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <TouchableOpacity onPress={() => changeMonth('prev')}><ChevronLeft color={C.textSecondary} /></TouchableOpacity>
-                  <TouchableOpacity onPress={() => changeMonth('next')}><ChevronRight color={C.textSecondary} /></TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.calGrid}>
-                <View style={styles.calRow}>
-                  {DAY_LABELS.map((l, i) => <Text key={i} style={[styles.calDayHeader, { color: C.textMuted }]}>{l}</Text>)}
-                </View>
-                {Array.from({ length: Math.ceil(gridCells.length / 7) }).map((_, rIdx) => (
-                  <View key={rIdx} style={styles.calRow}>
-                    {gridCells.slice(rIdx * 7, rIdx * 7 + 7).map((d, cIdx) => {
-                      if (d === 0) return <View key={cIdx} style={styles.calCellEmpty} />;
-                      const key = `${currentYear}-${currentMonth + 1}-${d}`;
-                      const entry = sleepData[key];
-                      const quality = entry?.quality || null;
-                      const { bg, text } = getCellColor(quality);
-                      const isToday = d === TODAY_DAY && currentMonth === ACTUAL_MONTH && currentYear === ACTUAL_YEAR;
-                      const isPast = new Date(currentYear, currentMonth, d) < new Date(ACTUAL_YEAR, ACTUAL_MONTH, TODAY_DAY);
-                      
-                      return (
-                        <TouchableOpacity 
-                          key={cIdx} 
-                          style={[
-                            styles.calCell, 
-                            { backgroundColor: bg }, 
-                            isToday && { borderWidth: 2, borderColor: C.textPrimary }, 
-                            !isToday && !isPast && { opacity: 0.3 }
-                          ]}
-                          disabled={!isPast && !isToday}
-                          onPress={() => setEvalTarget({ day: d, month: currentMonth, year: currentYear, dateKey: key })}
-                        >
-                          <Text style={[styles.calCellText, { color: text }, quality === null && { color: C.textMuted }]}>{d}</Text>
-                          {sleepData[key]?.note && (
-                            <View style={[styles.noteDot, { backgroundColor: text === '#FFF' ? '#FFF' : C.accent }]} />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
+              {/* CALENDAR */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={[styles.overline, { color: C.textSecondary }]}>{MONTH_NAMES[currentMonth]} {currentYear}</Text>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <TouchableOpacity onPress={() => changeMonth('prev')}><ChevronLeft color={C.textSecondary} /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => changeMonth('next')}><ChevronRight color={C.textSecondary} /></TouchableOpacity>
                   </View>
-                ))}
-              </View>
+                </View>
 
-              <View style={styles.legend}>
-                {['bad', 'okay', 'good', 'great', 'perfect'].map(k => (
-                  <View key={k} style={styles.legendItem}>
-                    <View style={[styles.legendSwatch, { backgroundColor: (QUALITY_COLORS as any)[k] }]} />
-                    <Text style={[styles.legendLabel, { color: C.textSecondary }]}>{k.charAt(0).toUpperCase() + k.slice(1)}</Text>
+                <View style={styles.calGrid}>
+                  <View style={styles.calRow}>
+                    {DAY_LABELS.map((l, i) => <Text key={i} style={[styles.calDayHeader, { color: C.textMuted }]}>{l}</Text>)}
                   </View>
-                ))}
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendSwatch, { backgroundColor: C.bgMuted }]} />
-                  <Text style={[styles.legendLabel, { color: C.textSecondary }]}>No data</Text>
+                  {Array.from({ length: Math.ceil(gridCells.length / 7) }).map((_, rIdx) => (
+                    <View key={rIdx} style={styles.calRow}>
+                      {gridCells.slice(rIdx * 7, rIdx * 7 + 7).map((d, cIdx) => {
+                        if (d === 0) return <View key={cIdx} style={styles.calCellEmpty} />;
+                        const key = `${currentYear}-${currentMonth + 1}-${d}`;
+                        const entry = sleepData[key];
+                        const quality = entry?.quality || null;
+                        const { bg, text } = getCellColor(quality);
+                        const isToday = d === TODAY_DAY && currentMonth === ACTUAL_MONTH && currentYear === ACTUAL_YEAR;
+                        const isPast = new Date(currentYear, currentMonth, d) < new Date(ACTUAL_YEAR, ACTUAL_MONTH, TODAY_DAY);
+                        
+                        return (
+                          <TouchableOpacity 
+                            key={cIdx} 
+                            style={[
+                              styles.calCell, 
+                              { backgroundColor: bg }, 
+                              isToday && { borderWidth: 2, borderColor: C.textPrimary }, 
+                              !isToday && !isPast && { opacity: 0.3 }
+                            ]}
+                            disabled={!isPast && !isToday}
+                            onPress={() => setEvalTarget({ day: d, month: currentMonth, year: currentYear, dateKey: key })}
+                          >
+                            <Text style={[styles.calCellText, { color: text }, quality === null && { color: C.textMuted }]}>{d}</Text>
+                            {sleepData[key]?.note && (
+                              <View style={[styles.noteDot, { backgroundColor: text === '#FFF' ? '#FFF' : C.accent }]} />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.legend}>
+                  {['bad', 'okay', 'good', 'great', 'perfect'].map(k => (
+                    <View key={k} style={styles.legendItem}>
+                      <View style={[styles.legendSwatch, { backgroundColor: (QUALITY_COLORS as any)[k] }]} />
+                      <Text style={[styles.legendLabel, { color: C.textSecondary }]}>{k.charAt(0).toUpperCase() + k.slice(1)}</Text>
+                    </View>
+                  ))}
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendSwatch, { backgroundColor: C.bgMuted }]} />
+                    <Text style={[styles.legendLabel, { color: C.textSecondary }]}>No data</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          </ScrollView>
-        </Animated.View>
+            </ScrollView>
+          </Animated.View>
+
+          <BottomNav active="sleep" />
+        </View>
 
         {/* MODAL */}
         <Modal visible={!!evalTarget} transparent animationType="fade" onRequestClose={() => setEvalTarget(null)}>
           <View style={styles.modalOverlay}>
             <Pressable style={[styles.modalBg, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(45,43,61,0.4)' }]} onPress={() => setEvalTarget(null)} />
-            <View style={[styles.modalContent, { backgroundColor: C.bgCard }]}>
+            <View style={[styles.modalContent, { backgroundColor: C.bgCard, maxWidth: 400 }]}>
               {modalView === 'rating' ? (
                 <>
                   <Text style={[styles.modalTitle, { color: C.textPrimary }]}>How did you sleep?</Text>
@@ -447,7 +451,7 @@ export default function SleepScreen() {
           </View>
         </Modal>
 
-        <BottomNav active="sleep" />
+
       </SafeAreaView>
     </View>
   );
@@ -455,6 +459,12 @@ export default function SleepScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
+  },
   header: { 
     paddingHorizontal: 24, 
     marginTop: 12, 

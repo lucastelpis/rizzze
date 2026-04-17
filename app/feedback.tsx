@@ -161,81 +161,85 @@ export default function FeedbackScreen() {
     <View style={[styles.container, { backgroundColor: C.bgPrimary }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
-            onPress={() => router.back()}
-          >
-            <BackIcon color={C.textPrimary} />
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: C.textPrimary }]}>Feedback Board</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <View style={styles.explainerContainer}>
-          <Text style={[styles.explainerText, { color: C.textSecondary }]}>
-            Help shape Rizzze! Share your ideas, report bugs, or upvote features you want to see next. Everything is anonymous.
-          </Text>
-        </View>
-
-        {/* Filter Toggle */}
-        <View style={styles.filterContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.filterBtn, 
-              { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' },
-              filterType === 'top' && { backgroundColor: C.accent }
-            ]}
-            onPress={() => setFilterType('top')}
-          >
-            <Text style={[styles.filterBtnText, { color: filterType === 'top' ? '#FFF' : C.textSecondary }]}>Top Voted</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[
-              styles.filterBtn, 
-              { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' },
-              filterType === 'latest' && { backgroundColor: C.accent }
-            ]}
-            onPress={() => setFilterType('latest')}
-          >
-            <Text style={[styles.filterBtnText, { color: filterType === 'latest' ? '#FFF' : C.textSecondary }]}>Latest</Text>
-          </TouchableOpacity>
-        </View>
-
-        {loading ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={C.accent} size="large" />
+        <View style={styles.maxWidthWrapper}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
+              onPress={() => router.back()}
+            >
+              <BackIcon color={C.textPrimary} />
+            </TouchableOpacity>
+            <Text style={[styles.title, { color: C.textPrimary }]}>Feedback Board</Text>
+            <View style={{ width: 40 }} />
           </View>
-        ) : (
-          <FlatList
-            data={sortedFeedbacks}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <FeedbackCard 
-                item={item} 
-                onVote={voteFeedback} 
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={() => fetchFeedbacks(true)} tintColor={C.accent} />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, { color: C.textSecondary }]}>No feedback yet. Be the first!</Text>
-              </View>
-            }
-          />
-        )}
 
-        {/* Floating Action Button */}
-        <TouchableOpacity 
-          style={[styles.fab, { backgroundColor: C.accent }]}
-          onPress={() => setModalVisible(true)}
-        >
-          <PlusIcon color="#FFF" />
-        </TouchableOpacity>
+          <View style={styles.explainerContainer}>
+            <Text style={[styles.explainerText, { color: C.textSecondary }]}>
+              Help shape Rizzze! Share your ideas, report bugs, or upvote features you want to see next. Everything is anonymous.
+            </Text>
+          </View>
+
+          {/* Filter Toggle */}
+          <View style={styles.filterContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.filterBtn, 
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' },
+                filterType === 'top' && { backgroundColor: C.accent }
+              ]}
+              onPress={() => setFilterType('top')}
+            >
+              <Text style={[styles.filterBtnText, { color: filterType === 'top' ? '#FFF' : C.textSecondary }]}>Top Voted</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.filterBtn, 
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' },
+                filterType === 'latest' && { backgroundColor: C.accent }
+              ]}
+              onPress={() => setFilterType('latest')}
+            >
+              <Text style={[styles.filterBtnText, { color: filterType === 'latest' ? '#FFF' : C.textSecondary }]}>Latest</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loading ? (
+            <View style={styles.center}>
+              <ActivityIndicator color={C.accent} size="large" />
+            </View>
+          ) : (
+            <FlatList
+              data={sortedFeedbacks}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <FeedbackCard 
+                  item={item} 
+                  onVote={voteFeedback} 
+                />
+              )}
+              contentContainerStyle={styles.listContent}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={() => fetchFeedbacks(true)} tintColor={C.accent} />
+              }
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={[styles.emptyText, { color: C.textSecondary }]}>No feedback yet. Be the first!</Text>
+                </View>
+              }
+            />
+          )}
+
+          {/* Floating Action Button - Contained within maxWidthWrapper relative context or handled via absolute */}
+          <View style={styles.fabWrapper}>
+            <TouchableOpacity 
+              style={[styles.fab, { backgroundColor: C.accent }]}
+              onPress={() => setModalVisible(true)}
+            >
+              <PlusIcon color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Submit Modal */}
         <Modal
@@ -319,6 +323,12 @@ export default function FeedbackScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
+  },
   safeArea: { flex: 1 },
   header: {
     paddingHorizontal: 20,
@@ -409,6 +419,14 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 14,
     fontFamily: 'Nunito_800ExtraBold',
+  },
+  fabWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    left: 0,
+    height: 100,
+    pointerEvents: 'box-none',
   },
   fab: {
     position: 'absolute',

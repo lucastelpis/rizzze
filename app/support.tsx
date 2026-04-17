@@ -142,59 +142,61 @@ export default function SupportCenterScreen() {
     <View style={[styles.container, { backgroundColor: C.bgPrimary }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
-            onPress={() => router.back()}
-          >
-            <BackIcon color={C.textPrimary} />
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: C.textPrimary }]}>Support Center</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <View style={styles.explainerContainer}>
-          <Text style={[styles.explainerText, { color: C.textSecondary }]}>
-            Have a question or a problem? Send us a private message and we'll get back to you personally.
-          </Text>
-        </View>
-
-        {loading && !refreshing ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={C.accent} size="large" />
+        <View style={styles.maxWidthWrapper}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0EBE3' }]}
+              onPress={() => router.back()}
+            >
+              <BackIcon color={C.textPrimary} />
+            </TouchableOpacity>
+            <Text style={[styles.title, { color: C.textPrimary }]}>Support Center</Text>
+            <View style={{ width: 40 }} />
           </View>
-        ) : (
-          <FlatList
-            data={tickets}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <SupportTicketCard ticket={item} />}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, { color: C.textSecondary }]}>
-                  No support tickets yet. Click the ➕ to start one!
-                </Text>
-              </View>
-            }
-          />
-        )}
 
-        {/* Floating Action Button */}
-        <TouchableOpacity 
-          style={[styles.fab, { backgroundColor: C.accent }]}
-          onPress={() => setModalVisible(true)}
-        >
-          <PlusIcon color="#FFF" />
-        </TouchableOpacity>
+          <View style={styles.explainerContainer}>
+            <Text style={[styles.explainerText, { color: C.textSecondary }]}>
+              Have a question or a problem? Send us a private message and we'll get back to you personally.
+            </Text>
+          </View>
+
+          {loading && !refreshing ? (
+            <View style={styles.center}>
+              <ActivityIndicator color={C.accent} size="large" />
+            </View>
+          ) : (
+            <FlatList
+              data={tickets}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <SupportTicketCard ticket={item} />}
+              contentContainerStyle={styles.listContent}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />
+              }
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={[styles.emptyText, { color: C.textSecondary }]}>
+                    No support tickets yet. Click the ➕ to start one!
+                  </Text>
+                </View>
+              }
+            />
+          )}
+
+          {/* Floating Action Button */}
+          <TouchableOpacity 
+            style={[styles.fab, { backgroundColor: C.accent }]}
+            onPress={() => setModalVisible(true)}
+          >
+            <PlusIcon color="#FFF" />
+          </TouchableOpacity>
+        </View>
 
         {/* Submit Modal */}
         <Modal
           visible={modalVisible}
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           onRequestClose={() => setModalVisible(false)}
         >
@@ -273,6 +275,12 @@ export default function SupportCenterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
   },
   safeArea: {
     flex: 1,
@@ -396,8 +404,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   modalContent: {
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,

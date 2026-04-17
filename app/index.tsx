@@ -174,20 +174,22 @@ const Page1 = () => {
   const C = useColors();
   return (
     <Animated.View exiting={FadeOutLeft} style={[styles.page, { paddingHorizontal: 0 }]}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Mascot variant="welcome" />
-        <View style={[styles.pageContent, { paddingHorizontal: 32 }]}>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>
-            Welcome to <Text style={{ color: C.accent }}>Rizzze</Text>!
-          </Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            The all-in-one sleep companion: a peaceful space to slow down and rest your mind.
-          </Text>
-        </View>
-      </ScrollView>
+      <View style={[styles.maxWidthWrapper, { flex: 1 }]}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Mascot variant="welcome" />
+          <View style={[styles.pageContent, { paddingHorizontal: 32 }]}>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>
+              Welcome to <Text style={{ color: C.accent }}>Rizzze</Text>!
+            </Text>
+            <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+              The all-in-one sleep companion: a peaceful space to slow down and rest your mind.
+            </Text>
+          </View>
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -197,40 +199,42 @@ const Page2 = () => {
   const { isDark } = useTheme();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="teaching" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>LEAVE THE STRESS BEHIND</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Craft your cozy night routine</Text>
-          <View style={styles.featureList}>
-            <FeatureItem
-              title="Sleep Diary"
-              description="Empty your thoughts before bed and rate your rest each morning to see your progress."
-              bgColor={isDark ? 'rgba(125, 176, 219, 0.2)' : '#E5F0F8'}
-              Icon={TrackerIcon}
-            />
-            <FeatureItem
-              title="Calming Sounds"
-              description="Block out the world with calming white noise and immersive natural and urban scenes."
-              bgColor={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
-              Icon={CloudIcon}
-            />
-            <FeatureItem
-              title="Soft Stories"
-              description="Travel to distant lands with peaceful tales designed to help your mind wander and relax."
-              bgColor={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
-              Icon={StoriesIcon}
-            />
-            <FeatureItem
-              title="Relaxing Games"
-              description="Quiet a busy mind with simple, gentle minigames that help you slow down."
-              bgColor={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
-              Icon={GamesIcon}
-              isLast
-            />
+      <View style={[styles.maxWidthWrapper, { flex: 1 }]}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Mascot variant="teaching" />
+          <View style={styles.pageContent}>
+            <Text style={[styles.overtitle, { color: C.overtitle }]}>LEAVE THE STRESS BEHIND</Text>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Craft your cozy night routine</Text>
+            <View style={styles.featureList}>
+              <FeatureItem
+                title="Sleep Diary"
+                description="Empty your thoughts before bed and rate your rest each morning to see your progress."
+                bgColor={isDark ? 'rgba(125, 176, 219, 0.2)' : '#E5F0F8'}
+                Icon={TrackerIcon}
+              />
+              <FeatureItem
+                title="Calming Sounds"
+                description="Block out the world with calming white noise and immersive natural and urban scenes."
+                bgColor={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
+                Icon={CloudIcon}
+              />
+              <FeatureItem
+                title="Soft Stories"
+                description="Travel to distant lands with peaceful tales designed to help your mind wander and relax."
+                bgColor={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
+                Icon={StoriesIcon}
+              />
+              <FeatureItem
+                title="Relaxing Games"
+                description="Quiet a busy mind with simple, gentle minigames that help you slow down."
+                bgColor={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
+                Icon={GamesIcon}
+                isLast
+              />
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -240,36 +244,38 @@ const PageName = ({ name, setName }: any) => {
   const { isDark } = useTheme();
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="greeting" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>LET'S GET ACQUAINTED</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What should I call you?</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            This name will appear on your profile screen.
-          </Text>
-          
-          <View style={[styles.inputWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: C.border }]}>
-            <TextInput
-              style={[styles.nameInput, { color: C.textPrimary }]}
-              placeholder="Your name"
-              placeholderTextColor={C.textMuted}
-              value={name}
-              onChangeText={(text) => {
-                if (text.length <= 15) {
-                  setName(text);
-                }
-              }}
-              maxLength={15}
-              autoFocus
-              selectionColor={C.accent}
-            />
-            <Text style={[styles.charCount, { color: C.textMuted }]}>
-              {name.length}/15
+      <View style={[styles.maxWidthWrapper, { flex: 1 }]}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Mascot variant="greeting" />
+          <View style={styles.pageContent}>
+            <Text style={[styles.overtitle, { color: C.overtitle }]}>LET'S GET ACQUAINTED</Text>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What should I call you?</Text>
+            <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+              This name will appear on your profile screen.
             </Text>
+            
+            <View style={[styles.inputWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: C.border }]}>
+              <TextInput
+                style={[styles.nameInput, { color: C.textPrimary }]}
+                placeholder="Your name"
+                placeholderTextColor={C.textMuted}
+                value={name}
+                onChangeText={(text) => {
+                  if (text.length <= 15) {
+                    setName(text);
+                  }
+                }}
+                maxLength={15}
+                autoFocus
+                selectionColor={C.accent}
+              />
+              <Text style={[styles.charCount, { color: C.textMuted }]}>
+                {name.length}/15
+              </Text>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -294,32 +300,34 @@ const PageGoal = ({ goal, setGoal }: any) => {
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-      >
-        <Mascot variant="reading" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>STARTING YOUR JOURNEY</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What is your biggest challenge?</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Let’s find the best way to help you sleep soundly.
-          </Text>
-          
-          <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
-            {goals.map((g) => (
-              <SelectionCard 
-                key={g} 
-                title={g} 
-                selected={goal === g} 
-                onPress={() => setGoal(g)} 
-                dynamicPadding={vPad}
-                dynamicFontSize={fontS}
-              />
-            ))}
+      <View style={[styles.maxWidthWrapper, { flex: 1 }]}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+        >
+          <Mascot variant="reading" />
+          <View style={styles.pageContent}>
+            <Text style={[styles.overtitle, { color: C.overtitle }]}>STARTING YOUR JOURNEY</Text>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>What is your biggest challenge?</Text>
+            <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+              Let’s find the best way to help you sleep soundly.
+            </Text>
+            
+            <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
+              {goals.map((g) => (
+                <SelectionCard 
+                  key={g} 
+                  title={g} 
+                  selected={goal === g} 
+                  onPress={() => setGoal(g)} 
+                  dynamicPadding={vPad}
+                  dynamicFontSize={fontS}
+                />
+              ))}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -338,32 +346,34 @@ const PageAge = ({ ageRange, setAgeRange }: any) => {
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-      >
-        <Mascot variant="age" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>MORE ABOUT YOU</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            I will gather the best sleep tips for your life stage.
-          </Text>
-          
-          <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
-            {ranges.map((r) => (
-              <SelectionCard 
-                key={r} 
-                title={r} 
-                selected={ageRange === r} 
-                onPress={() => setAgeRange(r)} 
-                dynamicPadding={vPad}
-                dynamicFontSize={fontS}
-              />
-            ))}
+      <View style={[styles.maxWidthWrapper, { flex: 1 }]}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+        >
+          <Mascot variant="age" />
+          <View style={styles.pageContent}>
+            <Text style={[styles.overtitle, { color: C.overtitle }]}>MORE ABOUT YOU</Text>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How old are you?</Text>
+            <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+              I will gather the best sleep tips for your life stage.
+            </Text>
+            
+            <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
+              {ranges.map((r) => (
+                <SelectionCard 
+                  key={r} 
+                  title={r} 
+                  selected={ageRange === r} 
+                  onPress={() => setAgeRange(r)} 
+                  dynamicPadding={vPad}
+                  dynamicFontSize={fontS}
+                />
+              ))}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -382,32 +392,34 @@ const PageGender = ({ gender, setGender }: any) => {
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-      >
-        <Mascot variant="gender" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How do you identify?</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Knowing our community helps us create better stories and sounds for you.
-          </Text>
-          
-          <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
-            {options.map((o) => (
-              <SelectionCard 
-                key={o} 
-                title={o} 
-                selected={gender === o} 
-                onPress={() => setGender(o)} 
-                dynamicPadding={vPad}
-                dynamicFontSize={fontS}
-              />
-            ))}
+      <View style={[styles.maxWidthWrapper, { flex: 1 }]}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+        >
+          <Mascot variant="gender" />
+          <View style={styles.pageContent}>
+            <Text style={[styles.overtitle, { color: C.overtitle }]}>ABOUT YOU</Text>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>How do you identify?</Text>
+            <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+              Knowing our community helps us create better stories and sounds for you.
+            </Text>
+            
+            <View style={[styles.selectionGrid, { gap: gapS, marginTop: topM + 4 }]}>
+              {options.map((o) => (
+                <SelectionCard 
+                  key={o} 
+                  title={o} 
+                  selected={gender === o} 
+                  onPress={() => setGender(o)} 
+                  dynamicPadding={vPad}
+                  dynamicFontSize={fontS}
+                />
+              ))}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -455,77 +467,79 @@ const Page3 = () => {
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Mascot variant="goal" />
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR DAILY ROUTINE</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Customize your reminders</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            We’ll send notifications to help you stay on track.
-          </Text>
+      <View style={[styles.maxWidthWrapper, { flex: 1 }]}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Mascot variant="goal" />
+          <View style={styles.pageContent}>
+            <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR DAILY ROUTINE</Text>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Customize your reminders</Text>
+            <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+              We’ll send notifications to help you stay on track.
+            </Text>
 
-          <View style={[styles.pickerRow, { marginHorizontal: -8 }]}>
-            <TimePickerCard
-              label="BEDTIME"
-              hour={localBedtime.hour}
-              minute={localBedtime.minute}
-              onAdjust={adjustBedtime}
-              themeColor="#C4AED8"
-              Icon={() => (
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="#C4AED8">
-                  <Path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-                </Svg>
-              )}
-            />
-            <View style={{ width: 10 }} />
-            <TimePickerCard
-              label="WAKE UP"
-              hour={localWakeUp.hour}
-              minute={localWakeUp.minute}
-              onAdjust={adjustWakeUp}
-              themeColor="#E8C88A"
-              Icon={() => (
-                <Svg width={16} height={16} viewBox="0 0 24 24" fill="#E8C88A">
-                  <Circle cx="12" cy="12" r="5" />
-                  <Path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#E8C88A" strokeWidth="2" strokeLinecap="round" />
-                </Svg>
-              )}
-            />
-          </View>
+            <View style={[styles.pickerRow, { marginHorizontal: -8 }]}>
+              <TimePickerCard
+                label="BEDTIME"
+                hour={localBedtime.hour}
+                minute={localBedtime.minute}
+                onAdjust={adjustBedtime}
+                themeColor="#C4AED8"
+                Icon={() => (
+                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="#C4AED8">
+                    <Path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                  </Svg>
+                )}
+              />
+              <View style={{ width: 10 }} />
+              <TimePickerCard
+                label="WAKE UP"
+                hour={localWakeUp.hour}
+                minute={localWakeUp.minute}
+                onAdjust={adjustWakeUp}
+                themeColor="#E8C88A"
+                Icon={() => (
+                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="#E8C88A">
+                    <Circle cx="12" cy="12" r="5" />
+                    <Path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#E8C88A" strokeWidth="2" strokeLinecap="round" />
+                  </Svg>
+                )}
+              />
+            </View>
 
-          <View style={styles.durationBox}>
-            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.textSecondary} strokeWidth="1.5">
-              <Circle cx="12" cy="12" r="10" />
-              <Path d="M12 6v6l4 2" />
-            </Svg>
-            <Text style={[styles.durationText, { color: C.textSecondary }]}>
-              {formatDuration(duration.hours, duration.minutes)} of sleep
+            <View style={styles.durationBox}>
+              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={C.textSecondary} strokeWidth="1.5">
+                <Circle cx="12" cy="12" r="10" />
+                <Path d="M12 6v6l4 2" />
+              </Svg>
+              <Text style={[styles.durationText, { color: C.textSecondary }]}>
+                {formatDuration(duration.hours, duration.minutes)} of sleep
+              </Text>
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: C.border }]} />
+
+            <View style={styles.togglesContainer}>
+              <ToggleRow
+                title="Bedtime reminder"
+                description="A gentle reminder to start your nightly routine."
+                isEnabled={isNotificationsEnabled}
+                onToggle={(enabled: boolean) => toggleNotifications(enabled, false)}
+              />
+              <ToggleRow
+                title="Morning check-in"
+                description="A soft reminder to log your sleep and start your day."
+                isEnabled={isDailyCheckInEnabled}
+                onToggle={(enabled: boolean) => toggleDailyCheckIn(enabled, false)}
+              />
+            </View>
+
+            <Text style={[styles.notificationDisclaimer, { color: C.textSecondary }]}>
+              Toggle these off if you'd prefer not to receive notifications. 
+              You can change this anytime in your profile settings.
             </Text>
           </View>
-
-          <View style={[styles.divider, { backgroundColor: C.border }]} />
-
-          <View style={styles.togglesContainer}>
-            <ToggleRow
-              title="Bedtime reminder"
-              description="A gentle reminder to start your nightly routine."
-              isEnabled={isNotificationsEnabled}
-              onToggle={(enabled: boolean) => toggleNotifications(enabled, false)}
-            />
-            <ToggleRow
-              title="Morning check-in"
-              description="A soft reminder to log your sleep and start your day."
-              isEnabled={isDailyCheckInEnabled}
-              onToggle={(enabled: boolean) => toggleDailyCheckIn(enabled, false)}
-            />
-          </View>
-
-          <Text style={[styles.notificationDisclaimer, { color: C.textSecondary }]}>
-            Toggle these off if you'd prefer not to receive notifications. 
-            You can change this anytime in your profile settings.
-          </Text>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -566,106 +580,108 @@ const Page4 = () => {
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.pageContent}>
-          <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR COMPANION</Text>
-          <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Meet your sheep</Text>
-          <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
-            Check in daily and watch it grow.{"\n"}How far can you take it?
-          </Text>
+      <View style={[styles.maxWidthWrapper, { flex: 1 }]}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.pageContent}>
+            <Text style={[styles.overtitle, { color: C.overtitle }]}>YOUR COMPANION</Text>
+            <Text style={[styles.heroTitle, { color: C.textPrimary }]}>Meet your sheep</Text>
+            <Text style={[styles.pageDescription, { color: C.textSecondary }]}>
+              Check in daily and watch it grow.{"\n"}How far can you take it?
+            </Text>
 
-          {/* ─── Growth Showcase ─── */}
-          <View style={p6Styles.showcaseContainer}>
-            <View style={p6Styles.sheepRow}>
-              {SheepComponents.map((SheepComp, i) => (
-                <View key={i} style={[p6Styles.sheepSlot, { opacity: STAGE_OPACITIES[i] }]}>
-                  <View style={p6Styles.sheepSvgWrap}>
-                    <SheepComp size={responsiveSizes[i]} />
-                  </View>
-                  <Text style={[
-                    p6Styles.stageLabel,
-                    { color: C.textSecondary, fontSize: width < 380 ? 8.5 : 10 },
-                    i === 3 && { color: C.textPrimary, fontWeight: '800', fontSize: width < 380 ? 10 : 12 },
-                  ]}>
-                    {STAGE_LABELS[i]}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            {/* ─── Timeline Bar ─── */}
-            <View style={p6Styles.timelineContainer}>
-              <View style={[p6Styles.timelineLine, { 
-                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E8E2D8',
-                width: '83.3%',
-                alignSelf: 'center',
-              }]}>
-                <View style={[p6Styles.timelineFilled, { backgroundColor: C.accent, width: '60%' }]} />
-              </View>
-
-              <View style={p6Styles.dotsRow}>
-                {[0, 1, 2, 3, 4, 5].map(i => (
-                  <View key={i} style={p6Styles.dotSlot}>
-                    <View
-                      style={[
-                        p6Styles.dot,
-                        i <= 3 && { backgroundColor: C.accent },
-                        i > 3 && [
-                          p6Styles.dotRing,
-                          { borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#D8D2CC', backgroundColor: 'transparent' },
-                        ],
-                        width < 380 && { width: 7, height: 7, borderRadius: 4 },
-                      ]}
-                    />
+            {/* ─── Growth Showcase ─── */}
+            <View style={p6Styles.showcaseContainer}>
+              <View style={p6Styles.sheepRow}>
+                {SheepComponents.map((SheepComp, i) => (
+                  <View key={i} style={[p6Styles.sheepSlot, { opacity: STAGE_OPACITIES[i] }]}>
+                    <View style={p6Styles.sheepSvgWrap}>
+                      <SheepComp size={responsiveSizes[i]} />
+                    </View>
+                    <Text style={[
+                      p6Styles.stageLabel,
+                      { color: C.textSecondary, fontSize: width < 380 ? 8.5 : 10 },
+                      i === 3 && { color: C.textPrimary, fontWeight: '800', fontSize: width < 380 ? 10 : 12 },
+                    ]}>
+                      {STAGE_LABELS[i]}
+                    </Text>
                   </View>
                 ))}
               </View>
+
+              {/* ─── Timeline Bar ─── */}
+              <View style={p6Styles.timelineContainer}>
+                <View style={[p6Styles.timelineLine, { 
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E8E2D8',
+                  width: '83.3%',
+                  alignSelf: 'center',
+                }]}>
+                  <View style={[p6Styles.timelineFilled, { backgroundColor: C.accent, width: '60%' }]} />
+                </View>
+
+                <View style={p6Styles.dotsRow}>
+                  {[0, 1, 2, 3, 4, 5].map(i => (
+                    <View key={i} style={p6Styles.dotSlot}>
+                      <View
+                        style={[
+                          p6Styles.dot,
+                          i <= 3 && { backgroundColor: C.accent },
+                          i > 3 && [
+                            p6Styles.dotRing,
+                            { borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#D8D2CC', backgroundColor: 'transparent' },
+                          ],
+                          width < 380 && { width: 7, height: 7, borderRadius: 4 },
+                        ]}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </View>
             </View>
-          </View>
 
-          {/* ─── Benefits ─── */}
-          <View style={p6Styles.benefitsList}>
-            <CompanionBenefitRow
-              icon={
-                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                  <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="1.5" />
-                  <Path d="M12 7v5l3 3" stroke={iconColor} strokeWidth="1.5" strokeLinecap="round" />
-                </Svg>
-              }
-              iconBg={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
-              title="Rate your sleep daily"
-              description="Each check-in helps your sheep grow."
-            />
-            <CompanionBenefitRow
-              icon={
-                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                  <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill={iconColor} />
-                </Svg>
-              }
-              iconBg={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
-              title="6 unique stages"
-              description="Each one a surprise to discover."
-            />
-            <CompanionBenefitRow
-              icon={
-                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                  <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="1.5" />
-                  <Circle cx="12" cy="12" r="4" fill={iconColor} />
-                </Svg>
-              }
-              iconBg={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
-              title="No pressure, just progress"
-              description="Missed a day? Your sheep waits patiently."
-              isLast
-            />
-          </View>
+            {/* ─── Benefits ─── */}
+            <View style={p6Styles.benefitsList}>
+              <CompanionBenefitRow
+                icon={
+                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                    <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="1.5" />
+                    <Path d="M12 7v5l3 3" stroke={iconColor} strokeWidth="1.5" strokeLinecap="round" />
+                  </Svg>
+                }
+                iconBg={isDark ? 'rgba(139, 107, 174, 0.25)' : '#E8DFF0'}
+                title="Rate your sleep daily"
+                description="Each check-in helps your sheep grow."
+              />
+              <CompanionBenefitRow
+                icon={
+                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                    <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill={iconColor} />
+                  </Svg>
+                }
+                iconBg={isDark ? 'rgba(232, 200, 138, 0.25)' : '#F5ECD8'}
+                title="6 unique stages"
+                description="Each one a surprise to discover."
+              />
+              <CompanionBenefitRow
+                icon={
+                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                    <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="1.5" />
+                    <Circle cx="12" cy="12" r="4" fill={iconColor} />
+                  </Svg>
+                }
+                iconBg={isDark ? 'rgba(168, 197, 160, 0.2)' : '#EAF2E8'}
+                title="No pressure, just progress"
+                description="Missed a day? Your sheep waits patiently."
+                isLast
+              />
+            </View>
 
-          {/* ─── Access hint ─── */}
-          <Text style={[p6Styles.accessHint, { color: C.textMuted }]}>
-            Visit your sheep anytime on your Profile
-          </Text>
-        </View>
-      </ScrollView>
+            {/* ─── Access hint ─── */}
+            <Text style={[p6Styles.accessHint, { color: C.textMuted }]}>
+              Visit your sheep anytime on your Profile
+            </Text>
+          </View>
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 };
@@ -953,6 +969,7 @@ export default function Onboarding() {
         gender_set: !!gender
       });
       posthog.capture('paywall_shown');
+      
       const success = await presentPaywall();
       if (success || isPro) {
         router.replace('/(tabs)');
@@ -984,18 +1001,20 @@ export default function Onboarding() {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           {/* Progress Dots */}
-          <View style={styles.progressContainer}>
-            {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
-              <View
-                key={i}
-                style={[
-                  styles.progressDot,
-                  { backgroundColor: C.mode === 'dark' ? '#5A5670' : 'rgba(0,0,0,0.1)' },
-                  i === currentPage && [styles.progressDotActive, { backgroundColor: C.accent }],
-                  i < currentPage && [styles.progressDotCompleted, { backgroundColor: C.accentSoft }],
-                ]}
-              />
-            ))}
+          <View style={styles.maxWidthWrapper}>
+            <View style={styles.progressContainer}>
+              {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+                <View
+                  key={i}
+                  style={[
+                    styles.progressDot,
+                    { backgroundColor: C.mode === 'dark' ? '#5A5670' : 'rgba(0,0,0,0.1)' },
+                    i === currentPage && [styles.progressDotActive, { backgroundColor: C.accent }],
+                    i < currentPage && [styles.progressDotCompleted, { backgroundColor: C.accentSoft }],
+                  ]}
+                />
+              ))}
+            </View>
           </View>
 
           {/* Page Container */}
@@ -1076,12 +1095,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'stretch',
     justifyContent: 'center',
-    paddingHorizontal: tokens.spacing.xl,
+  },
+  maxWidthWrapper: {
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
   },
   pageContent: {
     alignItems: 'center',
     width: '100%',
     alignSelf: 'stretch',
+    paddingHorizontal: 32,
   },
   scrollContent: {
     flexGrow: 1,
@@ -1154,7 +1178,7 @@ const styles = StyleSheet.create({
   },
   featureList: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: tokens.layout.contentMaxWidth,
     alignSelf: 'center',
     marginTop: 12,
   },
@@ -1186,7 +1210,7 @@ const styles = StyleSheet.create({
   },
   selectionGrid: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: tokens.layout.contentMaxWidth,
     alignSelf: 'center',
     gap: 12,
     marginTop: 20,
@@ -1224,7 +1248,7 @@ const styles = StyleSheet.create({
   },
   navigation: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: tokens.layout.contentMaxWidth,
     alignSelf: 'center',
     flexDirection: 'row',
     padding: tokens.spacing.xl,
@@ -1463,7 +1487,7 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: tokens.layout.contentMaxWidth,
     alignSelf: 'center',
     height: 60,
     borderRadius: 16,

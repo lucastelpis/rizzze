@@ -9,6 +9,7 @@ import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as SoundGraphics from '@/components/SoundGraphics';
+import { tokens } from '@/constants/theme';
 import { ScreenLoader } from '@/components/ScreenLoader';
 
 // ─── UTILS & DATA ─────────────────────────────────────────────────────────────
@@ -143,92 +144,93 @@ export default function PlayerScreen() {
       <StatusBar style="light" />
 
       <View style={[styles.safeArea, { paddingTop: Math.max(insets.top, 20) + 16, paddingBottom: Math.max(insets.bottom, 20) }]}>
-        
-        {/* TOP NAV BAR - Fixed at top */}
-        <View style={styles.topNav}>
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ padding: 4 }}>
-            <Ionicons name="chevron-down" size={24} color="#C4AED8" />
-          </TouchableOpacity>
-          <Text style={styles.nowPlayingText}>NOW PLAYING</Text>
-          <TouchableOpacity activeOpacity={0.7} style={{ padding: 4 }}>
-            <Feather name="more-vertical" size={20} color="#C4AED8" />
-          </TouchableOpacity>
-        </View>
-
-        {/* MAIN CONTENT - Vertically Centered */}
-        <View style={styles.mainContent}>
-          {/* ALBUM ART */}
-        <View style={styles.albumArtWrapper}>
-          <View style={styles.albumContainer}>
-            {GraphicComponent && <GraphicComponent w={220} h={220} />}
-            <View style={StyleSheet.absoluteFill}>
-              <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-                {/* 4-5 Sparkles */}
-                <Sparkle cx={40} cy={40} size={8} color="#C4AED8" opacity={0.6} />
-                <Sparkle cx={180} cy={60} size={6} color="#E8DFF0" opacity={0.8} />
-                <Sparkle cx={170} cy={160} size={10} color="#C4AED8" opacity={0.5} />
-                <Sparkle cx={50} cy={180} size={8} color="#E8DFF0" opacity={0.7} />
-              </Svg>
-            </View>
-            <Animated.View style={[styles.mascotContainer, animatedSheepStyle]}>
-              <Image source={require('@/assets/images/mascot_welcome.png')} style={styles.mascot} contentFit="contain" />
-            </Animated.View>
+        <View style={styles.maxWidthWrapper}>
+          {/* TOP NAV BAR - Fixed at top */}
+          <View style={styles.topNav}>
+            <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ padding: 4 }}>
+              <Ionicons name="chevron-down" size={24} color="#C4AED8" />
+            </TouchableOpacity>
+            <Text style={styles.nowPlayingText}>NOW PLAYING</Text>
+            <TouchableOpacity activeOpacity={0.7} style={{ padding: 4 }}>
+              <Feather name="more-vertical" size={20} color="#C4AED8" />
+            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* TRACK INFO */}
-        <View style={styles.trackInfo}>
-          <Text style={styles.title}>{title || 'Unknown Sound'}</Text>
-          <Text style={styles.subtitle}>{subtitle || 'Collection'}</Text>
-        </View>
+          {/* MAIN CONTENT - Vertically Centered */}
+          <View style={styles.mainContent}>
+            {/* ALBUM ART */}
+          <View style={styles.albumArtWrapper}>
+            <View style={styles.albumContainer}>
+              {GraphicComponent && <GraphicComponent w={220} h={220} />}
+              <View style={StyleSheet.absoluteFill}>
+                <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+                  {/* 4-5 Sparkles */}
+                  <Sparkle cx={40} cy={40} size={8} color="#C4AED8" opacity={0.6} />
+                  <Sparkle cx={180} cy={60} size={6} color="#E8DFF0" opacity={0.8} />
+                  <Sparkle cx={170} cy={160} size={10} color="#C4AED8" opacity={0.5} />
+                  <Sparkle cx={50} cy={180} size={8} color="#E8DFF0" opacity={0.7} />
+                </Svg>
+              </View>
+              <Animated.View style={[styles.mascotContainer, animatedSheepStyle]}>
+                <Image source={require('@/assets/images/mascot_welcome.png')} style={styles.mascot} contentFit="contain" />
+              </Animated.View>
+            </View>
+          </View>
 
-          {/* PROGRESS BAR */}
-          <View style={styles.progressContainer}>
-            <View 
-              style={styles.progressTouchable}
-              onStartShouldSetResponder={() => true}
-              onResponderGrant={handleScrubStart}
-              onResponderMove={handleScrubMove}
-              onResponderRelease={handleScrubEnd}
-              onResponderTerminate={handleScrubEnd}
-            >
-              <View style={styles.progressTrack} pointerEvents="none">
-                <View style={[styles.progressFilled, { width: `${progressPercent}%` }]} />
-                <View style={[styles.scrubberDot, { left: `${progressPercent}%`, transform: [{ translateX: -6 }] }]} />
+          {/* TRACK INFO */}
+          <View style={styles.trackInfo}>
+            <Text style={styles.title}>{title || 'Unknown Sound'}</Text>
+            <Text style={styles.subtitle}>{subtitle || 'Collection'}</Text>
+          </View>
+
+            {/* PROGRESS BAR */}
+            <View style={styles.progressContainer}>
+              <View 
+                style={styles.progressTouchable}
+                onStartShouldSetResponder={() => true}
+                onResponderGrant={handleScrubStart}
+                onResponderMove={handleScrubMove}
+                onResponderRelease={handleScrubEnd}
+                onResponderTerminate={handleScrubEnd}
+              >
+                <View style={styles.progressTrack} pointerEvents="none">
+                  <View style={[styles.progressFilled, { width: `${progressPercent}%` }]} />
+                  <View style={[styles.scrubberDot, { left: `${progressPercent}%`, transform: [{ translateX: -6 }] }]} />
+                </View>
+              </View>
+              <View style={styles.timeRow}>
+                <Text style={styles.timeText}>{formatTime(displayPosition)}</Text>
+                <Text style={styles.timeText}>{formatTime(displayDuration)}</Text>
               </View>
             </View>
-            <View style={styles.timeRow}>
-              <Text style={styles.timeText}>{formatTime(displayPosition)}</Text>
-              <Text style={styles.timeText}>{formatTime(displayDuration)}</Text>
-            </View>
-          </View>
 
-          {/* PLAYBACK CONTROLS */}
-          <View style={styles.controlsRow}>
-            <View style={styles.buttonCol}>
-              <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
-                <Feather name="arrow-left" size={22} color="#C4AED8" />
+            {/* PLAYBACK CONTROLS */}
+            <View style={styles.controlsRow}>
+              <View style={styles.buttonCol}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+                  <Feather name="arrow-left" size={22} color="#C4AED8" />
+                </TouchableOpacity>
+                <Text style={styles.buttonLabel}>Back</Text>
+              </View>
+
+              <TouchableOpacity style={styles.playPauseButton} onPress={togglePlayPause} activeOpacity={0.8}>
+                {isPlaying ? <PauseIcon /> : <PlayIcon />}
               </TouchableOpacity>
-              <Text style={styles.buttonLabel}>Back</Text>
+
+              <View style={styles.buttonCol}>
+                <TouchableOpacity style={[styles.loopButton, isLooping ? { backgroundColor: '#8B6DAE' } : null]} onPress={toggleLoop} activeOpacity={0.7}>
+                  <LoopIcon active={isLooping} />
+                </TouchableOpacity>
+                <Text style={[styles.loopLabel, isLooping ? { color: '#8B6DAE' } : null]}>{isLooping ? 'On' : 'Loop'}</Text>
+              </View>
             </View>
 
-            <TouchableOpacity style={styles.playPauseButton} onPress={togglePlayPause} activeOpacity={0.8}>
-              {isPlaying ? <PauseIcon /> : <PlayIcon />}
-            </TouchableOpacity>
-
-            <View style={styles.buttonCol}>
-              <TouchableOpacity style={[styles.loopButton, isLooping ? { backgroundColor: '#8B6DAE' } : null]} onPress={toggleLoop} activeOpacity={0.7}>
-                <LoopIcon active={isLooping} />
-              </TouchableOpacity>
-              <Text style={[styles.loopLabel, isLooping ? { color: '#8B6DAE' } : null]}>{isLooping ? 'On' : 'Loop'}</Text>
-            </View>
-          </View>
-
-          {/* SLEEP TIMER PILL */}
-          <View style={styles.pillContainer}>
-            <View style={styles.timerPill}>
-              <Feather name="clock" size={14} color="#C4AED8" strokeWidth={1.5} />
-              <Text style={styles.timerText}>Sleep timer · 45 min</Text>
+            {/* SLEEP TIMER PILL */}
+            <View style={styles.pillContainer}>
+              <View style={styles.timerPill}>
+                <Feather name="clock" size={14} color="#C4AED8" strokeWidth={1.5} />
+                <Text style={styles.timerText}>Sleep timer · 45 min</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -244,6 +246,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#2D2B3D',
+  },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
   },
   safeArea: {
     flex: 1,

@@ -190,91 +190,93 @@ export default function GamesScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.bgPrimary }]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Games</Text>
-            <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Wind down with gentle play</Text>
+        <View style={styles.maxWidthWrapper}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <View>
+              <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Games</Text>
+              <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Wind down with gentle play</Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
+              onPress={() => router.push('/profile')}
+              activeOpacity={0.8}
+            >
+              <HeaderSheep size={34} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            style={[styles.sheepButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.accentLight }]}
-            onPress={() => router.push('/profile')}
-            activeOpacity={0.8}
+          <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
+
+          <ScrollView 
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
           >
-            <HeaderSheep size={34} />
-          </TouchableOpacity>
+            {/* Card 1: Sheep Jumper */}
+            <TouchableOpacity 
+              style={styles.gameCard}
+              activeOpacity={0.9}
+              onPress={() => {
+                posthog.capture('game_started', { game: 'sheep-jumper' });
+                router.push('/games/sheep-jumper');
+              }}
+            >
+              <SheepJumperBG />
+              <LinearGradient
+                colors={['transparent', 'rgba(26,35,56,0.92)']}
+                style={styles.cardOverlay}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 0, y: 1 }}
+              >
+                <View style={styles.pillWrap}>
+                  <View style={styles.badgePill}>
+                    <Text style={styles.badgeText}>Endless</Text>
+                  </View>
+                  {sheepHighScore > 0 && (
+                    <View style={[styles.badgePill, { backgroundColor: 'rgba(232, 216, 192, 0.45)', marginLeft: 8, borderColor: 'rgba(232, 216, 192, 0.3)', borderWidth: 1 }]}>
+                      <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Best: {sheepHighScore}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.cardTitle}>Sheep jumper</Text>
+                <Text style={styles.cardSubtitle}>Tap to jump over fences. How far can you go?</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Card 2: Cozy Farm */}
+            <TouchableOpacity 
+              style={styles.gameCard}
+              activeOpacity={0.9}
+              onPress={() => {
+                posthog.capture('game_started', { game: 'cozy-farm' });
+                router.push('/games/cozy-farm');
+              }}
+            >
+              <CozyFarmBG />
+              <LinearGradient
+                colors={['transparent', 'rgba(60,80,65,0.92)']}
+                style={styles.cardOverlay}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 0, y: 1 }}
+              >
+                <View style={styles.pillWrap}>
+                  <View style={styles.badgePill}>
+                    <Text style={styles.badgeText}>Puzzle</Text>
+                  </View>
+                  {cozyFarmHighScore > 0 && (
+                    <View style={[styles.badgePill, { backgroundColor: 'rgba(232, 216, 192, 0.45)', marginLeft: 8, borderColor: 'rgba(232, 216, 192, 0.3)', borderWidth: 1 }]}>
+                      <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Best: {cozyFarmHighScore}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.cardTitle}>Cozy farm</Text>
+                <Text style={styles.cardSubtitle}>Clear stones and weeds to restore a peaceful garden</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </ScrollView>
+
+          <BottomNav active="games" />
         </View>
-        <View style={[styles.headerDivider, { backgroundColor: C.border }]} />
-
-        <ScrollView 
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Card 1: Sheep Jumper */}
-          <TouchableOpacity 
-            style={styles.gameCard}
-            activeOpacity={0.9}
-            onPress={() => {
-              posthog.capture('game_started', { game: 'sheep-jumper' });
-              router.push('/games/sheep-jumper');
-            }}
-          >
-            <SheepJumperBG />
-            <LinearGradient
-              colors={['transparent', 'rgba(26,35,56,0.92)']}
-              style={styles.cardOverlay}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 0, y: 1 }}
-            >
-              <View style={styles.pillWrap}>
-                <View style={styles.badgePill}>
-                  <Text style={styles.badgeText}>Endless</Text>
-                </View>
-                {sheepHighScore > 0 && (
-                  <View style={[styles.badgePill, { backgroundColor: 'rgba(232, 216, 192, 0.45)', marginLeft: 8, borderColor: 'rgba(232, 216, 192, 0.3)', borderWidth: 1 }]}>
-                    <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Best: {sheepHighScore}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.cardTitle}>Sheep jumper</Text>
-              <Text style={styles.cardSubtitle}>Tap to jump over fences. How far can you go?</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          {/* Card 2: Cozy Farm */}
-          <TouchableOpacity 
-            style={styles.gameCard}
-            activeOpacity={0.9}
-            onPress={() => {
-              posthog.capture('game_started', { game: 'cozy-farm' });
-              router.push('/games/cozy-farm');
-            }}
-          >
-            <CozyFarmBG />
-            <LinearGradient
-              colors={['transparent', 'rgba(60,80,65,0.92)']}
-              style={styles.cardOverlay}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 0, y: 1 }}
-            >
-              <View style={styles.pillWrap}>
-                <View style={styles.badgePill}>
-                  <Text style={styles.badgeText}>Puzzle</Text>
-                </View>
-                {cozyFarmHighScore > 0 && (
-                  <View style={[styles.badgePill, { backgroundColor: 'rgba(232, 216, 192, 0.45)', marginLeft: 8, borderColor: 'rgba(232, 216, 192, 0.3)', borderWidth: 1 }]}>
-                    <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Best: {cozyFarmHighScore}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.cardTitle}>Cozy farm</Text>
-              <Text style={styles.cardSubtitle}>Clear stones and weeds to restore a peaceful garden</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </ScrollView>
-
-        <BottomNav active="games" />
       </SafeAreaView>
     </View>
   );
@@ -283,6 +285,12 @@ export default function GamesScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  maxWidthWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.contentMaxWidth,
+    alignSelf: 'center',
   },
   safeArea: {
     flex: 1,

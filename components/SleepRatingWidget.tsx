@@ -1,7 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
-import Animated, { FadeIn, FadeOut, ZoomIn, Layout } from 'react-native-reanimated';
+import Animated, { 
+  FadeIn, 
+  FadeOut, 
+  ZoomIn, 
+  Layout, 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  withSequence 
+} from 'react-native-reanimated';
 import { useTheme } from '@/context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSleep, getDateKey } from '@/context/SleepContext';
@@ -140,6 +150,28 @@ export function SleepRatingWidget() {
     pointsForNextStage,
     isMaxStage,
   } = useSheepGrowth();
+  
+  // Wiggle animation for the sheep
+  const wiggle = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (selectedRating) {
+      wiggle.value = withRepeat(
+        withSequence(
+          withTiming(3, { duration: 1500 }),
+          withTiming(-3, { duration: 1500 })
+        ),
+        -1,
+        true
+      );
+    } else {
+      wiggle.value = 0;
+    }
+  }, [selectedRating]);
+
+  const wiggleStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${wiggle.value}deg` }]
+  }));
 
   // Mark success as seen after it renders once with animation
   React.useEffect(() => {
@@ -152,10 +184,12 @@ export function SleepRatingWidget() {
   }, [selectedRating, hasSeenSuccessToday]);
 
   return (
-    <Animated.View layout={Layout.springify().damping(15)} style={styles.container}>
+    <Animated.View layout={Layout.springify().damping(26).stiffness(200)} style={styles.container}>
       {selectedRating ? (
         <Animated.View 
-          entering={hasSeenSuccessToday ? undefined : ZoomIn.springify().damping(12).delay(100)}
+          key="success-card"
+          entering={hasSeenSuccessToday ? undefined : ZoomIn.springify().damping(26).stiffness(200)}
+          exiting={FadeOut.duration(200)}
           style={styles.successWrapper}
         >
           <LinearGradient
@@ -224,10 +258,10 @@ export function SleepRatingWidget() {
                     color={isDark ? C.accent : "#8B6DAE"} 
                     isDark={isDark}
                   />
-                  <View style={styles.auraMascot}>
+                  <Animated.View style={[styles.auraMascot, wiggleStyle]}>
                     <HeaderSheep size={48} />
                     <HeartAnimation opacity={0.6} />
-                  </View>
+                  </Animated.View>
                 </View>
                 <View style={styles.statusBadge}>
                     <Text style={[styles.stageText, { color: C.textPrimary }]}>
@@ -243,6 +277,8 @@ export function SleepRatingWidget() {
         </Animated.View>
       ) : (
         <Animated.View 
+          key="picker-card"
+          entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(200)} 
           style={styles.successWrapper}
         >

@@ -104,6 +104,10 @@ export const tokens = {
       shadowOpacity: 0.12,
     },
   },
+  
+  layout: {
+    contentMaxWidth: 620,
+  },
 };
 
 export const Colors = { light: { ...tokens.colors.common, ...tokens.colors.light }, dark: { ...tokens.colors.common, ...tokens.colors.dark } } as any;
