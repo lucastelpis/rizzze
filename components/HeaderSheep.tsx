@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useSheepGrowth } from '@/context/SheepGrowthContext';
-import { getSheepComponent } from '@/components/sheepStages';
+import { getSheepComponent } from '@/components/mascot';
 
 // Early stages have smaller pixel art, so we scale them up to fill the header button
 const HEADER_SCALE_FACTORS = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0];

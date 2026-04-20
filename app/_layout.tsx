@@ -87,11 +87,6 @@ export default function RootLayout() {
         propsToCapture: ['testID'],
         maxElementsCaptured: 20,
       }}
-      enableSessionReplay={true}
-      sessionReplayConfig={{
-        maskAllTextInputs: true,
-        maskAllImages: true,
-      }}
     >
       <ThemeProvider>
         <UserProvider>

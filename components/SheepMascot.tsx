@@ -64,15 +64,15 @@ export const SheepMascot: React.FC<SheepMascotProps> = ({ size = 120, sleeping =
     {/* Zzz for sleeping */}
     {sleeping && (
       <G>
-        <SvgText x="48" y="22" fontSize="6" fill={tokens.colors.accent} fontWeight="bold" fontFamily="monospace">z</SvgText>
-        <SvgText x="52" y="18" fontSize="5" fill={tokens.colors.accentSoft} fontWeight="bold" fontFamily="monospace">z</SvgText>
-        <SvgText x="55" y="14" fontSize="4" fill={tokens.colors.accentLight} fontWeight="bold" fontFamily="monospace">z</SvgText>
+        <SvgText x="48" y="22" fontSize="6" fill={tokens.colors.common.accent} fontWeight="bold" fontFamily="monospace">z</SvgText>
+        <SvgText x="52" y="18" fontSize="5" fill={tokens.colors.common.accentSoft} fontWeight="bold" fontFamily="monospace">z</SvgText>
+        <SvgText x="55" y="14" fontSize="4" fill={tokens.colors.light.accentLight} fontWeight="bold" fontFamily="monospace">z</SvgText>
       </G>
     )}
   </Svg>
 );
 
-export const Sparkle = ({ size = 16, color = tokens.colors.accent }) => (
+export const Sparkle = ({ size = 16, color = tokens.colors.common.accent }) => (
   <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
     <Path d="M8 0L9.5 6.5L16 8L9.5 9.5L8 16L6.5 9.5L0 8L6.5 6.5L8 0Z" fill={color} />
   </Svg>

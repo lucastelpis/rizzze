@@ -9,8 +9,6 @@ setAudioModeAsync({
   interruptionMode: 'doNotMix', // Priority mode
   allowsRecording: false,
   shouldPlayInBackground: true,
-  staysActiveInBackground: true,
-  shouldRouteThroughEarpiece: false,
 }).catch(console.error);
 
 export const SOUND_ASSETS: Record<string, any> = {

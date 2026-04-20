@@ -4,7 +4,7 @@ module.exports = {
     slug: 'rizzze',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/icon_new.png',
+    icon: './assets/images/icon.png',
     scheme: 'rizzze',
     userInterfaceStyle: 'automatic',
     ios: {
@@ -17,7 +17,7 @@ module.exports = {
     android: {
       adaptiveIcon: {
         backgroundColor: '#2D2B3D',
-        foregroundImage: './assets/images/icon_new.png',
+        foregroundImage: './assets/images/icon.png',
       },
       predictiveBackGestureEnabled: false,
       permissions: [],
@@ -54,6 +54,7 @@ module.exports = {
           enableBackgroundPlayback: true,
         },
       ],
+      'expo-asset',
     ],
     experiments: {
       typedRoutes: true,

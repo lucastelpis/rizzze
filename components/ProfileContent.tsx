@@ -1,5 +1,3 @@
-import { getSheepComponent } from '@/components/sheepStages';
-import { POINT_COLORS } from '@/constants/sheepGrowth';
 import { tokens } from '@/constants/theme';
 import { useAudio } from '@/context/AudioContext';
 import { useNotifications } from '@/context/NotificationContext';
@@ -9,7 +7,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useSleep } from '@/context/SleepContext';
 import { useUser } from '@/context/UserContext';
-import RevenueCatUI from 'react-native-purchases-ui';
 import { useColors } from '@/hooks/useColors';
 import { posthog } from '@/config/posthog';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
@@ -20,6 +17,9 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useBackup } from '@/hooks/useBackup';
 import { StatCard, SettingsItem, ToggleSettingsItem, ChevronRight } from '@/components/profile/SettingsItem';
+import { SubscriptionSection } from '@/components/profile/SubscriptionSection';
+import { BackupSection } from '@/components/profile/BackupSection';
+import { MascotGrowthWidget } from '@/components/mascot/MascotGrowthWidget';
 import Animated, {
   Easing,
   interpolateColor,
@@ -63,27 +63,6 @@ const HeartIcon = ({ size = 24, color = '#D4928A', showFill = true }: { size?: n
   </Svg>
 );
 
-const CopyIcon = ({ size = 16, color = "currentColor" }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-    <Rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-    <Path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </Svg>
-);
-
-const MailIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-    <Polyline points="22,6 12,13 2,6" />
-  </Svg>
-);
-
-const CloudIconSync = ({ size = 20, color = "currentColor" }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.2-3.9-4.5C17.5 6.5 14.5 4 11 4 7.7 4 5 6.7 5 10c-2.2.3-4 2.2-4 4.5C1 17 3 19 5.5 19h12z" />
-    <Path d="M9 13l2 2 4-4" />
-  </Svg>
-);
-
 function formatCooldownTime(ms: number): string {
   if (ms <= 0) return '';
   const totalMin = Math.ceil(ms / 60000);
@@ -98,111 +77,7 @@ function formatCooldownTime(ms: number): string {
 
 
 
-// ─── SHEEP GAMIFICATION SECTION ──────────────────────────────────────────────
-const SheepGamificationWidget = () => {
-  const C = useColors();
-  const { isDark } = useTheme();
-  const {
-    currentStageIndex,
-    currentStageName,
-    progressToNextStage,
-    pointsInCurrentStage,
-    pointsForNextStage,
-    isMaxStage,
-    totalPoints,
-  } = useSheepGrowth();
-
-  const SheepComponent = getSheepComponent(currentStageIndex);
-
-  // Slightly smaller again to increase perceived padding
-  const STAGE_RENDER_SIZES = [56, 72, 82, 82, 82, 82];
-  const sheepRenderSize = STAGE_RENDER_SIZES[currentStageIndex] ?? 90;
-
-  // Heart Animation setup
-  const heartScale = useSharedValue(0);
-  const heartOpacity = useSharedValue(0);
-  const heartTranslateY = useSharedValue(0);
-
-  const triggerHeartPop = () => {
-    // Reset values immediately
-    heartScale.value = 0;
-    heartTranslateY.value = 0;
-    heartOpacity.value = 1;
-
-    // Execute with a slight sequence for smoothness
-    heartScale.value = withSequence(
-      withTiming(1.2, { duration: 250, easing: Easing.out(Easing.back(1.5)) }),
-      withTiming(1, { duration: 150 })
-    );
-
-    heartTranslateY.value = withTiming(-15, {
-      duration: 1000,
-      easing: Easing.out(Easing.quad),
-    });
-
-    heartOpacity.value = withSequence(
-      withDelay(600, withTiming(0, { duration: 600 }))
-    );
-  };
-
-  const heartAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: heartOpacity.value,
-    transform: [
-      { scale: heartScale.value },
-      { translateY: heartTranslateY.value }
-    ],
-    position: 'absolute',
-    top: 20,
-    zIndex: 100,
-  }));
-
-  return (
-    <View style={styles.gamificationContainer}>
-      {/* Sheep mascot container */}
-      <View style={styles.sheepMainWrapper}>
-        <Pressable 
-          onPress={triggerHeartPop}
-          style={({ pressed }) => [
-            styles.avatarCircle, 
-            { backgroundColor: C.accentLight, transform: [{ scale: pressed ? 0.96 : 1 }] }
-          ]}
-        >
-          <View style={{ transform: [{ scaleX: -1 }], overflow: 'hidden' }}>
-            <SheepComponent size={sheepRenderSize} />
-          </View>
-          <Animated.View pointerEvents="none" style={heartAnimatedStyle}>
-            <HeartIcon size={18} />
-          </Animated.View>
-        </Pressable>
-      </View>
-
-      {/* Stage label */}
-      <Text style={[styles.stageName, { color: C.textPrimary }]}>{currentStageName}</Text>
-
-      {/* Progress Label — ABOVE the bar */}
-      <Text style={[styles.progressLabelTop, { color: C.textMuted }]}>
-        {isMaxStage ? `${totalPoints} pts` : `${pointsInCurrentStage} of ${pointsForNextStage} check-ins to next stage`}
-      </Text>
-
-      {/* Centered Status Bar */}
-      <View style={styles.progressAreaCentered}>
-        <View style={styles.progressBarTrackMini}>
-          <View style={[styles.progressBarTrackBase, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : C.bgMuted }]}>
-            <View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: `${Math.min(progressToNextStage * 100, 100)}%`,
-                  backgroundColor: POINT_COLORS.daily,
-                }
-              ]}
-            />
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-};
+// Mascot growth visualization is now handled by MascotGrowthWidget
 
 export const ProfileContent = ({
   isModal = false,
@@ -236,14 +111,6 @@ export const ProfileContent = ({
     email: linkedEmail 
   } = useBackup();
   const C = useColors();
-
-  const handleSubscriptionPress = async () => {
-    if (isPro) {
-      await RevenueCatUI.presentCustomerCenter();
-    } else {
-      await presentPaywall();
-    }
-  };
 
   useEffect(() => {
     syncSleepRatings();
@@ -332,7 +199,7 @@ export const ProfileContent = ({
     >
       {/* Sheep Gamification Header */}
       <View style={styles.header}>
-        <SheepGamificationWidget />
+        <MascotGrowthWidget />
         <Text style={[styles.userName, { color: C.textPrimary }]}>{userName}</Text>
         <Text style={[styles.userJoined, { color: C.textSecondary }]}>Rizzzer since March 2026</Text>
       </View>
@@ -429,91 +296,16 @@ export const ProfileContent = ({
         />
       </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>ACCOUNT & BACKUP</Text>
-        
-        {isEmailVerified ? (
-          <View style={[styles.settingsFlatItem, { borderBottomColor: C.border, paddingBottom: 16 }]}>
-            <View style={{ flex: 1, alignItems: 'flex-start' }}>
-              <View style={[styles.syncStatusHeader, { width: '100%', justifyContent: 'space-between' }]}>
-                <View style={[styles.syncBadge, { backgroundColor: isDark ? 'rgba(74, 139, 86, 0.15)' : '#DDF0E1' }]}>
-                  <CloudIconSync size={16} color={isDark ? '#6CC17D' : '#356B3F'} />
-                  <Text style={[styles.syncBadgeText, { color: isDark ? '#6CC17D' : '#356B3F' }]}>Cloud Sync Active</Text>
-                </View>
-                <TouchableOpacity onPress={() => {
-                  Alert.alert("Remove Cloud Sync?", "Your current data is safe, but future progress won't be backed up.", [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Remove", style: "destructive", onPress: unlinkEmail }
-                  ]);
-                }}>
-                  <Text style={{ color: '#D4928A', fontFamily: tokens.fonts.heading, fontSize: 13, fontWeight: '700' }}>Remove</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={[styles.settingsLabel, { color: C.textPrimary, marginTop: 8 }]}>{linkedEmail}</Text>
-              <Text style={[styles.settingsSublabel, { color: C.textSecondary, marginTop: 4 }]}>Your progress is automatically saved.</Text>
-            </View>
-          </View>
-        ) : (
-          <View style={[styles.settingsFlatItem, { borderBottomColor: C.border, paddingBottom: 16 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Cloud Backup</Text>
-              <Text style={[styles.settingsSublabel, { color: C.textSecondary, marginTop: 4, marginBottom: 16 }]}>
-                Link an email to protect your progress if you lose your phone.
-              </Text>
-              <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: C.accent }]}
-                onPress={() => setShowEmailModal(true)}
-              >
-                <MailIcon color="#FFF" />
-                <Text style={styles.actionBtnText}>Link Email</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+      <BackupSection 
+        isEmailVerified={isEmailVerified}
+        linkedEmail={linkedEmail}
+        unlinkEmail={unlinkEmail}
+        setShowEmailModal={setShowEmailModal}
+        setShowRestoreModal={setShowRestoreModal}
+        isSyncing={isSyncing}
+      />
 
-        <SettingsItem
-          label="Restore Progress"
-          onPress={() => setShowRestoreModal(true)}
-        />
-      </View>
-
-      <View style={[styles.section, { marginBottom: 16 }]}>
-        <Text style={[styles.sectionTitle, { color: C.textMuted }]}>SUBSCRIPTION, SUPPORT & FEEDBACK</Text>
-        <View style={[styles.settingsFlatItem, { borderBottomColor: C.border }]}>
-          <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Subscription</Text>
-          <TouchableOpacity style={styles.badgeWrapper} onPress={handleSubscriptionPress} disabled={subLoading}>
-            <View style={[styles.proBadge, {
-              backgroundColor: isPro
-                ? (isDark ? 'rgba(139, 109, 174, 0.2)' : '#EDE5F5')
-                : (isDark ? 'rgba(255,255,255,0.08)' : '#F0EDE8')
-            }]}>
-              <Text style={[styles.proBadgeText, { color: isPro ? '#8B6DAE' : C.textSecondary }]}>
-                {subLoading ? '...' : isPro ? 'Rizzze Pro' : 'Free'}
-              </Text>
-            </View>
-            <ChevronRight />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          style={[styles.settingsFlatItem, { borderBottomColor: C.border }]}
-          onPress={() => {
-            posthog.capture('restore_purchases_tapped');
-            restorePurchases();
-          }}
-        >
-          <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Restore purchases</Text>
-        </TouchableOpacity>
-        <SettingsItem label="Support" onPress={() => router.push('/support')} />
-        <SettingsItem label="Feedback" onPress={() => router.push('/feedback')} />
-        {onReplayTour && (
-          <SettingsItem
-            label="Replay app tour"
-            showChevron={false}
-            last
-            onPress={onReplayTour}
-          />
-        )}
-      </View>
+      <SubscriptionSection onReplayTour={onReplayTour} />
 
       <TouchableOpacity style={[styles.logoutBtn, { marginTop: 0, opacity: 0.6 }]} onPress={handleReset}>
         <Text style={[styles.logoutText, { color: C.textSecondary, fontSize: 13 }]}>Reset app data</Text>

@@ -37,7 +37,7 @@ import { useSubscription } from '@/context/SubscriptionContext';
 import { useUser } from '@/context/UserContext';
 import { calculateSleepDuration, formatDuration } from '@/utils/sleepDuration';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
-import { SheepStage1, SheepStage2, SheepStage3, SheepStage4, SheepStage5, SheepStage6 } from '../components/sheepStages';
+import { getSheepComponent, SheepStage1, SheepStage2, SheepStage3, SheepStage4, SheepStage5, SheepStage6 } from '../components/mascot';
 import { posthog } from '@/config/posthog';
 
 // ─── COMPONENTS ───
@@ -573,10 +573,10 @@ const Page4 = () => {
   const { isDark } = useTheme();
   const { width } = useWindowDimensions();
 
+  const iconColor = isDark ? 'rgba(255,255,255,0.9)' : C.accent;
+  
   const SheepComponents = [SheepStage1, SheepStage2, SheepStage3, SheepStage4, SheepStage5, SheepStage6];
   const responsiveSizes = STAGE_SIZES;
-
-  const iconColor = isDark ? 'rgba(255,255,255,0.9)' : C.accent;
 
   return (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.page}>
