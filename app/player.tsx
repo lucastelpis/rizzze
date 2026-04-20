@@ -195,7 +195,7 @@ export default function PlayerScreen() {
 
   return (
     <View 
-      style={[styles.container, { opacity: isLoading ? 0 : 1 }]}
+      style={styles.container}
       onLayout={() => {
         // Essential to wait for at least one frame of layout 
         requestAnimationFrame(() => setIsLoading(false));

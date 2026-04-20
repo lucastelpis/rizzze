@@ -1,27 +1,29 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
+import { Image } from 'react-native';
 import { useStreak } from './StreakContext';
 import { NARRATION_ASSETS } from '@/constants/narrationAssets';
 
 setAudioModeAsync({
   playsInSilentMode: true,
-  interruptionMode: 'mixWithOthers',
+  interruptionMode: 'doNotMix', // Priority mode
   allowsRecording: false,
   shouldPlayInBackground: true,
+  staysActiveInBackground: true,
   shouldRouteThroughEarpiece: false,
 }).catch(console.error);
 
 export const SOUND_ASSETS: Record<string, any> = {
-  'forest.m4a': require('@/assets/sounds/forest.m4a'),
-  'beach.m4a': require('@/assets/sounds/beach.m4a'),
-  'city_rain.m4a': require('@/assets/sounds/city_rain.m4a'),
-  'fireplace.m4a': require('@/assets/sounds/fireplace.m4a'),
-  'coffeeshop.m4a': require('@/assets/sounds/coffeeshop.m4a'),
-  'birds.m4a': require('@/assets/sounds/birds.m4a'),
-  'simple_rain.m4a': require('@/assets/sounds/simple_rain.m4a'),
-  'simple_fan.m4a': require('@/assets/sounds/simple_fan.m4a'),
-  'simple_static.m4a': require('@/assets/sounds/simple_static.m4a'),
-  'simple_ac.m4a': require('@/assets/sounds/simple_ac.m4a'),
+  'forest.m4a': require('@/assets/audio/sounds/forest.m4a'),
+  'beach.m4a': require('@/assets/audio/sounds/beach.m4a'),
+  'rainydrive.m4a': require('@/assets/audio/sounds/rainydrive.m4a'),
+  'fireplace.m4a': require('@/assets/audio/sounds/fireplace.m4a'),
+  'coffeeshop.m4a': require('@/assets/audio/sounds/coffeeshop.m4a'),
+  'birds.m4a': require('@/assets/audio/sounds/birds.m4a'),
+  'simple_rain.m4a': require('@/assets/audio/sounds/simple_rain.m4a'),
+  'simple_fan.m4a': require('@/assets/audio/sounds/simple_fan.m4a'),
+  'simple_static.m4a': require('@/assets/audio/sounds/simple_static.m4a'),
+  'simple_ac.m4a': require('@/assets/audio/sounds/simple_ac.m4a'),
   ...NARRATION_ASSETS,
 };
 
@@ -86,28 +88,28 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   // Reset logic when a new sound is selected
   useEffect(() => {
-    if (activeSound) {
-      const metadata = {
-        title: activeSound.title,
-        artist: 'Rizzze',
-        album: activeSound.subtitle || 'Scenes',
-      };
-      
-      (player1 as any).setMetadata?.(metadata);
-      (player2 as any).setMetadata?.(metadata);
-      
-      // For lock screen controls
-      (player1 as any).setActiveForLockScreen?.(true, metadata);
-      (player2 as any).setActiveForLockScreen?.(true, metadata);
-      
-      player1.loop = false;
-      player2.loop = false;
-      player1.seekTo(0);
-      player2.seekTo(0);
-      setActivePlayerIdx(0);
-      setVisualProgress(0);
-      player1.play();
-    }
+    if (!activeSound) return;
+
+    const metadata = {
+      title: activeSound.title,
+      artist: activeSound.subtitle || 'Rizzze',
+      albumTitle: 'Deep Sleep',
+      artworkUrl: Image.resolveAssetSource(require('@/assets/images/icon.png')).uri,
+    };
+    
+    // Clear any previous controls first to avoid conflict
+    player1.clearLockScreenControls();
+    player2.clearLockScreenControls();
+    
+    player1.setActiveForLockScreen(true, metadata);
+    
+    player1.loop = false;
+    player2.loop = false;
+    player1.seekTo(0);
+    player2.seekTo(0);
+    setActivePlayerIdx(0);
+    setVisualProgress(0);
+    player1.play();
   }, [activeSound, player1, player2]);
 
   // Handle Volume Changes
@@ -145,6 +147,19 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => {
           finishedPlayer.seekTo(0);
         }, 300);
+
+        // Transition the lock screen control to the new active player
+        const metadata = {
+          title: activeSound.title,
+          artist: activeSound.subtitle || 'Rizzze',
+          albumTitle: 'Deep Sleep',
+          artworkUrl: Image.resolveAssetSource(require('@/assets/images/icon.png')).uri,
+        };
+        const nextPlayer = nextIdx === 0 ? player1 : player2;
+        const oldPlayer = nextIdx === 0 ? player2 : player1;
+        
+        oldPlayer.clearLockScreenControls();
+        nextPlayer.setActiveForLockScreen(true, metadata);
 
         setActivePlayerIdx(nextIdx);
       }

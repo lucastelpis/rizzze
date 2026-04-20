@@ -68,6 +68,16 @@ export const CityRainBg = ({ w = 160, h = 120 }: { w?: number; h?: number }) => 
     
     <Rect x={0} y={108} width={160} height={12} fill="#4A4A5A"/>
     <Rect x={20} y={110} width={120} height={2} rx={1} fill="#5A5A6A"/>
+    
+    {/* Cute Little Car */}
+    <G x={85} y={90} opacity={0.9}>
+      <Rect x={0} y={8} width={28} height={10} rx={4} fill="#1A1A2A" />
+      <Path d="M5 8 L8 1 L20 1 L23 8 Z" fill="#1A1A2A" />
+      <Circle cx={7} cy={18} r={3} fill="#000000" />
+      <Circle cx={21} cy={18} r={3} fill="#000000" />
+      <Rect x={24} y={10} width={4} height={2.5} rx={1} fill="#F0D880" />
+    </G>
+
     {[15, 35, 55, 75, 95, 115, 135].map((x, i) => (
       <Line key={i} x1={x + 2} y1={10 + i * 5} x2={x} y2={28 + i * 5} stroke="#C8DEF0" strokeWidth={0.8} opacity={0.2 + (i % 3) * 0.05} />
     ))}

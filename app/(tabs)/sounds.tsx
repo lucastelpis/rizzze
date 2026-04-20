@@ -51,11 +51,11 @@ const SceneCard = ({ title, subtitle, tag, bgColor, BgGraphic, gradientOverlay, 
     activeOpacity={0.85}
     onPress={() => {
       // Trigger sound immediately for better perceived performance
-      playSelectedSound({ title, subtitle: 'Scenes collection', soundFile, graphicId });
+      playSelectedSound({ title, subtitle: 'Sleep Scenes Collection', soundFile, graphicId });
       posthog.capture('sound_played', { title, sound_file: soundFile, graphic_id: graphicId, sound_type: 'scene' });
       router.push({
         pathname: '/player',
-        params: { title, subtitle: 'Scenes collection', soundFile, graphicId }
+        params: { title, subtitle: 'Sleep Scenes Collection', soundFile, graphicId }
       });
     }}
   >
@@ -88,11 +88,11 @@ const SimpleSoundCard = ({ title, BgGraphic, soundFile, graphicId }: any) => {
     activeOpacity={0.85}
     onPress={() => {
       // Trigger sound immediately for better perceived performance
-      playSelectedSound({ title, subtitle: 'Simple sounds collection', soundFile, graphicId });
+      playSelectedSound({ title, subtitle: 'Simple Sleep Sounds', soundFile, graphicId });
       posthog.capture('sound_played', { title, sound_file: soundFile, graphic_id: graphicId, sound_type: 'simple' });
       router.push({
         pathname: '/player',
-        params: { title, subtitle: 'Simple sounds collection', soundFile, graphicId }
+        params: { title, subtitle: 'Simple Sleep Sounds', soundFile, graphicId }
       });
     }}
   >
@@ -155,7 +155,7 @@ export default function SoundsScreen() {
               onPress={() => {
                 const pickParams = {
                   title: randomScene.title,
-                  subtitle: 'Scenes collection',
+                  subtitle: 'Sleep Scenes Collection',
                   soundFile: randomScene.soundFile,
                   graphicId: randomScene.graphicId
                 };
@@ -207,13 +207,13 @@ export default function SoundsScreen() {
                 graphicId="OceanShoreBg"
               />
               <SceneCard
-                title="City rain"
+                title="Rainy drive"
                 subtitle="#C4AED8"
-                tag="Rain, traffic hum, puddles"
+                tag="Car interior, rain, traffic"
                 bgColor="#3A3A4A"
                 gradientOverlay="rgba(58,58,74,0.9)"
                 BgGraphic={CityRainBg}
-                soundFile="city_rain.m4a"
+                soundFile="rainydrive.m4a"
                 graphicId="CityRainBg"
               />
               <SceneCard

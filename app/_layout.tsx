@@ -50,7 +50,7 @@ function RootLayoutContent() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="player" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="player" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
       </Stack>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <SyncObserver />

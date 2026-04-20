@@ -100,7 +100,6 @@ const SupportTicketCard = ({ ticket }: { ticket: SupportTicket }) => {
           <Text style={[styles.answerText, { color: ticket.response ? C.textPrimary : C.textSecondary }]}>
             {ticket.response || 'Our support team will evaluate your inquiry and return to you asap!'}
           </Text>
-          {!ticket.response && <Sparkle size={14} color={C.accent} />}
         </View>
       </View>
     </Animated.View>

@@ -343,8 +343,10 @@ export default function HomeScreen() {
                 contentContainerStyle={[styles.scrollContent, activeSound && { paddingBottom: 100 }]}
                 showsVerticalScrollIndicator={false}
               >
-                <Animated.View ref={sleepWidgetRef} collapsable={false} entering={FadeIn.duration(600)}>
-                  <SleepRatingWidget />
+                <Animated.View entering={FadeIn.duration(600)}>
+                  <View ref={sleepWidgetRef} collapsable={false}>
+                    <SleepRatingWidget />
+                  </View>
                 </Animated.View>
 
             {/* ── STREAK ── */}

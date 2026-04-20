@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AccessibilityInfo } from 'react-native';
 
 const STORAGE_KEY = 'rizzze_tour_home_completed';
-const AUTO_START_DELAY_MS = 600;
+const AUTO_START_DELAY_MS = 800;
 const DISMISS_FADE_DURATION_MS = 300;
 
 export interface UseTourReturn {
