@@ -9,7 +9,7 @@ import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { posthog } from '@/config/posthog';
 
 const API_KEY = Platform.select({
-  ios: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY || 'appl_waXPQUDiYzWHVWHJqvugZjgpqnP',
+  ios: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY || '',
   android: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || '',
   default: ''
 });
@@ -33,7 +33,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // BYPASS FOR SCREENSHOTS: Set this to false for production
+  // BYPASS FOR SCREENSHOTS: Set this to true to unlock all screens in DEV mode
   const BYPASS_FOR_SCREENSHOTS = false; 
   const isPro = BYPASS_FOR_SCREENSHOTS || !!customerInfo?.entitlements.active[ENTITLEMENT_ID];
 

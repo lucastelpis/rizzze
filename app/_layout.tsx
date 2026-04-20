@@ -13,6 +13,7 @@ import {
 } from '@expo-google-fonts/nunito';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/config/posthog';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AudioProvider } from '@/context/AudioContext';
@@ -77,6 +78,7 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <PostHogProvider
       client={posthog}
       autocapture={{
@@ -113,5 +115,6 @@ export default function RootLayout() {
         </UserProvider>
       </ThemeProvider>
     </PostHogProvider>
+    </GestureHandlerRootView>
   );
 }

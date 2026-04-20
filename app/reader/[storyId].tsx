@@ -562,7 +562,7 @@ export default function ReaderScreen() {
           </View>
         </View>
 
-        {!isNarrating && <MiniPlayer bottomOffset={122} />}
+        {!isNarrating && <MiniPlayer bottomOffset={84} />}
       </SafeAreaView>
 
       <ScreenLoader isVisible={isLoading} />

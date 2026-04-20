@@ -39,6 +39,8 @@ type AudioPlaybackContextType = {
   scrubTo: (position: number) => void;
   setIsScrubbing: (scrubbing: boolean) => void;
   toggleLoop: () => void;
+  setSleepTimer: (minutes: number | null) => void;
+  setVolume: (val: number) => void;
 };
 
 type AudioStatusContextType = {
@@ -48,6 +50,8 @@ type AudioStatusContextType = {
   visualProgress: number;
   visualDuration: number;
   displayPosition: number;
+  sleepTimerRemaining: number | null;
+  volume: number;
 };
 
 const AudioPlaybackContext = createContext<AudioPlaybackContextType | null>(null);
@@ -59,6 +63,9 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubPosition, setScrubPosition] = useState(0);
   const [visualProgress, setVisualProgress] = useState(0);
+  const [sleepTimerEnd, setSleepTimerEnd] = useState<number | null>(null);
+  const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
+  const [volume, setVolumeState] = useState(0.5);
   const { markActivity } = useStreak();
   
   const lastTimeRef = useRef(Date.now());
@@ -102,6 +109,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       player1.play();
     }
   }, [activeSound, player1, player2]);
+
+  // Handle Volume Changes
+  useEffect(() => {
+    player1.volume = volume;
+    player2.volume = volume;
+  }, [volume, player1, player2]);
 
   // Ping-Pong Looping logic
   useEffect(() => {
@@ -172,6 +185,29 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [isPlaying, isScrubbing, isLooping, visualDuration, activeSound]);
 
+  // Sleep Timer Countdown Logic
+  useEffect(() => {
+    if (!sleepTimerEnd) {
+      setSleepTimerRemaining(null);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((sleepTimerEnd - now) / 1000));
+      setSleepTimerRemaining(remaining);
+
+      if (remaining === 0) {
+        setSleepTimerEnd(null);
+        player1.pause();
+        player2.pause();
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sleepTimerEnd, player1, player2]);
+
   const displayPosition = isScrubbing ? scrubPosition : visualProgress;
 
   const playbackHandlers = React.useMemo(() => ({
@@ -192,6 +228,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {}
       
       setActiveSound(sound);
+      setVolumeState(0.5);
       markActivity();
     },
     togglePlayPause: () => {
@@ -247,6 +284,14 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       }
     },
     toggleLoop: () => setIsLooping(l => !l),
+    setSleepTimer: (minutes: number | null) => {
+      if (minutes === null) {
+        setSleepTimerEnd(null);
+      } else {
+        setSleepTimerEnd(Date.now() + minutes * 60 * 1000);
+      }
+    },
+    setVolume: (val: number) => setVolumeState(val),
   }), [activeSound, isPlaying, player1, player2, activePlayerIdx, visualProgress, visualDuration, isLooping, activeStatus.duration]);
 
   const statusValue = React.useMemo(() => ({
@@ -256,7 +301,9 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     visualProgress,
     visualDuration,
     displayPosition,
-  }), [activeSound, isPlaying, isLooping, visualProgress, visualDuration, displayPosition]);
+    sleepTimerRemaining,
+    volume,
+  }), [activeSound, isPlaying, isLooping, visualProgress, visualDuration, displayPosition, sleepTimerRemaining, volume]);
 
   return (
     <AudioPlaybackContext.Provider value={playbackHandlers}>

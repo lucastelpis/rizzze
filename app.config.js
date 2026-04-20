@@ -1,6 +1,6 @@
 module.exports = {
   expo: {
-    name: 'rizzze',
+    name: 'Rizzze',
     slug: 'rizzze',
     version: '1.0.0',
     orientation: 'portrait',
@@ -20,10 +20,7 @@ module.exports = {
         foregroundImage: './assets/images/icon_new.png',
       },
       predictiveBackGestureEnabled: false,
-      permissions: [
-        'android.permission.RECORD_AUDIO',
-        'android.permission.MODIFY_AUDIO_SETTINGS',
-      ],
+      permissions: [],
       package: 'com.lucastelpis.rizzze',
     },
     web: {

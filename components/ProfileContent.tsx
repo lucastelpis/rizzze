@@ -667,57 +667,6 @@ export const ProfileContent = ({
         <Text style={[styles.logoutText, { color: C.textSecondary, fontSize: 13 }]}>Reset app data</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={[styles.logoutBtn, { 
-          marginTop: 24, 
-          backgroundColor: isDark ? 'rgba(107, 154, 96, 0.15)' : '#E5F0E0',
-          borderRadius: 12,
-          paddingVertical: 12,
-          marginHorizontal: 32,
-        }]} 
-        onPress={() => {
-          for (let i = 0; i < 5; i++) addDailyRatingPoint();
-        }}
-      >
-        <Text style={[styles.logoutText, { color: '#6B9A60', fontSize: 13, fontWeight: '800' }]}>
-          DEBUG: ADD +5 CHECK-IN POINTS
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={[styles.logoutBtn, { 
-          marginTop: 12, 
-          backgroundColor: isDark ? 'rgba(235, 87, 87, 0.15)' : '#FDEAEA',
-          borderRadius: 12,
-          paddingVertical: 12,
-          marginHorizontal: 32,
-        }]} 
-        onPress={async () => {
-          await resetGrowthData();
-        }}
-      >
-        <Text style={[styles.logoutText, { color: '#EB5757', fontSize: 13, fontWeight: '800' }]}>
-          DEBUG: RESET GROWTH DATA
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={[styles.logoutBtn, { 
-          marginTop: 12, 
-          backgroundColor: isDark ? 'rgba(139, 109, 174, 0.15)' : '#EDE5F5',
-          borderRadius: 12,
-          paddingVertical: 12,
-          marginHorizontal: 32,
-        }]} 
-        onPress={async () => {
-          await resetUserData();
-          router.replace('/');
-        }}
-      >
-        <Text style={[styles.logoutText, { color: '#8B6DAE', fontSize: 13, fontWeight: '800' }]}>
-          DEV: RETURN TO ONBOARDING
-        </Text>
-      </TouchableOpacity>
 
       {/* Info Popup Modal */}
       <Modal

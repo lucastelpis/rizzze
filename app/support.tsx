@@ -22,6 +22,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
 import { tokens } from '@/constants/theme';
 import { useSupport, TicketCategory, SupportTicket } from '@/hooks/useSupport';
+import { Sparkle } from '@/components/SheepMascot';
 import Animated, { FadeInUp, FadeIn, Layout, FadeInDown } from 'react-native-reanimated';
 
 // --- Icons ---
@@ -95,9 +96,12 @@ const SupportTicketCard = ({ ticket }: { ticket: SupportTicket }) => {
             {ticket.response ? 'OFFICIAL RESPONSE' : 'STATUS: EVALUATING'}
           </Text>
         </View>
-        <Text style={[styles.answerText, { color: ticket.response ? C.textPrimary : C.textSecondary }]}>
-          {ticket.response || "Our support team will evaluate your inquiry and return to you asap! ✨"}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+          <Text style={[styles.answerText, { color: ticket.response ? C.textPrimary : C.textSecondary }]}>
+            {ticket.response || 'Our support team will evaluate your inquiry and return to you asap!'}
+          </Text>
+          {!ticket.response && <Sparkle size={14} color={C.accent} />}
+        </View>
       </View>
     </Animated.View>
   );
@@ -177,7 +181,7 @@ export default function SupportCenterScreen() {
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   <Text style={[styles.emptyText, { color: C.textSecondary }]}>
-                    No support tickets yet. Click the ➕ to start one!
+                    No support tickets yet. Click the plus sign in the right side of the footer to start one!
                   </Text>
                 </View>
               }

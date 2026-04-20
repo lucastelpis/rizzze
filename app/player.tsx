@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, useWindowDimensions, Platform, Modal } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { useAudioPlayback, useAudioStatus } from '@/context/AudioContext';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, ZoomIn, FadeOut, runOnJS, clamp } from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as SoundGraphics from '@/components/SoundGraphics';
 import { tokens } from '@/constants/theme';
@@ -59,6 +61,59 @@ const LoopIcon = ({ active }: { active: boolean }) => (
   </Svg>
 );
 
+// ─── VOLUME SLIDER COMPONENT ──────────────────────────────────────────────────
+const VolumeSlider = ({ volume, onVolumeChange }: { volume: number; onVolumeChange: (val: number) => void }) => {
+  const SLIDER_WIDTH = 200;
+  const translationX = useSharedValue(volume * SLIDER_WIDTH);
+  const isPressed = useSharedValue(false);
+
+  useEffect(() => {
+    translationX.value = volume * SLIDER_WIDTH;
+  }, [volume]);
+
+  const gesture = Gesture.Pan()
+    .onBegin((event) => {
+      isPressed.value = true;
+      const newVal = clamp(event.x, 0, SLIDER_WIDTH);
+      translationX.value = newVal;
+      runOnJS(onVolumeChange)(newVal / SLIDER_WIDTH);
+    })
+    .onUpdate((event) => {
+      const newVal = clamp(event.x, 0, SLIDER_WIDTH);
+      translationX.value = newVal;
+      runOnJS(onVolumeChange)(newVal / SLIDER_WIDTH);
+    })
+    .onEnd(() => {
+      isPressed.value = false;
+    });
+
+  const animatedHandleStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translationX.value - 6 }],
+    scale: withTiming(isPressed.value ? 1.2 : 1, { duration: 100 }),
+  }));
+
+  const animatedTrackStyle = useAnimatedStyle(() => ({
+    width: translationX.value,
+  }));
+
+  return (
+    <View style={styles.volumeContainer}>
+      <View style={styles.volumeInner}>
+        <Feather name="volume" size={16} color="#A9A3B5" />
+        <GestureDetector gesture={gesture}>
+          <View style={[styles.volumeSliderTrack, { width: SLIDER_WIDTH }]}>
+            <View style={styles.volumeSliderBase} />
+            <Animated.View style={[styles.volumeSliderFill, animatedTrackStyle]} />
+            <Animated.View style={[styles.volumeSliderHandle, animatedHandleStyle]} />
+          </View>
+        </GestureDetector>
+        <Feather name="volume-2" size={16} color="#A9A3B5" />
+      </View>
+      <Text style={styles.volumeDisclaimer}>controls only the volume of this sound</Text>
+    </View>
+  );
+};
+
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 export default function PlayerScreen() {
   const router = useRouter();
@@ -71,7 +126,9 @@ export default function PlayerScreen() {
     togglePlayPause,
     scrubTo,
     setIsScrubbing,
-    toggleLoop
+    toggleLoop,
+    setSleepTimer,
+    setVolume
   } = useAudioPlayback();
 
   const {
@@ -79,7 +136,9 @@ export default function PlayerScreen() {
     isPlaying,
     isLooping,
     visualDuration,
-    displayPosition
+    displayPosition,
+    sleepTimerRemaining,
+    volume
   } = useAudioStatus();
 
   useEffect(() => {
@@ -102,6 +161,8 @@ export default function PlayerScreen() {
   }, []);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isTimerModalVisible, setIsTimerModalVisible] = useState(false);
+  const [tempMinutes, setTempMinutes] = useState(45);
 
   const animatedSheepStyle = useAnimatedStyle(() => {
     return {
@@ -225,13 +286,106 @@ export default function PlayerScreen() {
               </View>
             </View>
 
-            {/* SLEEP TIMER PILL */}
+            {/* VOLUME CONTROLLER */}
+            <VolumeSlider volume={volume} onVolumeChange={setVolume} />
+
             <View style={styles.pillContainer}>
-              <View style={styles.timerPill}>
+              <TouchableOpacity 
+                style={styles.timerPill} 
+                onPress={() => {
+                  setTempMinutes(sleepTimerRemaining ? Math.ceil(sleepTimerRemaining / 60) : 45);
+                  setIsTimerModalVisible(true);
+                }}
+                activeOpacity={0.7}
+              >
                 <Feather name="clock" size={14} color="#C4AED8" strokeWidth={1.5} />
-                <Text style={styles.timerText}>Sleep timer · 45 min</Text>
-              </View>
+                <Text style={styles.timerText}>
+                  {sleepTimerRemaining 
+                    ? `Ends in ${Math.ceil(sleepTimerRemaining / 60)} min` 
+                    : 'Sleep timer · Off'}
+                </Text>
+              </TouchableOpacity>
             </View>
+
+            {/* SLEEP TIMER MODAL */}
+            <Modal
+              visible={isTimerModalVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setIsTimerModalVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <TouchableOpacity 
+                  style={StyleSheet.absoluteFill} 
+                  activeOpacity={1} 
+                  onPress={() => setIsTimerModalVisible(false)} 
+                />
+                <Animated.View 
+                  entering={ZoomIn.duration(250)}
+                  exiting={FadeOut.duration(200)}
+                  style={[styles.modalContent, { backgroundColor: '#34314A' }]}
+                >
+                  <View style={styles.modalHeader}>
+                    <Feather name="clock" size={20} color="#C4AED8" />
+                    <Text style={styles.modalLabel}>SLEEP TIMER</Text>
+                  </View>
+
+                  <View style={styles.tpControls}>
+                    <View style={styles.tpCol}>
+                      <TouchableOpacity 
+                        onPress={() => setTempMinutes(m => Math.min(120, m + 5))} 
+                        style={styles.tpArrow}
+                      >
+                        <Svg width={18} height={12} viewBox="0 0 10 6">
+                          <Path d="M5 0L10 6H0L5 0Z" fill="#C4AED8" />
+                        </Svg>
+                      </TouchableOpacity>
+                      
+                      <View style={styles.tpValueContainer}>
+                        <Text style={styles.tpValue}>{tempMinutes}</Text>
+                        <Text style={styles.tpUnit}>min</Text>
+                      </View>
+
+                      <TouchableOpacity 
+                        onPress={() => setTempMinutes(m => Math.max(5, m - 5))} 
+                        style={styles.tpArrow}
+                      >
+                        <Svg width={18} height={12} viewBox="0 0 10 6">
+                          <Path d="M5 6L0 0H10L5 6Z" fill="#C4AED8" />
+                        </Svg>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity 
+                      style={styles.cancelBtn}
+                      onPress={() => {
+                        setSleepTimer(null);
+                        setIsTimerModalVisible(false);
+                      }}
+                    >
+                      <Text style={styles.cancelBtnText}>Turn Off</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      style={styles.setBtnWrapper}
+                      onPress={() => {
+                        setSleepTimer(tempMinutes);
+                        setIsTimerModalVisible(false);
+                      }}
+                    >
+                      <LinearGradient
+                        colors={['#8B6DAE', '#6B528E']}
+                        style={styles.setBtn}
+                      >
+                        <Text style={styles.setBtnText}>Set Timer</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
+                </Animated.View>
+              </View>
+            </Modal>
           </View>
         </View>
       </View>
@@ -424,5 +578,148 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#C4AED8',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 32,
+    padding: 28,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
+  modalLabel: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#C4AED8',
+    letterSpacing: 1.2,
+  },
+  tpControls: {
+    marginBottom: 32,
+  },
+  tpCol: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  tpArrow: {
+    padding: 12,
+  },
+  tpValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  tpValue: {
+    fontFamily: tokens.fonts.heading,
+    fontSize: 56,
+    fontWeight: '900',
+    color: '#F5F0E8',
+  },
+  tpUnit: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#C4AED8',
+    marginBottom: 8,
+  },
+  modalButtons: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBtnText: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#A9A3B5',
+  },
+  setBtnWrapper: {
+    flex: 2,
+    height: 52,
+  },
+  setBtn: {
+    flex: 1,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  setBtnText: {
+    fontFamily: tokens.fonts.caption,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  volumeContainer: {
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 4,
+  },
+  volumeInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  volumeSliderTrack: {
+    height: 32,
+    justifyContent: 'center',
+  },
+  volumeSliderBase: {
+    position: 'absolute',
+    width: '100%',
+    height: 4,
+    backgroundColor: '#3D3A52',
+    borderRadius: 2,
+  },
+  volumeSliderFill: {
+    position: 'absolute',
+    height: 4,
+    backgroundColor: '#8B6DAE',
+    borderRadius: 2,
+  },
+  volumeSliderHandle: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#F5F0E8',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  volumeDisclaimer: {
+    fontFamily: tokens.fonts.body,
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#A9A3B5',
+    marginTop: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

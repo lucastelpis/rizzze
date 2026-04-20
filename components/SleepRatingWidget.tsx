@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
 import Animated, { 
   FadeIn, 
@@ -18,6 +18,7 @@ import { useSleep, getDateKey } from '@/context/SleepContext';
 import { useSheepGrowth } from '@/context/SheepGrowthContext';
 import { tokens } from '@/constants/theme';
 import { HeaderSheep } from './HeaderSheep';
+import { Sparkle } from './SheepMascot';
 import { HeartAnimation } from './HeartAnimation';
 import { CommentModal } from './CommentModal';
 import { posthog } from '@/config/posthog';
@@ -201,9 +202,12 @@ export function SleepRatingWidget() {
             <View style={styles.successContentRow}>
               <View style={styles.successLeft}>
                 <View style={styles.successTextBlock}>
-                  <Text style={[styles.successHeading, { color: C.textPrimary }]}>
-                    Check-in done! ✨
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.successHeading, { color: C.textPrimary }]}>
+                      Check-in done!
+                    </Text>
+                    <Sparkle size={18} color={isDark ? C.accent : '#8B6DAE'} />
+                  </View>
                   <Text style={[styles.successBody, { color: isDark ? C.textSecondary : C.textPrimary, opacity: 0.8 }]}>
                     Your sheep grows strong
                   </Text>
@@ -241,12 +245,14 @@ export function SleepRatingWidget() {
                     <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke={C.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                     <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke={C.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
-                  <Text 
-                    numberOfLines={1} 
-                    style={[styles.notePreviewText, { color: currentNote ? C.textPrimary : C.textSecondary }]}
-                  >
-                    {currentNote ? 'View / Edit note' : 'Add a note'}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                    <Text 
+                      numberOfLines={1} 
+                      style={[styles.notePreviewText, { color: currentNote ? C.textPrimary : C.textSecondary }]}
+                    >
+                      {currentNote ? 'View / Edit note' : 'Add a note'}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </View>
 

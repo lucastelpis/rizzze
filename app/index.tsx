@@ -970,6 +970,7 @@ export default function Onboarding() {
       });
       posthog.capture('paywall_shown');
       
+
       const success = await presentPaywall();
       if (success || isPro) {
         router.replace('/(tabs)');

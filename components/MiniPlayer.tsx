@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { useAudioPlayback, useAudioStatus } from '@/context/AudioContext';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
@@ -57,11 +59,12 @@ const SheepFallbackIcon = () => (
   </Svg>
 );
 
-export function MiniPlayer({ bottomOffset = 78 }: { bottomOffset?: number }) {
+export function MiniPlayer({ bottomOffset = 0 }: { bottomOffset?: number }) {
   const { togglePlayPause, stopSound, toggleLoop } = useAudioPlayback();
   const { activeSound, isPlaying, isLooping, visualProgress, visualDuration } = useAudioStatus();
   const { isDark } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const translateY = useSharedValue(100);
 
   useEffect(() => {
@@ -95,13 +98,14 @@ export function MiniPlayer({ bottomOffset = 78 }: { bottomOffset?: number }) {
         graphicId: activeSound.graphicId 
       }
     });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   return (
     <Animated.View 
       style={[
         styles.wrapper, 
-        { bottom: bottomOffset }, 
+        { bottom: Math.max(insets.bottom, 12) + bottomOffset }, 
         animatedStyle
       ]} 
       pointerEvents={activeSound ? 'auto' : 'none'}

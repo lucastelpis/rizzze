@@ -18,7 +18,7 @@ export default function TabLayout() {
         <Tabs.Screen name="stories" options={{ title: 'Stories' }} />
         <Tabs.Screen name="games" options={{ title: 'Games' }} />
       </Tabs>
-      <MiniPlayer />
+      <MiniPlayer bottomOffset={48} />
     </View>
   );
 }

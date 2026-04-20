@@ -155,7 +155,7 @@ export default function StoryListScreen() {
           </ScrollView>
 
           <BottomNav active="stories" />
-          <MiniPlayer />
+          <MiniPlayer bottomOffset={48} />
         </View>
       </SafeAreaView>
     </View>
