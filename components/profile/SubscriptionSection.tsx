@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useColors } from '@/hooks/useColors';
@@ -15,6 +16,7 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ onRepl
   const { isPro, isLoading, presentPaywall, restorePurchases } = useSubscription();
   const { isDark } = useTheme();
   const C = useColors();
+  const router = useRouter();
 
   const handleSubscriptionPress = async () => {
     if (isPro) {
@@ -58,8 +60,8 @@ export const SubscriptionSection: React.FC<SubscriptionSectionProps> = ({ onRepl
         <Text style={[styles.settingsLabel, { color: C.textPrimary }]}>Restore purchases</Text>
       </TouchableOpacity>
 
-      <SettingsItem label="Support" onPress={() => {}} /* Handled by parent router push */ />
-      <SettingsItem label="Feedback" onPress={() => {}} /* Handled by parent router push */ />
+      <SettingsItem label="Support" onPress={() => router.push('/support')} />
+      <SettingsItem label="Feedback" onPress={() => router.push('/feedback')} />
       
       {onReplayTour && (
         <SettingsItem
